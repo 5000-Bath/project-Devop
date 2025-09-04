@@ -3,9 +3,8 @@ import { FiTrendingUp, FiBookOpen, FiRefreshCcw, FiGrid, FiSettings } from "reac
 
 const menu = [
   { to: "/", label: "Dashboard", icon: <FiTrendingUp /> },
-  { to: "/menu", label: "Menu", icon: <FiBookOpen /> },
-  { to: "/status", label: "Status", icon: <FiRefreshCcw /> },
-  { to: "/orders", label: "Orders", icon: <FiGrid /> },
+  { to: "/admin/menu", label: "Menu", icon: <FiBookOpen /> },
+  { to: "/admin/orders", label: "Orders", icon: <FiGrid /> },
 ];
 
 function Navbar() {
@@ -29,7 +28,7 @@ function Navbar() {
 
       {/* Bottom Settings */}
       <NavLink
-        to="/setting"
+        to="/admin/setting"
         style={({ isActive }) => ({
           ...styles.link,
           ...styles.setting,

@@ -16,7 +16,12 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import App from "./App.jsx";
 import Home from "./page/Home.jsx";
 import About from "./page/About.jsx";
-import Contact from "./page/Contact.jsx";
+import Contact from "./page/status.jsx";
+import Additem from "./page/AddItem.jsx";
+import Setting from "./page/setting.jsx";
+import Orders from "./page/orders.jsx";
+import Ordersdetail from "./page/Ordersdetail.jsx";
+
 
 const router = createBrowserRouter([
   {
@@ -24,10 +29,12 @@ const router = createBrowserRouter([
     element: <App />,
     children: [
       { index: true, element: <Home /> },       // http://localhost:5173/
-      { path: "menu", element: <About /> },     // /menu
-      { path: "status", element: <Contact /> }, // /status
-      { path: "orders", element: <Home /> },    // /orders (ตัวอย่าง)
-      { path: "setting", element: <div>Setting Page</div> },
+      { path: "admin/menu", element: <About /> },     // /menu
+      { path: "admin/status", element: <Contact /> }, // /status
+      { path: "admin/orders", element: <Orders /> },
+      { path: "admin/orders/orders-detail", element: <Ordersdetail /> },    
+      { path: "admin/add-item", element: <Additem /> },    // /orders (ตัวอย่าง)
+      { path: "admin/setting", element: <Setting /> },
       { path: "*", element: <div>Not Found</div> },
     ],
   },
