@@ -1,0 +1,56 @@
+
+.contact-page {
+    font-family: sans-serif;
+}
+.contact-header {
+    background-color: #212529;
+    color: white;
+    padding: 1rem 2rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-weight: bold;
+}
+
+
+
+.contact-body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    gap: 50px;
+}
+
+.carousel {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+}
+
+.carousel-arrow {
+    font-size: 3rem;
+    cursor: pointer;
+    color: #333;
+    user-select: none;
+}
+
+.contact-image {
+    width: 400px;
+    height: auto;
+}
+
+.contact-info {
+    text-align: left;
+}
+
+.contact-info p {
+    margin: 10px 0;
+    font-weight: bold;
+    font-size: 1.8rem;
+    letter-spacing: 1px;
+}
+
+.contact-info .nickname {
+    font-size: 1.5rem;
+    text-align: center;
+}

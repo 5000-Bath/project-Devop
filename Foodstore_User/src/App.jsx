@@ -39,16 +39,17 @@ import Navbar from "./component/Navbar";   // ← โฟลเดอร์ compo
 import "./component/Navbar.css";
 
 import { Outlet } from "react-router-dom";
+import { CartProvider } from "./context/CartContext";
 
 export default function App() {
   return (
     <div>
       <Navbar brand="Crayon Shinchan" />
-      <main style={{ padding: 24 }}>
-        <Outlet />
+      <main>
+        <CartProvider>
+          <Outlet />
+        </CartProvider>
       </main>
     </div>
   );
 }
-
-
