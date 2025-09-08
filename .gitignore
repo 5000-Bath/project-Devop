@@ -1,0 +1,11 @@
+# macOS
+.DS_Store
+
+# Node / Vite / React build
+node_modules/
+dist/
+.vite/
+.eslintcache
+
+# Env file
+.env
