@@ -6,67 +6,76 @@ import contactKong from '../assets/contactkong.jpg';
 import shinchan from '../assets/shinchan.png';
 import { CartContext } from '../context/CartContext';
 
+// const menuData = [
+//   {
+//     img: khaoManKai,
+//     name: 'Life Kitchen 金沙海鮮咖哩',
+//     price: 18,
+//   },
+//   {
+//     img: khaoManKai,
+//     name: 'Life Kitchen 金沙海鮮咖哩',
+//     price: 18,
+//   },
+//   {
+//     img: contactKong,
+//     name: '米其林二星四人餐',
+//     price: 12,
+//   },
+//   {
+//     img: pedPaLo,
+//     name: 'Life Kitchen 金沙海鮮咖哩',
+//     price: 9,
+//   },
+//   {
+//     img: khaoManKai,
+//     name: '霜降牛肉壽喜燒',
+//     price: 7,
+//   },
+//   {
+//     img: khaoManKai,
+//     name: 'Life Kitchen 金沙海鮮咖哩',
+//     price: 18,
+//   },
+//   {
+//     img: shinchan,
+//     name: '蜜汁梅花叉燒拼盤',
+//     price: 18,
+//   },
+//   {
+//     img: shinchan,
+//     name: '蜜汁梅花叉燒拼盤',
+//     price: 18,
+//   },
+//   {
+//     img: khaoManKai,
+//     name: '蜜汁梅花叉燒拼盤',
+//     price: 12,
+//   },
+//   {
+//     img: contactKong,
+//     name: '米其林二星四人餐',
+//     price: 18,
+//   },
+//     {
+//     img: pedPaLo,
+//     name: '帝王蟹肉炒飯',
+//     price: 15,
+//   },
+//   {
+//     img: khaoManKai,
+//     name: '蜜汁梅花叉燒拼盤',
+//     price: 18,
+//   },
+// ];
+
 const menuData = [
-  {
-    img: khaoManKai,
-    name: 'Life Kitchen 金沙海鮮咖哩',
-    price: 18,
-  },
-  {
-    img: khaoManKai,
-    name: 'Life Kitchen 金沙海鮮咖哩',
-    price: 18,
-  },
-  {
-    img: contactKong,
-    name: '米其林二星四人餐',
-    price: 12,
-  },
-  {
-    img: pedPaLo,
-    name: 'Life Kitchen 金沙海鮮咖哩',
-    price: 9,
-  },
-  {
-    img: khaoManKai,
-    name: '霜降牛肉壽喜燒',
-    price: 7,
-  },
-  {
-    img: khaoManKai,
-    name: 'Life Kitchen 金沙海鮮咖哩',
-    price: 18,
-  },
-  {
-    img: shinchan,
-    name: '蜜汁梅花叉燒拼盤',
-    price: 18,
-  },
-  {
-    img: shinchan,
-    name: '蜜汁梅花叉燒拼盤',
-    price: 18,
-  },
-  {
-    img: khaoManKai,
-    name: '蜜汁梅花叉燒拼盤',
-    price: 12,
-  },
-  {
-    img: contactKong,
-    name: '米其林二星四人餐',
-    price: 18,
-  },
-    {
-    img: pedPaLo,
-    name: '帝王蟹肉炒飯',
-    price: 15,
-  },
-  {
-    img: khaoManKai,
-    name: '蜜汁梅花叉燒拼盤',
-    price: 18,
-  },
+  { id: 'm1', img: khaoManKai, name: 'Life Kitchen 金沙海鮮咖哩', price: 18, currency: 'THB' },
+  { id: 'm2', img: khaoManKai, name: 'Life Kitchen 金沙海鮮咖哩', price: 18, currency: 'THB' },
+  { id: 'm3', img: contactKong, name: '米其林二星四人餐', price: 12, currency: 'THB' },
+  { id: 'm4', img: pedPaLo, name: 'Life Kitchen 金沙海鮮咖哩', price: 9, currency: 'THB' },
+  { id: 'm5', img: khaoManKai, name: '霜降牛肉壽喜燒', price: 7, currency: 'THB' },
+  // ... ที่เหลือเติม id ต่อเนื่อง m6, m7...
 ];
 
 const Home = () => {

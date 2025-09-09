@@ -1,54 +1,69 @@
-// import { useState } from 'react'
-// import reactLogo from './assets/react.svg'
-// import viteLogo from '/vite.svg'
-// import './App.css'
 
-// function App() {
-//   const [count, setCount] = useState(0)
+// // import Navbar from "./component/Navbar";   // ← โฟลเดอร์ component (ไม่มี s) และ N ใหญ่
+// // import "./component/Navbar.css";
 
+// // import { Outlet } from "react-router-dom";
+// // import { CartProvider } from "./context/CartContext";
+
+// // export default function App() {
+// //   return (
+// //     <div>
+// //       <Navbar brand="Crayon Shinchan" />
+// //       <main>
+// //         <CartProvider>
+// //           <Outlet />
+// //         </CartProvider>
+// //       </main>
+// //     </div>
+// //   );
+// // }
+
+// import Navbar from "./component/Navbar";   // โฟลเดอร์ component (ไม่มี s) และ N ใหญ่
+// import "./component/Navbar.css";
+
+// import { Outlet } from "react-router-dom";
+// import { CartProvider } from "./context/CartContext";
+// import { OrderProvider } from "./context/OrderContext"; // 👈 นำเข้า OrderProvider ใหม่
+
+// export default function App() {
 //   return (
-//     <>
-//       <div>
-//         <a href="https://vite.dev" target="_blank">
-//           <img src={viteLogo} className="logo" alt="Vite logo" />
-//         </a>
-//         <a href="https://react.dev" target="_blank">
-//           <img src={reactLogo} className="logo react" alt="React logo" />
-//         </a>
-//       </div>
-//       <h1>Vite + React</h1>
-//       <div className="card">
-//         <button onClick={() => setCount((count) => count + 1)}>
-//           count is {count}
-//         </button>
-//         <p>
-//           Edit <code>src/App.jsx</code> and save to test HMR
-//         </p>
-//       </div>
-//       <p className="read-the-docs">
-//         Click on the Vite and React logos to learn more
-//       </p>
-//     </>
-//   )
+//     <div>
+//       <Navbar brand="Crayon Shinchan" />
+//       <main>
+//         {/* ครอบ CartProvider ไว้ข้างใน OrderProvider */}
+//         <OrderProvider>
+//           <CartProvider>
+//             <Outlet />
+//           </CartProvider>
+//         </OrderProvider>
+//       </main>
+//     </div>
+//   );
 // }
 
-// export default App
-
-// src/App.jsx
-import Navbar from "./component/Navbar";   // ← โฟลเดอร์ component (ไม่มี s) และ N ใหญ่
+import React from "react";
+import Navbar from "./component/Navbar";
 import "./component/Navbar.css";
 
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { CartProvider } from "./context/CartContext";
+// ถ้าไม่มี OrderProvider ไม่ต้อง import/use ได้
+// import { OrderProvider } from "./context/OrderContext";
 
 export default function App() {
+  const { pathname } = useLocation();
+  const hideNavbar = pathname === "/";  // ⬅️ ซ่อนเฉพาะหน้า /
+
   return (
     <div>
-      <Navbar brand="Crayon Shinchan" />
+      {!hideNavbar && <Navbar brand="Crayon Shinchan" />}
       <main>
-        <CartProvider>
-          <Outlet />
-        </CartProvider>
+        {/* ถ้ามี OrderProvider ให้ครอบเพิ่มได้ */}
+        {/* <OrderProvider> */}
+          <CartProvider>
+            <Outlet />
+          </CartProvider>
+        {/* </OrderProvider> */}
       </main>
     </div>
   );
