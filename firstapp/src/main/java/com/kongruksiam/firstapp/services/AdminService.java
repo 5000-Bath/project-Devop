@@ -28,9 +28,11 @@ public class AdminService {
     public Admin updateAdmin(Long id, Admin adminDetails) {
         Admin admin = adminRepository.findById(id).orElse(null);
         if (admin != null) {
+            admin.setUsername(adminDetails.getUsername());
             admin.setEmail(adminDetails.getEmail());
-            admin.setPasswordHash(adminDetails.getPasswordHash());
-            admin.setName(adminDetails.getName());
+            if (adminDetails.getPassword() != null && !adminDetails.getPassword().isEmpty()) {
+                admin.setPassword(adminDetails.getPassword()); // Ideally, hash this password
+            }
             return adminRepository.save(admin);
         }
         return null;

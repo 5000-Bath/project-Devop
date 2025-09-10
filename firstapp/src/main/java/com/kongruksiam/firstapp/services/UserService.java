@@ -28,10 +28,15 @@ public class UserService {
     public User updateUser(Long id, User userDetails) {
         User user = userRepository.findById(id).orElse(null);
         if (user != null) {
+            user.setUsername(userDetails.getUsername());
+            user.setName(userDetails.getName());
+            user.setLastname(userDetails.getLastname());
             user.setEmail(userDetails.getEmail());
-            user.setPasswordHash(userDetails.getPasswordHash());
-            user.setFullName(userDetails.getFullName());
+            if (userDetails.getPassword() != null && !userDetails.getPassword().isEmpty()) {
+                user.setPassword(userDetails.getPassword()); // Ideally, hash this password
+            }
             user.setPhone(userDetails.getPhone());
+            user.setAddress(userDetails.getAddress());
             return userRepository.save(user);
         }
         return null;

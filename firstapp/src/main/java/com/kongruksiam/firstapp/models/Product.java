@@ -1,12 +1,15 @@
 package com.kongruksiam.firstapp.models;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "products")
 public class Product {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -24,10 +27,13 @@ public class Product {
     private String imageUrl;
 
     @Column(name = "is_active")
-    private boolean isActive;
+    private boolean isActive = true;
 
-    @Column(name = "created_at", updatable = false)
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    // Getters and Setters
 
     public Long getId() {
         return id;

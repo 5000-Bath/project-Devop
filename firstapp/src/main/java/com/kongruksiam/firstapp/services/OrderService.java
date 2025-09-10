@@ -29,13 +29,8 @@ public class OrderService {
         Order order = orderRepository.findById(id).orElse(null);
         if (order != null) {
             order.setUser(orderDetails.getUser());
-            order.setTotalAmount(orderDetails.getTotalAmount());
             order.setStatus(orderDetails.getStatus());
-            order.setItemsJson(orderDetails.getItemsJson());
-            order.setShippingName(orderDetails.getShippingName());
-            order.setShippingPhone(orderDetails.getShippingPhone());
-            order.setShippingAddr(orderDetails.getShippingAddr());
-            order.setNote(orderDetails.getNote());
+            // OrderItems are managed via their own repository/service now
             return orderRepository.save(order);
         }
         return null;

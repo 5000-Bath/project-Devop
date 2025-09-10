@@ -1,47 +1,34 @@
 package com.kongruksiam.firstapp.models;
 
 import jakarta.persistence.*;
-import java.math.BigDecimal;
+import org.hibernate.annotations.CreationTimestamp;
+
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "orders")
 public class Order {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(name = "total_amount", nullable = false, precision = 12, scale = 2)
-    private BigDecimal totalAmount;
+    @Column(length = 20)
+    private String status = "PENDING";
 
-    @Column(nullable = false, length = 20)
-    private String status;
-
-    @Lob
-    @Column(name = "items_json", nullable = false)
-    private String itemsJson;
-
-    @Column(name = "shipping_name", length = 150)
-    private String shippingName;
-
-    @Column(name = "shipping_phone", length = 30)
-    private String shippingPhone;
-
-    @Column(name = "shipping_addr", length = 400)
-    private String shippingAddr;
-
-    @Column(length = 300)
-    private String note;
-
-    @Column(name = "created_at", updatable = false)
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<OrderItem> orderItems;
+
+    // Getters and Setters
 
     public Long getId() {
         return id;
@@ -59,60 +46,12 @@ public class Order {
         this.user = user;
     }
 
-    public BigDecimal getTotalAmount() {
-        return totalAmount;
-    }
-
-    public void setTotalAmount(BigDecimal totalAmount) {
-        this.totalAmount = totalAmount;
-    }
-
     public String getStatus() {
         return status;
     }
 
     public void setStatus(String status) {
         this.status = status;
-    }
-
-    public String getItemsJson() {
-        return itemsJson;
-    }
-
-    public void setItemsJson(String itemsJson) {
-        this.itemsJson = itemsJson;
-    }
-
-    public String getShippingName() {
-        return shippingName;
-    }
-
-    public void setShippingName(String shippingName) {
-        this.shippingName = shippingName;
-    }
-
-    public String getShippingPhone() {
-        return shippingPhone;
-    }
-
-    public void setShippingPhone(String shippingPhone) {
-        this.shippingPhone = shippingPhone;
-    }
-
-    public String getShippingAddr() {
-        return shippingAddr;
-    }
-
-    public void setShippingAddr(String shippingAddr) {
-        this.shippingAddr = shippingAddr;
-    }
-
-    public String getNote() {
-        return note;
-    }
-
-    public void setNote(String note) {
-        this.note = note;
     }
 
     public LocalDateTime getCreatedAt() {
@@ -123,11 +62,11 @@ public class Order {
         this.createdAt = createdAt;
     }
 
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
+    public List<OrderItem> getOrderItems() {
+        return orderItems;
     }
 
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
+    public void setOrderItems(List<OrderItem> orderItems) {
+        this.orderItems = orderItems;
     }
 }
