@@ -1,12 +1,17 @@
 import React, { useState } from "react";
+import Swal from 'sweetalert2'; // ✅ เพิ่มการ import
 
 export default function Additem() {
   const [formData, setFormData] = useState({
-    menuName: '',
+    name: '',
     description: '',
     price: '',
-    coverImage: null
+    imageUrl: '',
+    stockQty: 0,
+    isActive: true
   });
+
+  const [coverImage, setCoverImage] = useState(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -19,24 +24,86 @@ export default function Additem() {
   const handleImageUpload = (e) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setFormData(prev => ({
-        ...prev,
-        coverImage: file
-      }));
+      setCoverImage(file);
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle form submission
-    console.log('Form submitted:', formData);
-    // In a real app, you would send this data to your backend
+
+    // ตรวจสอบข้อมูลเบื้องต้น
+    if (!formData.name || !formData.price) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'กรุณากรอกข้อมูลให้ครบ',
+        text: 'กรุณากรอกชื่อเมนูและราคา',
+        confirmButtonText: 'ตกลง',
+        customClass: {
+          confirmButton: 'btn btn-success'
+        }
+      });
+      return;
+    }
+
+    const formDataToSend = new FormData();
+    formDataToSend.append('name', formData.name);
+    formDataToSend.append('description', formData.description || '');
+    formDataToSend.append('price', parseFloat(formData.price));
+    formDataToSend.append('stockQty', parseInt(formData.stockQty) || 0);
+    formDataToSend.append('isActive', formData.isActive);
+
+    if (coverImage) {
+      formDataToSend.append('imageUrl', coverImage);
+    }
+
+    try {
+      const response = await fetch('http://localhost:8080/products', {
+        method: 'POST',
+        body: formDataToSend,
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        Swal.fire({
+          icon: 'success',
+          title: 'เพิ่มเมนูสำเร็จ!',
+          text: 'เมนูใหม่ของคุณถูกเพิ่มเข้าสู่ระบบแล้ว',
+          confirmButtonText: 'ตกลง',
+          customClass: {
+            confirmButton: 'btn btn-success'
+          }
+        }).then(() => {
+          setFormData({
+            name: '',
+            description: '',
+            price: '',
+            imageUrl: '',
+            stockQty: 0,
+            isActive: true
+          });
+          setCoverImage(null);
+        });
+      } else {
+        throw new Error('Failed to add product');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'เกิดข้อผิดพลาด',
+        text: 'เกิดข้อผิดพลาด: ' + error.message,
+        confirmButtonText: 'ลองอีกครั้ง',
+        customClass: {
+          confirmButton: 'btn btn-danger'
+        }
+      });
+    }
   };
 
   return (
     <div style={{ padding: 24, background: "#f7f7f7", borderRadius: 12 }}>
       <h1 style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 20, color: '#333' }}>Add New Menu</h1>
-      
+
       {/* Header image */}
       <div style={{
         width: '100%',
@@ -64,8 +131,8 @@ export default function Additem() {
               </label>
               <input
                 type="text"
-                name="menuName"
-                value={formData.menuName}
+                name="name"
+                value={formData.name}
                 onChange={handleChange}
                 style={{
                   width: '100%',
@@ -116,7 +183,7 @@ export default function Additem() {
                 fontWeight: 500, 
                 color: '#666'
               }}>
-                Price
+                Price (THB)
               </label>
               <input
                 type="number"
@@ -135,6 +202,34 @@ export default function Additem() {
                 }}
                 placeholder="Enter price"
                 required
+              />
+            </div>
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ 
+                display: 'block', 
+                marginBottom: 8, 
+                fontSize: 14, 
+                fontWeight: 500, 
+                color: '#666'
+              }}>
+                Stock Quantity
+              </label>
+              <input
+                type="number"
+                name="stockQty"
+                value={formData.stockQty}
+                onChange={handleChange}
+                min="0"
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  border: '1px solid #ddd',
+                  borderRadius: 6,
+                  fontSize: 14,
+                  boxSizing: 'border-box'
+                }}
+                placeholder="Enter stock quantity"
               />
             </div>
           </div>
@@ -176,7 +271,7 @@ export default function Additem() {
                 fontSize: 14, 
                 marginBottom: 8 
               }}>
-                Menu Covers
+                Menu Cover Image
               </p>
               <input
                 type="file"

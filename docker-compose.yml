@@ -32,7 +32,7 @@ services:
       - "8081:80"
     restart: unless-stopped
 
-  # 3. Spring Boot Backend (firstapp)
+    # 3. Spring Boot Backend (firstapp)
   backend:
     build: ./firstapp
     container_name: firstapp-backend
@@ -45,7 +45,10 @@ services:
       SPRING_DATASOURCE_USERNAME: shopuser
       SPRING_DATASOURCE_PASSWORD: shoppassword
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    volumes:
+      - ./uploads/images:/app/uploads/images   # ✅ เพิ่มบรรทัดนี้เพื่อ map โฟลเดอร์ upload
     restart: unless-stopped
+
 
   # 4. User Frontend
   frontend-user:

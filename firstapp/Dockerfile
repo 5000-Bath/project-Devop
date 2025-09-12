@@ -9,8 +9,14 @@ RUN mvn package -DskipTests
 FROM eclipse-temurin:17-jre
 WORKDIR /app
 
-# คัดลอกไฟล์ .jar ใดก็ได้ในโฟลเดอร์ target/ (มีแค่ไฟล์เดียวแน่นอน)
+# คัดลอกไฟล์ .jar
 COPY --from=builder /app/target/*.jar app.jar
 
+# ✅ สร้างโฟลเดอร์สำหรับอัปโหลดไฟล์ — สำคัญมาก!
+RUN mkdir -p /app/uploads/images
+
+# เปิดพอร์ต
 EXPOSE 8080
+
+# รันแอป
 ENTRYPOINT ["java", "-jar", "app.jar"]

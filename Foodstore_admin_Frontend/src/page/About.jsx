@@ -1,100 +1,46 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
 
 export default function About() {
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedItem, setSelectedItem] = useState(null);
+    const [menuItems, setMenuItems] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    // อยู่ในฟังก์ชัน Component
     const navigate = useNavigate();
 
-    // Mock data for menu items
-    const menuItems = [
-        {
-            id: 1111,
-            name: "飛鶴海雞卵",
-            description: "Fringilla Fusce Elit",
-            price: 75.00,
-            value: 492,
-            category: "Appetizer"
-        },
-        {
-            id: 1112,
-            name: "星巴克",
-            description: "Lorem Ornare",
-            price: 43.27,
-            value: 154,
-            category: "Beverage"
-        },
-        {
-            id: 1113,
-            name: "紅油抄手",
-            description: "Venenatis Mollis",
-            price: 246.00,
-            value: 453,
-            category: "Main Course"
-        },
-        {
-            id: 1114,
-            name: "星巴克",
-            description: "Ullamcor per",
-            price: 87.00,
-            value: 883,
-            category: "Beverage"
-        },
-        {
-            id: 1115,
-            name: "三高巧福",
-            description: "Bibendum",
-            price: 82.06,
-            value: 922,
-            category: "Dessert"
-        },
-        {
-            id: 1116,
-            name: "藍家割包",
-            description: "Magna Malesuada",
-            price: 214.27,
-            value: 561,
-            category: "Sandwich"
-        },
-        {
-            id: 1117,
-            name: "五十嵐",
-            description: "Quam",
-            price: 54.05,
-            value: 540,
-            category: "Beverage"
-        },
-        {
-            id: 1118,
-            name: "金酷餅餡餅",
-            description: "Fringilla Fusce Elit",
-            price: 75.00,
-            value: 130,
-            category: "Snack"
-        },
-        {
-            id: 1119,
-            name: "窯烤食堂",
-            description: "Ridiculus",
-            price: 226.20,
-            value: 816,
-            category: "Main Course"
-        }
-    ];
+    // ✅ โหลดสินค้า
+    useEffect(() => {
+        const fetchProducts = async () => {
+            try {
+                const res = await fetch("http://localhost:8080/products");
+                if (!res.ok) throw new Error("Failed to fetch products");
+                const data = await res.json();
+                setMenuItems(data);
+            } catch (err) {
+                console.error("Error fetching products:", err);
+                setError("ไม่สามารถโหลดสินค้าได้");
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchProducts();
+    }, []);
 
-    // Filter items based on search term
     const filteredItems = menuItems.filter(item =>
-        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.description.toLowerCase().includes(searchTerm.toLowerCase())
+        (item.name?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (item.description?.toLowerCase().includes(searchTerm.toLowerCase()))
     );
+
+    if (loading) return <div style={{ padding: 24 }}>⏳ กำลังโหลด...</div>;
+    if (error) return <div style={{ padding: 24, color: "red" }}>{error}</div>;
 
     return (
         <div style={{ padding: 24, background: "#f7f7f7", borderRadius: 12 }}>
             <h1 style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 20, color: '#333' }}>Menu</h1>
 
-            {/* Header with search */}
+            {/* Search */}
             <div style={{
                 display: 'flex',
                 justifyContent: 'space-between',
@@ -105,11 +51,7 @@ export default function About() {
                 borderRadius: 8,
                 boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
             }}>
-                <div style={{
-                    position: 'relative',
-                    flex: 1,
-                    maxWidth: 300
-                }}>
+                <div style={{ position: 'relative', flex: 1, maxWidth: 300 }}>
                     <input
                         type="text"
                         placeholder="Search..."
@@ -137,32 +79,37 @@ export default function About() {
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
                         <tr style={{ borderBottom: '1px solid #eee' }}>
-                            <th style={{ textAlign: 'left', padding: '12px 8px', fontSize: 14, color: '#666', fontWeight: 500 }}>Name</th>
-                            <th style={{ textAlign: 'left', padding: '12px 8px', fontSize: 14, color: '#666', fontWeight: 500 }}>ID</th>
-                            <th style={{ textAlign: 'left', padding: '12px 8px', fontSize: 14, color: '#666', fontWeight: 500 }}>Description</th>
-                            <th style={{ textAlign: 'left', padding: '12px 8px', fontSize: 14, color: '#666', fontWeight: 500 }}>Price Per Menu</th>
-                            <th style={{ textAlign: 'left', padding: '12px 8px', fontSize: 14, color: '#666', fontWeight: 500 }}>Value</th>
-                            <th style={{ textAlign: 'left', padding: '12px 8px', fontSize: 14, color: '#666', fontWeight: 500 }}>Info</th>
+                            <th style={{ textAlign: 'left', padding: '12px 8px' }}>Image</th>
+                            <th style={{ textAlign: 'left', padding: '12px 8px' }}>Name</th>
+                            <th style={{ textAlign: 'left', padding: '12px 8px' }}>ID</th>
+                            <th style={{ textAlign: 'left', padding: '12px 8px' }}>Description</th>
+                            <th style={{ textAlign: 'left', padding: '12px 8px' }}>Price</th>
+                            <th style={{ textAlign: 'left', padding: '12px 8px' }}>Stock</th>
+                            <th style={{ textAlign: 'left', padding: '12px 8px' }}>Info</th>
                         </tr>
                     </thead>
                     <tbody>
                         {filteredItems.map((item) => (
-                            <tr
-                                key={item.id}
-                                style={{
-                                    borderBottom: '1px solid #f0f0f0',
-                                    cursor: 'pointer',
-                                    transition: 'background-color 0.2s'
-                                }}
-                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'}
-                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
+                            <tr key={item.id}
+                                style={{ borderBottom: '1px solid #f0f0f0', cursor: 'pointer' }}
                                 onClick={() => setSelectedItem(item)}
                             >
-                                <td style={{ padding: '12px 8px', fontSize: 14, fontWeight: 500, color: '#333' }}>{item.name}</td>
-                                <td style={{ padding: '12px 8px', fontSize: 14, color: '#666' }}>{item.id}</td>
-                                <td style={{ padding: '12px 8px', fontSize: 14, color: '#666' }}>{item.description}</td>
-                                <td style={{ padding: '12px 8px', fontSize: 14, color: '#666' }}>{item.price.toFixed(2)} บาท</td>
-                                <td style={{ padding: '12px 8px', fontSize: 14, color: '#666' }}>{item.value}</td>
+                                <td style={{ padding: '12px 8px' }}>
+                                    {item.imageUrl ? (
+                                        <img 
+                                            src={item.imageUrl.startsWith("http") ? item.imageUrl : `http://localhost:8080/${item.imageUrl}`} 
+                                            alt={item.name} 
+                                            style={{ width: 50, height: 50, objectFit: "cover", borderRadius: 6 }}
+                                        />
+                                    ) : (
+                                        <span style={{ fontSize: 12, color: "#aaa" }}>No Image</span>
+                                    )}
+                                </td>
+                                <td style={{ padding: '12px 8px', fontWeight: 500 }}>{item.name}</td>
+                                <td style={{ padding: '12px 8px' }}>{item.id}</td>
+                                <td style={{ padding: '12px 8px' }}>{item.description}</td>
+                                <td style={{ padding: '12px 8px' }}>{item.price} บาท</td>
+                                <td style={{ padding: '12px 8px' }}>{item.stockQty}</td>
                                 <td style={{ padding: '12px 8px' }}>
                                     <button
                                         style={{
@@ -187,12 +134,8 @@ export default function About() {
                     </tbody>
                 </table>
 
-                {/* Add Item Button at bottom */}
-                <div style={{
-                    marginTop: 16,
-                    display: 'flex',
-                    justifyContent: 'flex-end'
-                }}>
+                {/* Add Item Button */}
+                <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
                     <button
                         onClick={() => navigate('/admin/add-item')}
                         style={{
@@ -207,14 +150,7 @@ export default function About() {
                             alignItems: 'center',
                             gap: 6
                         }}>
-                        <svg xmlns="http://www.w3.org/2000/svg"
-                            style={{ width: 16, height: 16 }}
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                        </svg>
-                        Add Item
+                        ➕ Add Item
                     </button>
                 </div>
             </div>
@@ -222,100 +158,24 @@ export default function About() {
             {/* Modal */}
             {selectedItem && (
                 <div style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
                     backgroundColor: 'rgba(0,0,0,0.5)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 1000
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
                 }}>
-                    <div style={{
-                        backgroundColor: 'white',
-                        borderRadius: 8,
-                        padding: 24,
-                        width: 400,
-                        maxWidth: '90vw'
-                    }}>
-                        <div style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'flex-start',
-                            marginBottom: 16
-                        }}>
-                            <h3 style={{
-                                fontSize: 20,
-                                fontWeight: 'bold',
-                                color: '#333'
-                            }}>{selectedItem.name}</h3>
-                            <button
-                                onClick={() => setSelectedItem(null)}
-                                style={{
-                                    background: 'none',
-                                    border: 'none',
-                                    fontSize: 24,
-                                    cursor: 'pointer',
-                                    color: '#999'
-                                }}
-                            >
-                                ×
-                            </button>
-                        </div>
-
-                        <div style={{ marginBottom: 16 }}>
-                            <div style={{ display: 'flex', marginBottom: 8 }}>
-                                <span style={{ color: '#666', width: 80 }}>ID:</span>
-                                <span style={{ fontWeight: 500 }}>{selectedItem.id}</span>
-                            </div>
-                            <div style={{ display: 'flex', marginBottom: 8 }}>
-                                <span style={{ color: '#666', width: 80 }}>Description:</span>
-                                <span style={{ fontWeight: 500 }}>{selectedItem.description}</span>
-                            </div>
-                            <div style={{ display: 'flex', marginBottom: 8 }}>
-                                <span style={{ color: '#666', width: 80 }}>Price:</span>
-                                <span style={{ fontWeight: 500 }}>{selectedItem.price.toFixed(2)} €</span>
-                            </div>
-                            <div style={{ display: 'flex', marginBottom: 8 }}>
-                                <span style={{ color: '#666', width: 80 }}>Value:</span>
-                                <span style={{ fontWeight: 500 }}>{selectedItem.value}</span>
-                            </div>
-                            <div style={{ display: 'flex' }}>
-                                <span style={{ color: '#666', width: 80 }}>Category:</span>
-                                <span style={{ fontWeight: 500 }}>{selectedItem.category}</span>
-                            </div>
-                        </div>
-
-                        <div style={{
-                            display: 'flex',
-                            gap: 12
-                        }}>
-                            <button style={{
-                                flex: 1,
-                                backgroundColor: '#1976d2',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: 6,
-                                padding: '10px 16px',
-                                fontSize: 14,
-                                cursor: 'pointer'
-                            }}>
-                                Edit
-                            </button>
-                            <button style={{
-                                backgroundColor: '#d32f2f',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: 6,
-                                padding: '10px 16px',
-                                fontSize: 14,
-                                cursor: 'pointer'
-                            }}>
-                                Delete
-                            </button>
-                        </div>
+                    <div style={{ backgroundColor: 'white', borderRadius: 8, padding: 24, width: 400 }}>
+                        <h3>{selectedItem.name}</h3>
+                        {selectedItem.imageUrl && (
+                            <img 
+                                src={selectedItem.imageUrl.startsWith("http") ? selectedItem.imageUrl : `http://localhost:8080/${selectedItem.imageUrl}`} 
+                                alt={selectedItem.name} 
+                                style={{ width: "100%", height: 200, objectFit: "cover", borderRadius: 8, marginBottom: 12 }}
+                            />
+                        )}
+                        <p><b>ID:</b> {selectedItem.id}</p>
+                        <p><b>Description:</b> {selectedItem.description}</p>
+                        <p><b>Price:</b> {selectedItem.price} บาท</p>
+                        <p><b>Stock:</b> {selectedItem.stockQty}</p>
+                        <button onClick={() => setSelectedItem(null)}>Close</button>
                     </div>
                 </div>
             )}
