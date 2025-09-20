@@ -1,105 +1,62 @@
-import React, { useContext } from 'react';
+// src/pages/Home.jsx  (หรือไฟล์ที่เป็นหน้า Home ของคุณ)
+import React, { useContext, useEffect, useState } from 'react';
 import './Home.css';
-import khaoManKai from '../assets/menupic/khao-man-kai.jpg';
-import pedPaLo from '../assets/menupic/ped-pa-lo.jpg';
-import contactKong from '../assets/contactkong.jpg';
-import shinchan from '../assets/shinchan.png';
+import placeholder from '../assets/menupic/khao-man-kai.jpg'; // รูปสำรองถ้าไม่มี imageUrl จาก API
 import { CartContext } from '../context/CartContext';
-
-// const menuData = [
-//   {
-//     img: khaoManKai,
-//     name: 'Life Kitchen 金沙海鮮咖哩',
-//     price: 18,
-//   },
-//   {
-//     img: khaoManKai,
-//     name: 'Life Kitchen 金沙海鮮咖哩',
-//     price: 18,
-//   },
-//   {
-//     img: contactKong,
-//     name: '米其林二星四人餐',
-//     price: 12,
-//   },
-//   {
-//     img: pedPaLo,
-//     name: 'Life Kitchen 金沙海鮮咖哩',
-//     price: 9,
-//   },
-//   {
-//     img: khaoManKai,
-//     name: '霜降牛肉壽喜燒',
-//     price: 7,
-//   },
-//   {
-//     img: khaoManKai,
-//     name: 'Life Kitchen 金沙海鮮咖哩',
-//     price: 18,
-//   },
-//   {
-//     img: shinchan,
-//     name: '蜜汁梅花叉燒拼盤',
-//     price: 18,
-//   },
-//   {
-//     img: shinchan,
-//     name: '蜜汁梅花叉燒拼盤',
-//     price: 18,
-//   },
-//   {
-//     img: khaoManKai,
-//     name: '蜜汁梅花叉燒拼盤',
-//     price: 12,
-//   },
-//   {
-//     img: contactKong,
-//     name: '米其林二星四人餐',
-//     price: 18,
-//   },
-//     {
-//     img: pedPaLo,
-//     name: '帝王蟹肉炒飯',
-//     price: 15,
-//   },
-//   {
-//     img: khaoManKai,
-//     name: '蜜汁梅花叉燒拼盤',
-//     price: 18,
-//   },
-// ];
-
-const menuData = [
-  { id: 'm1', img: khaoManKai, name: 'Life Kitchen 金沙海鮮咖哩', price: 18, currency: 'THB' },
-  { id: 'm2', img: khaoManKai, name: 'Life Kitchen 金沙海鮮咖哩', price: 18, currency: 'THB' },
-  { id: 'm3', img: contactKong, name: '米其林二星四人餐', price: 12, currency: 'THB' },
-  { id: 'm4', img: pedPaLo, name: 'Life Kitchen 金沙海鮮咖哩', price: 9, currency: 'THB' },
-  { id: 'm5', img: khaoManKai, name: '霜降牛肉壽喜燒', price: 7, currency: 'THB' },
-  // ... ที่เหลือเติม id ต่อเนื่อง m6, m7...
-];
+import { listProducts } from '../api/products'; // 👉 ใช้ API จริง
 
 const Home = () => {
-  const { addToCart } = useContext(CartContext);
+    const { addToCart } = useContext(CartContext);
+    const [items, setItems] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [err, setErr] = useState('');
 
-  return (
-    <div className="home-container">
-      <div className="all-menus-header">
-        <h1>ALL MENUS</h1>
-      </div>
-      <div className="menu-grid-container">
-        <div className="menu-grid">
-        {menuData.map((item, index) => (
-          <div className="menu-card" key={index}>
-            <img src={item.img} alt={item.name} />
-            <div className="menu-card-name">{item.name}</div>
-            <div className="menu-card-price">{item.price} THB</div>
-            <button className="add-to-cart-button" onClick={() => addToCart(item)}>+1</button>
-          </div>
-        ))}
-      </div>
-      </div>
-    </div>
-  );
+    useEffect(() => {
+        let ignore = false;
+        listProducts()
+            .then(data => { if (!ignore) setItems(Array.isArray(data) ? data : []); })
+            .catch(e => { if (!ignore) setErr(e.message || 'Fetch failed'); })
+            .finally(() => { if (!ignore) setLoading(false); });
+        return () => { ignore = true; };
+    }, []);
+
+    const handleAdd = (p) => {
+        // ทำให้ข้อมูลที่ส่งเข้า Cart เป็นฟอร์แมตเดียวกันเสมอ
+        const cartItem = {
+            id: p.id ?? p.productId ?? p.menuId,
+            name: p.name,
+            price: Number(p.price ?? 0),
+            imageUrl: p.imageUrl ?? p.img ?? placeholder,
+            quantity: 1,
+        };
+        addToCart(cartItem);
+    };
+
+    return (
+        <div className="home-container">
+            <div className="all-menus-header">
+                <h1>ALL MENUS</h1>
+            </div>
+
+            <div className="menu-grid-container">
+                {loading && <div style={{ padding: 24 }}>Loading...</div>}
+                {err && !loading && <div style={{ padding: 24, color: 'red' }}>Error: {err}</div>}
+
+                {!loading && !err && (
+                    <div className="menu-grid">
+                        {items.map((item) => (
+                            <div className="menu-card" key={item.id ?? item.name}>
+                                <img src={item.imageUrl ?? placeholder} alt={item.name} />
+                                <div className="menu-card-name">{item.name}</div>
+                                <div className="menu-card-price">{item.price} THB</div>
+                                <button className="add-to-cart-button" onClick={() => handleAdd(item)}>+1</button>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
 };
 
 export default Home;

@@ -17,22 +17,22 @@ services:
       - "3306:3306"
     restart: unless-stopped
 
-  # 2. phpMyAdmin
+  # 2. phpMyAdmin (รองรับ ARM)
   phpmyadmin:
-    image: phpmyadmin/phpmyadmin
+    image: arm64v8/phpmyadmin:latest
     container_name: phpmyadmin
     depends_on:
       - db
     environment:
       PMA_HOST: db
-      PMA_PORT: 3306
+      PMA_PORT: "3306"      # ใส่เป็นสตริงกัน YAML งอแง
       PMA_USER: shopuser
       PMA_PASSWORD: shoppassword
     ports:
       - "8081:80"
     restart: unless-stopped
 
-    # 3. Spring Boot Backend (firstapp)
+  # 3. Spring Boot Backend (firstapp)
   backend:
     build: ./firstapp
     container_name: firstapp-backend
@@ -46,9 +46,8 @@ services:
       SPRING_DATASOURCE_PASSWORD: shoppassword
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
     volumes:
-      - ./uploads/images:/app/uploads/images   # ✅ เพิ่มบรรทัดนี้เพื่อ map โฟลเดอร์ upload
+      - ./uploads/images:/app/uploads/images
     restart: unless-stopped
-
 
   # 4. User Frontend
   frontend-user:
