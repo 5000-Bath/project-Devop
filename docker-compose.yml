@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  # 1. MySQL Database
+  db:
+    image: mysql:8.0
+    container_name: foodstore-db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: shopdb
+      MYSQL_USER: shopuser
+      MYSQL_PASSWORD: shoppassword
+    volumes:
+      - ./mysql-data:/var/lib/mysql
+      - ./shop_db.sql:/docker-entrypoint-initdb.d/shop_db.sql
+    ports:
+      - "3306:3306"
+    restart: unless-stopped
+
+  # 2. phpMyAdmin
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin
+    depends_on:
+      - db
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: shopuser
+      PMA_PASSWORD: shoppassword
+    ports:
+      - "8081:80"
+    restart: unless-stopped
+
+    # 3. Spring Boot Backend (firstapp)
+  backend:
+    build: ./firstapp
+    container_name: firstapp-backend
+    depends_on:
+      - db
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/shopdb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: shopuser
+      SPRING_DATASOURCE_PASSWORD: shoppassword
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    volumes:
+      - ./uploads/images:/app/uploads/images   # ✅ เพิ่มบรรทัดนี้เพื่อ map โฟลเดอร์ upload
+    restart: unless-stopped
+
+
+  # 4. User Frontend
+  frontend-user:
+    build: ./Foodstore_User
+    container_name: foodstore-user-frontend
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+  # 5. Admin Frontend
+  frontend-admin:
+    build: ./Foodstore_admin_Frontend
+    container_name: foodstore-admin-frontend
+    depends_on:
+      - backend
+    ports:
+      - "3001:3001"
+    restart: unless-stopped
