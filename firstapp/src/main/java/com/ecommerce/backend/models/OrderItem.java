@@ -1,7 +1,7 @@
 package com.ecommerce.backend.models;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
-import java.math.BigDecimal;
 
 @Entity
 @Table(name = "order_items")
@@ -11,6 +11,7 @@ public class OrderItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @JsonBackReference
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
@@ -18,12 +19,6 @@ public class OrderItem {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id")
     private Product product;
-
-    @Column(name = "product_name", nullable = false, length = 200)
-    private String productName;
-
-    @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal price;
 
     @Column(nullable = false)
     private int quantity;
@@ -51,22 +46,6 @@ public class OrderItem {
 
     public void setProduct(Product product) {
         this.product = product;
-    }
-
-    public String getProductName() {
-        return productName;
-    }
-
-    public void setProductName(String productName) {
-        this.productName = productName;
-    }
-
-    public BigDecimal getPrice() {
-        return price;
-    }
-
-    public void setPrice(BigDecimal price) {
-        this.price = price;
     }
 
     public int getQuantity() {
