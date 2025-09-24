@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Sep 10, 2025 at 02:35 PM
+-- Generation Time: Sep 24, 2025 at 06:19 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -35,6 +35,14 @@ CREATE TABLE `admins` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `admins`
+--
+
+INSERT INTO `admins` (`id`, `username`, `email`, `password`, `created_at`) VALUES
+(1, 'Tas', 'tasbcc@gmail.com', '123456', '2025-09-24 14:35:44'),
+(2, 'admin1', 'admin1@example.com', 'securePass123', '2025-09-24 14:47:12');
+
 -- --------------------------------------------------------
 
 --
@@ -44,9 +52,16 @@ CREATE TABLE `admins` (
 CREATE TABLE `orders` (
   `id` bigint(20) NOT NULL,
   `user_id` bigint(20) NOT NULL,
-  `status` varchar(20) DEFAULT 'PENDING',
+  `status` enum('PENDING','SUCCESS','CANCELLED') NOT NULL DEFAULT 'PENDING',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `orders`
+--
+
+INSERT INTO `orders` (`id`, `user_id`, `status`, `created_at`) VALUES
+(6, 1, 'PENDING', '2025-09-24 14:59:52');
 
 -- --------------------------------------------------------
 
@@ -57,11 +72,23 @@ CREATE TABLE `orders` (
 CREATE TABLE `order_items` (
   `id` bigint(20) NOT NULL,
   `order_id` bigint(20) NOT NULL,
-  `product_id` bigint(20) DEFAULT NULL,
-  `product_name` varchar(200) NOT NULL,
-  `price` decimal(10,2) NOT NULL,
-  `quantity` int(11) NOT NULL
+  `product_id` bigint(20) NOT NULL,
+  `quantity` int(11) NOT NULL DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `order_items`
+--
+
+INSERT INTO `order_items` (`id`, `order_id`, `product_id`, `quantity`) VALUES
+(1, 6, 2, 3),
+(2, 6, 1, 3),
+(3, 6, 1, 2),
+(4, 6, 2, 1),
+(5, 6, 7, 2),
+(6, 6, 8, 1),
+(7, 6, 7, 2),
+(8, 6, 8, 1);
 
 -- --------------------------------------------------------
 
@@ -74,6 +101,7 @@ CREATE TABLE `products` (
   `name` varchar(200) NOT NULL,
   `description` text DEFAULT NULL,
   `price` decimal(10,2) NOT NULL,
+  `stock_qty` int(11) NOT NULL DEFAULT 0,
   `image_url` varchar(400) DEFAULT NULL,
   `is_active` tinyint(1) DEFAULT 1,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
@@ -83,6 +111,11 @@ CREATE TABLE `products` (
 -- Dumping data for table `products`
 --
 
+INSERT INTO `products` (`id`, `name`, `description`, `price`, `stock_qty`, `image_url`, `is_active`, `created_at`) VALUES
+(1, 'Latte', NULL, 80.00, 0, NULL, 1, '2025-09-10 12:29:33'),
+(2, 'Brownie', NULL, 45.00, 0, NULL, 1, '2025-09-10 12:29:33'),
+(7, 'mala', NULL, 200.00, 10, NULL, 1, '2025-09-24 16:07:17'),
+(8, 'tempura', NULL, 150.00, 0, NULL, 1, '2025-09-24 16:07:41');
 
 -- --------------------------------------------------------
 
@@ -98,6 +131,8 @@ CREATE TABLE `users` (
   `email` varchar(255) NOT NULL,
   `password` varchar(255) NOT NULL,
   `phone` varchar(30) DEFAULT NULL,
+  `birth_date` date DEFAULT NULL,
+  `profile_image_url` varchar(400) DEFAULT NULL,
   `address` varchar(255) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -106,8 +141,8 @@ CREATE TABLE `users` (
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `username`, `name`, `lastname`, `email`, `password`, `phone`, `address`, `created_at`) VALUES
-(1, 'user01', 'user', 'demo', 'user@demo.com', '1234', '123456789', 'bangkok,thailand', '2025-09-10 12:34:13');
+INSERT INTO `users` (`id`, `username`, `name`, `lastname`, `email`, `password`, `phone`, `birth_date`, `profile_image_url`, `address`, `created_at`) VALUES
+(1, 'user01', 'user', 'demo', 'user@demo.com', '1234', '123456789', NULL, NULL, 'bangkok,thailand', '2025-09-10 12:34:13');
 
 --
 -- Indexes for dumped tables
@@ -133,8 +168,8 @@ ALTER TABLE `orders`
 --
 ALTER TABLE `order_items`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `order_id` (`order_id`),
-  ADD KEY `product_id` (`product_id`);
+  ADD KEY `fk_order` (`order_id`),
+  ADD KEY `fk_product` (`product_id`);
 
 --
 -- Indexes for table `products`
@@ -158,25 +193,25 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `admins`
 --
 ALTER TABLE `admins`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `orders`
 --
 ALTER TABLE `orders`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `order_items`
 --
 ALTER TABLE `order_items`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `products`
 --
 ALTER TABLE `products`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `users`
@@ -198,8 +233,8 @@ ALTER TABLE `orders`
 -- Constraints for table `order_items`
 --
 ALTER TABLE `order_items`
-  ADD CONSTRAINT `order_items_ibfk_1` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`),
-  ADD CONSTRAINT `order_items_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`);
+  ADD CONSTRAINT `fk_order` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`),
+  ADD CONSTRAINT `fk_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
