@@ -15,16 +15,4 @@ public class WebConfig implements WebMvcConfigurer {
                 .addResourceLocations("file:/app/uploads/images/"); // ✅ แก้เป็น absolute path!
     }
 
-    // ✅ Config CORS ให้ frontend ยิง API ได้
-    @Override
-    public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**") // ครอบคลุมทุก endpoint
-                .allowedOrigins(
-                        "http://localhost:3000", // frontend React
-                        "http://localhost:3001"  // frontend อีกอัน
-                )
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                .allowedHeaders("*")
-                .allowCredentials(true);
-    }
 }

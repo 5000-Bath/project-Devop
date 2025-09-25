@@ -1,7 +1,6 @@
 version: '3.8'
 
 services:
-  # 1. MySQL Database
   db:
     image: mysql:8.0
     container_name: foodstore-db
@@ -17,22 +16,21 @@ services:
       - "3306:3306"
     restart: unless-stopped
 
-  # 2. phpMyAdmin (รองรับ ARM)
   phpmyadmin:
-    image: arm64v8/phpmyadmin:latest
+    image: phpmyadmin/phpmyadmin:latest
     container_name: phpmyadmin
     depends_on:
       - db
     environment:
       PMA_HOST: db
-      PMA_PORT: "3306"      # ใส่เป็นสตริงกัน YAML งอแง
+      PMA_PORT: "3306"
       PMA_USER: shopuser
       PMA_PASSWORD: shoppassword
     ports:
       - "8081:80"
     restart: unless-stopped
+    platform: ${PLATFORM:-}  # จะเลือกอัตโนมัติ (x86_64 หรือ ARM64)
 
-  # 3. Spring Boot Backend (firstapp)
   backend:
     build: ./firstapp
     container_name: firstapp-backend
@@ -49,7 +47,6 @@ services:
       - ./uploads/images:/app/uploads/images
     restart: unless-stopped
 
-  # 4. User Frontend
   frontend-user:
     build: ./Foodstore_User
     container_name: foodstore-user-frontend
@@ -59,7 +56,6 @@ services:
       - "3000:3000"
     restart: unless-stopped
 
-  # 5. Admin Frontend
   frontend-admin:
     build: ./Foodstore_admin_Frontend
     container_name: foodstore-admin-frontend

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import Swal from 'sweetalert2'; // ✅ เพิ่มการ import
+import Swal from 'sweetalert2';
+import { useNavigate } from 'react-router-dom';
 
 export default function Additem() {
   const [formData, setFormData] = useState({
@@ -12,6 +13,8 @@ export default function Additem() {
   });
 
   const [coverImage, setCoverImage] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null); // ✅ สำหรับ preview
+  const navigate = useNavigate(); // ✅ สำหรับ redirect
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -25,22 +28,19 @@ export default function Additem() {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setCoverImage(file);
+      setPreviewUrl(URL.createObjectURL(file)); // ✅ สร้าง preview
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // ตรวจสอบข้อมูลเบื้องต้น
     if (!formData.name || !formData.price) {
       Swal.fire({
         icon: 'warning',
         title: 'กรุณากรอกข้อมูลให้ครบ',
         text: 'กรุณากรอกชื่อเมนูและราคา',
-        confirmButtonText: 'ตกลง',
-        customClass: {
-          confirmButton: 'btn btn-success'
-        }
+        confirmButtonText: 'ตกลง'
       });
       return;
     }
@@ -53,36 +53,33 @@ export default function Additem() {
     formDataToSend.append('isActive', formData.isActive);
 
     if (coverImage) {
-      formDataToSend.append('imageUrl', coverImage);
+      formDataToSend.append('image', coverImage);
     }
 
     try {
-      const response = await fetch('http://localhost:8080/products', {
+      const response = await fetch('http://localhost:8080/api/products', {
         method: 'POST',
         body: formDataToSend,
       });
 
       if (response.ok) {
-        const result = await response.json();
+        await response.json();
         Swal.fire({
           icon: 'success',
           title: 'เพิ่มเมนูสำเร็จ!',
           text: 'เมนูใหม่ของคุณถูกเพิ่มเข้าสู่ระบบแล้ว',
-          confirmButtonText: 'ตกลง',
-          customClass: {
-            confirmButton: 'btn btn-success'
-          }
-        }).then(() => {
-          setFormData({
-            name: '',
-            description: '',
-            price: '',
-            imageUrl: '',
-            stockQty: 0,
-            isActive: true
-          });
-          setCoverImage(null);
+          confirmButtonText: 'ตกลง'
         });
+        setFormData({
+          name: '',
+          description: '',
+          price: '',
+          stockQty: 0,
+          isActive: true
+        });
+        setCoverImage(null);
+        setPreviewUrl(null);
+        navigate('/admin/menu'); // ✅ redirect ไปหน้า menu
       } else {
         throw new Error('Failed to add product');
       }
@@ -92,13 +89,10 @@ export default function Additem() {
         icon: 'error',
         title: 'เกิดข้อผิดพลาด',
         text: 'เกิดข้อผิดพลาด: ' + error.message,
-        confirmButtonText: 'ลองอีกครั้ง',
-        customClass: {
-          confirmButton: 'btn btn-danger'
-        }
+        confirmButtonText: 'ลองอีกครั้ง'
       });
     }
-  };
+  }
 
   return (
     <div style={{ padding: 24, background: "#f7f7f7", borderRadius: 12 }}>
@@ -120,13 +114,7 @@ export default function Additem() {
           {/* Left column - Form fields */}
           <div style={{ flex: 1 }}>
             <div style={{ marginBottom: 16 }}>
-              <label style={{ 
-                display: 'block', 
-                marginBottom: 8, 
-                fontSize: 14, 
-                fontWeight: 500, 
-                color: '#666'
-              }}>
+              <label style={{ display: 'block', marginBottom: 8, fontSize: 14, fontWeight: 500, color: '#666' }}>
                 Menu Name
               </label>
               <input
@@ -134,55 +122,27 @@ export default function Additem() {
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  border: '1px solid #ddd',
-                  borderRadius: 6,
-                  fontSize: 14,
-                  boxSizing: 'border-box'
-                }}
+                style={{ width: '100%', padding: '12px 16px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, boxSizing: 'border-box' }}
                 placeholder="Enter menu name"
                 required
               />
             </div>
 
             <div style={{ marginBottom: 16 }}>
-              <label style={{ 
-                display: 'block', 
-                marginBottom: 8, 
-                fontSize: 14, 
-                fontWeight: 500, 
-                color: '#666'
-              }}>
+              <label style={{ display: 'block', marginBottom: 8, fontSize: 14, fontWeight: 500, color: '#666' }}>
                 Description
               </label>
               <textarea
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
-                style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  border: '1px solid #ddd',
-                  borderRadius: 6,
-                  fontSize: 14,
-                  boxSizing: 'border-box',
-                  minHeight: 80
-                }}
+                style={{ width: '100%', padding: '12px 16px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, boxSizing: 'border-box', minHeight: 80 }}
                 placeholder="Enter menu description"
-                required
               />
             </div>
 
             <div style={{ marginBottom: 16 }}>
-              <label style={{ 
-                display: 'block', 
-                marginBottom: 8, 
-                fontSize: 14, 
-                fontWeight: 500, 
-                color: '#666'
-              }}>
+              <label style={{ display: 'block', marginBottom: 8, fontSize: 14, fontWeight: 500, color: '#666' }}>
                 Price (THB)
               </label>
               <input
@@ -192,27 +152,14 @@ export default function Additem() {
                 onChange={handleChange}
                 step="0.01"
                 min="0"
-                style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  border: '1px solid #ddd',
-                  borderRadius: 6,
-                  fontSize: 14,
-                  boxSizing: 'border-box'
-                }}
+                style={{ width: '100%', padding: '12px 16px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, boxSizing: 'border-box' }}
                 placeholder="Enter price"
                 required
               />
             </div>
 
             <div style={{ marginBottom: 16 }}>
-              <label style={{ 
-                display: 'block', 
-                marginBottom: 8, 
-                fontSize: 14, 
-                fontWeight: 500, 
-                color: '#666'
-              }}>
+              <label style={{ display: 'block', marginBottom: 8, fontSize: 14, fontWeight: 500, color: '#666' }}>
                 Stock Quantity
               </label>
               <input
@@ -221,68 +168,40 @@ export default function Additem() {
                 value={formData.stockQty}
                 onChange={handleChange}
                 min="0"
-                style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  border: '1px solid #ddd',
-                  borderRadius: 6,
-                  fontSize: 14,
-                  boxSizing: 'border-box'
-                }}
+                style={{ width: '100%', padding: '12px 16px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, boxSizing: 'border-box' }}
                 placeholder="Enter stock quantity"
               />
             </div>
           </div>
 
-          {/* Right column - Image upload */}
+          {/* Right column - Image upload + preview */}
           <div style={{ flex: 1 }}>
             <div style={{
               backgroundColor: '#f9f9f9',
               border: '1px dashed #ddd',
               borderRadius: 6,
-              padding: 40,
+              padding: 20,
               textAlign: 'center',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              height: 200
+              minHeight: 200
             }}>
-              <div style={{
-                width: 60,
-                height: 60,
-                backgroundColor: '#e0e0e0',
-                borderRadius: 8,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 12
-              }}>
-                <svg xmlns="http://www.w3.org/2000/svg" 
-                     style={{ width: 24, height: 24, color: '#666' }} 
-                     fill="none" 
-                     viewBox="0 0 24 24" 
-                     stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <p style={{ 
-                color: '#666', 
-                fontSize: 14, 
-                marginBottom: 8 
-              }}>
-                Menu Cover Image
-              </p>
+              {previewUrl ? (
+                <img src={previewUrl} alt="preview" style={{ maxHeight: 150, borderRadius: 8, marginBottom: 12 }} />
+              ) : (
+                <p style={{ color: '#666', marginBottom: 12 }}>Menu Cover Image</p>
+              )}
+
               <input
                 type="file"
                 accept="image/*"
                 onChange={handleImageUpload}
-                style={{ 
-                  display: 'none' 
-                }}
+                style={{ display: 'none' }}
                 id="image-upload"
               />
-              <label 
+              <label
                 htmlFor="image-upload"
                 style={{
                   backgroundColor: '#4CAF50',
@@ -305,12 +224,8 @@ export default function Additem() {
         </div>
 
         {/* Submit button */}
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'flex-end',
-          marginTop: 24
-        }}>
-          <button 
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 24 }}>
+          <button
             type="submit"
             style={{
               backgroundColor: '#4CAF50',

@@ -1,5 +1,5 @@
 import { recentOrders, topProducts, inventoryAlerts } from "./mockOrders";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area,} from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, } from "recharts";
 
 const stats = [
   { label: "Today Orders", value: 276 },
@@ -26,20 +26,20 @@ const mockRevenueData = [
 
 export default function Home() {
   return (
-    <div style={{ background: "#ececec", minHeight: "100vh", padding: 0 }}>
-      {/* Header */}
-      <div style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        background: "#ececec",
-        borderRadius: 0,
-        padding: "8px 16px 0 16px",
-        borderBottom: "4px solid #4b4444",
-        marginBottom: 0,
-        boxShadow: "none",
-        height: 56,
-      }}>
+    <div style={{ background: "#ececec", minHeight: "100%" }}>
+      {/* ✅ Header แบบ static (ไม่ fixed) */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          background: "#ececec",
+          padding: "8px 16px",
+          borderBottom: "4px solid #4b4444",
+          height: 56,
+          marginBottom: 24,
+        }}
+      >
         <h2 style={{ margin: 0, fontWeight: 700, fontSize: 20 }}>Dashboard</h2>
         <span style={{ fontWeight: 700, fontSize: 18 }}>Welcome&nbsp; Back!&nbsp; Mr. First</span>
       </div>

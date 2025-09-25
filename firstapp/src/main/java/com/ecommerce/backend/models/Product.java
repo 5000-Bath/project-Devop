@@ -17,32 +17,46 @@ public class Product {
     @Column(nullable = false, length = 200)
     private String name;
 
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
+    @Column(nullable = false)
+    private int stockQty = 0;
+
+    @Column(nullable = false)
+    private boolean isActive = true;
+
+    @Column(length = 400)
+    private String imageUrl;
+
+    @CreationTimestamp
+    private LocalDateTime createdAt;
+
     // Getters and Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public Long getId() {
-        return id;
-    }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 
-    public String getName() {
-        return name;
-    }
+    public BigDecimal getPrice() { return price; }
+    public void setPrice(BigDecimal price) { this.price = price; }
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    public int getStockQty() { return stockQty; }
+    public void setStockQty(int stockQty) { this.stockQty = stockQty; }
 
-    public BigDecimal getPrice() {
-        return price;
-    }
+    public boolean getIsActive() { return isActive; }
+    public void setIsActive(boolean isActive) { this.isActive = isActive; }
 
-    public void setPrice(BigDecimal price) {
-        this.price = price;
-    }
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }

@@ -7,20 +7,24 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "admins")
+@Table(name = "admins",
+       indexes = {
+           @Index(name = "idx_username", columnList = "username"),
+           @Index(name = "idx_email", columnList = "email")
+       })
 public class Admin {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false, length = 100, unique = true)
     private String username;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 255, unique = true)
     private String email;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 255)
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 
@@ -28,7 +32,7 @@ public class Admin {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    // Getters and Setters
+    // ===== Getters and Setters =====
     public Long getId() {
         return id;
     }
@@ -58,7 +62,13 @@ public class Admin {
     }
 
     public void setPassword(String password) {
-        this.password = password;
+        // ✅ Hash password automatically when setting
+        if (password != null && !password.startsWith("$2a$")) {
+            this.password = org.springframework.security.crypto.bcrypt.BCrypt
+                                .hashpw(password, org.springframework.security.crypto.bcrypt.BCrypt.gensalt());
+        } else {
+            this.password = password;
+        }
     }
 
     public LocalDateTime getCreatedAt() {

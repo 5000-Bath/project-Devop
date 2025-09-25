@@ -5,7 +5,7 @@
 const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
 
 export async function listProducts() {
-    const res = await fetch(`${API_BASE}/products`, {
+    const res = await fetch(`${API_BASE}/api/products`, {
         headers: { Accept: 'application/json' },
     });
     if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);

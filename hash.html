@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>Generate Bcrypt Hash</title>
+</head>
+<body>
+  <h2>สร้าง Bcrypt Hash สำหรับ Password</h2>
+  <input type="text" id="password" placeholder="กรอกรหัสผ่าน">
+  <button id="generate">สร้าง Hash</button>
+  <p>Hash: <span id="hash"></span></p>
+  <h2>© 2025 Weerapat Aphiphuwong. All rights reserved.</h2>
+
+  <!-- ใช้ bcryptjs แบบ client-side -->
+  <script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.min.js"></script>
+  <script>
+    document.getElementById('generate').addEventListener('click', () => {
+      const password = document.getElementById('password').value.trim();
+      if (!password) return alert('กรุณากรอกรหัสผ่าน');
+
+      // ใช้ dcodeIO.bcrypt แทน bcrypt
+      const salt = dcodeIO.bcrypt.genSaltSync(10);
+      const hash = dcodeIO.bcrypt.hashSync(password, salt);
+
+      document.getElementById('hash').innerText = hash;
+    });
+  </script>
+</body>
+</html>
