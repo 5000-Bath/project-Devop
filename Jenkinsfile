@@ -3,7 +3,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                deleteDir() // ล้าง workspace เก่าทิ้ง
+                deleteDir()
                 git branch: 'changename',
                     url: 'https://github.com/5000-Bath/project-Devop.git'
             }
@@ -15,6 +15,7 @@ pipeline {
         }
         stage('Deploy') {
             steps {
+                sh 'docker-compose down' 
                 sh 'docker-compose up -d'
             }
         }
