@@ -10,7 +10,7 @@ services:
       MYSQL_USER: shopuser
       MYSQL_PASSWORD: shoppassword
     volumes:
-      - ./mysql-data:/var/lib/mysql
+      - mysql_data:/var/lib/mysql
       - ./shop_db.sql:/docker-entrypoint-initdb.d/shop_db.sql
     ports:
       - "3306:3306"
@@ -33,7 +33,7 @@ services:
 
   backend:
     build: ./firstapp
-    image: filmfilm/foodstore-backend:latest  # 👈 ถ้าคุณจะ push backend ด้วย
+    image: filmfilm/foodstore-backend:latest
     container_name: firstapp-backend
     depends_on:
       - db
@@ -50,7 +50,7 @@ services:
 
   frontend-user:
     build: ./Foodstore_User
-    image: filmfilm/foodstore-user-frontend:latest  # 👈 เพิ่มบรรทัดนี้
+    image: filmfilm/foodstore-user-frontend:latest
     container_name: foodstore-user-frontend
     depends_on:
       - backend
@@ -60,10 +60,13 @@ services:
 
   frontend-admin:
     build: ./Foodstore_admin_Frontend
-    image: filmfilm/foodstore-admin-frontend:latest  # 👈 เพิ่มบรรทัดนี้
+    image: filmfilm/foodstore-admin-frontend:latest
     container_name: foodstore-admin-frontend
     depends_on:
       - backend
     ports:
       - "3001:3001"
     restart: unless-stopped
+
+volumes:
+  mysql_data:
