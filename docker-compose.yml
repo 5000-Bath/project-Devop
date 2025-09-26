@@ -29,10 +29,11 @@ services:
     ports:
       - "8081:80"
     restart: unless-stopped
-    platform: ${PLATFORM:-}  # จะเลือกอัตโนมัติ (x86_64 หรือ ARM64)
+    platform: ${PLATFORM:-}
 
   backend:
     build: ./firstapp
+    image: filmfilm/foodstore-backend:latest  # 👈 ถ้าคุณจะ push backend ด้วย
     container_name: firstapp-backend
     depends_on:
       - db
@@ -49,6 +50,7 @@ services:
 
   frontend-user:
     build: ./Foodstore_User
+    image: filmfilm/foodstore-user-frontend:latest  # 👈 เพิ่มบรรทัดนี้
     container_name: foodstore-user-frontend
     depends_on:
       - backend
@@ -58,6 +60,7 @@ services:
 
   frontend-admin:
     build: ./Foodstore_admin_Frontend
+    image: filmfilm/foodstore-admin-frontend:latest  # 👈 เพิ่มบรรทัดนี้
     container_name: foodstore-admin-frontend
     depends_on:
       - backend
