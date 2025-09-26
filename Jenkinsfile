@@ -10,17 +10,15 @@ pipeline {
             steps {
                 deleteDir()
                 git branch: 'changename',
-                    url: 'https://github.com/5000-Bath/project-Devop.git'
+                    url: 'https://github.com/5000-Bath/project-Devop.git'  // ← ลบ space ท้าย!
             }
         }
         stage('Build and Push Docker Images') {
             steps {
-                // Build admin frontend
-                sh "docker build -t ${IMAGE_NAME_ADMIN}:latest ./frontend-admin"
-                // Build user frontend
-                sh "docker build -t ${IMAGE_NAME_USER}:latest ./frontend-user"
+                // ใช้ชื่อโฟลเดอร์จริงตามที่เห็นใน repo
+                sh "docker build -t ${IMAGE_NAME_ADMIN}:latest ./Foodstore_admin_Frontend"
+                sh "docker build -t ${IMAGE_NAME_USER}:latest ./Foodstore_User"
 
-                // Login to Docker Hub (ใช้ Credentials ใน Jenkins)
                 withCredentials([usernamePassword(
                     credentialsId: 'docker-hub-creds',
                     usernameVariable: 'DOCKER_USER',
