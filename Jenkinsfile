@@ -1,5 +1,10 @@
 pipeline {
-    agent { label 'docker-host' }  // ← ตรงกับ Labels ที่ตั้งใน agent
+    agent {
+        docker {
+            image 'cypress/included:13.7.0'  // ใช้ Cypress พร้อม Chrome
+            args '-u root:root'              // ให้สิทธิ์ root
+        }
+    }
     environment {
         DOCKER_HUB_USERNAME = 'filmfilm'
         IMAGE_NAME_ADMIN = "${DOCKER_HUB_USERNAME}/foodstore-admin-frontend"
@@ -14,6 +19,7 @@ pipeline {
                     url: 'https://github.com/5000-Bath/project-Devop.git'
             }
         }
+
         stage('Build and Push Docker Images') {
             steps {
                 sh "docker build -t ${IMAGE_NAME_ADMIN}:latest ./Foodstore_admin_Frontend"
@@ -32,12 +38,30 @@ pipeline {
                 }
             }
         }
+
         stage('Deploy') {
             steps {
                 sh 'docker rm -f foodstore-db || true'
                 sh 'docker-compose down || true'
                 sh 'docker-compose up -d'
             }
+        }
+
+        stage('E2E Test') {
+            steps {
+                dir('Foodstore_User') {
+                    sh 'npm ci'
+                    sh 'npx cypress run --browser chrome --config-file cypress.config.js'
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            junit 'Foodstore_User/cypress/results/*.xml'
+            archiveArtifacts artifacts: 'Foodstore_User/cypress/screenshots/**', allowEmptyArchive: true
+            archiveArtifacts artifacts: 'Foodstore_User/cypress/videos/**', allowEmptyArchive: true
         }
     }
 }
