@@ -52,7 +52,7 @@ pipeline {
                       -v \$PWD:/e2e \
                       -w /e2e \
                       cypress/included:13.7.0 \
-                      cypress run --browser chrome --config-file cypress.config.js
+                      cypress run --browser chrome --config-file cypress.config.cjs
                     """
                 }
             }
