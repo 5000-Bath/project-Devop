@@ -52,6 +52,9 @@ pipeline {
 
         stage('Build and Push Docker Images') {
             steps {
+                // ลบ folder downloads ของ Cypress ก่อน build
+                sh 'rm -rf ./Foodstore_User/cypress/downloads || true'
+
                 sh "docker build -t ${IMAGE_NAME_ADMIN}:latest ./Foodstore_admin_Frontend"
                 sh "docker build -t ${IMAGE_NAME_USER}:latest ./Foodstore_User"
                 sh "docker build -t ${IMAGE_NAME_BACKEND}:latest ./firstapp"
