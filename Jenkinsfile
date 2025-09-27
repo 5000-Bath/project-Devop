@@ -1,10 +1,5 @@
 pipeline {
-    agent {
-        docker {
-            image 'cypress/included:13.7.0'  // ใช้ Cypress พร้อม Chrome
-            args '-u root:root'              // ให้สิทธิ์ root
-        }
-    }
+    agent { label 'docker-host' }  // ← ตรงกับ Labels ที่ตั้งใน agent
     environment {
         DOCKER_HUB_USERNAME = 'filmfilm'
         IMAGE_NAME_ADMIN = "${DOCKER_HUB_USERNAME}/foodstore-admin-frontend"
@@ -49,8 +44,9 @@ pipeline {
 
         stage('E2E Test') {
             steps {
-                dir('Foodstore_User') {
-                    sh 'npm ci'
+                dir('Foodstore_User') { // เข้าไปโฟลเดอร์ที่มี cypress
+                    sh 'npm ci'   // ติดตั้ง dependencies ตาม package-lock.json
+                    // รัน Cypress แบบ headless (มีไฟล์ cypress.config.js อยู่แล้ว)
                     sh 'npx cypress run --browser chrome --config-file cypress.config.js'
                 }
             }
@@ -59,6 +55,7 @@ pipeline {
 
     post {
         always {
+            // เก็บผลลัพธ์ E2E test ไว้ใน Jenkins
             junit 'Foodstore_User/cypress/results/*.xml'
             archiveArtifacts artifacts: 'Foodstore_User/cypress/screenshots/**', allowEmptyArchive: true
             archiveArtifacts artifacts: 'Foodstore_User/cypress/videos/**', allowEmptyArchive: true
