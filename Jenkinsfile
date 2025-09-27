@@ -46,14 +46,14 @@ pipeline {
         stage('E2E Test') {
             steps {
                 dir('Foodstore_User') {
-                    // รัน Cypress ผ่าน Docker container
+                    // รัน Cypress ผ่าน Docker container (headless)
                     sh """
                     docker run --rm \
                       --network ${COMPOSE_PROJECT_NAME}_default \
                       -v \$PWD:/e2e \
                       -w /e2e \
                       cypress/included:13.7.0 \
-                      npx cypress run --browser chrome --config-file cypress.config.js
+                      cypress run --browser chrome --config-file cypress.config.js
                     """
                 }
             }
@@ -62,8 +62,7 @@ pipeline {
 
     post {
         always {
-            // เก็บผลลัพธ์ E2E test ไว้ใน Jenkins
-            junit 'Foodstore_User/cypress/results/*.xml'
+            // 👉 เอา junit ออก เพราะ Cypress ยังไม่ได้ generate XML
             archiveArtifacts artifacts: 'Foodstore_User/cypress/screenshots/**', allowEmptyArchive: true
             archiveArtifacts artifacts: 'Foodstore_User/cypress/videos/**', allowEmptyArchive: true
         }
