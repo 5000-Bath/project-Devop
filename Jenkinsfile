@@ -1,10 +1,11 @@
 pipeline {
-    agent { label 'docker-host' }  // ← ตรงกับ Labels ที่ตั้งใน agent
+    agent { label 'docker-host' }
     environment {
         DOCKER_HUB_USERNAME = 'filmfilm'
         IMAGE_NAME_ADMIN = "${DOCKER_HUB_USERNAME}/foodstore-admin-frontend"
         IMAGE_NAME_USER  = "${DOCKER_HUB_USERNAME}/foodstore-user-frontend"
         IMAGE_NAME_BACKEND = "${DOCKER_HUB_USERNAME}/foodstore-backend"
+        COMPOSE_PROJECT_NAME = 'node1_devops'  // ชื่อ network จาก docker-compose
     }
     stages {
         stage('Checkout') {
@@ -44,10 +45,16 @@ pipeline {
 
         stage('E2E Test') {
             steps {
-                dir('Foodstore_User') { // เข้าไปโฟลเดอร์ที่มี cypress
-                    sh 'npm ci'   // ติดตั้ง dependencies ตาม package-lock.json
-                    // รัน Cypress แบบ headless (มีไฟล์ cypress.config.js อยู่แล้ว)
-                    sh 'npx cypress run --browser chrome --config-file cypress.config.js'
+                dir('Foodstore_User') {
+                    // รัน Cypress ผ่าน Docker container
+                    sh """
+                    docker run --rm \
+                      --network ${COMPOSE_PROJECT_NAME}_default \
+                      -v \$PWD:/e2e \
+                      -w /e2e \
+                      cypress/included:13.7.0 \
+                      npx cypress run --browser chrome --config-file cypress.config.js
+                    """
                 }
             }
         }
