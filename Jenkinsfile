@@ -46,7 +46,6 @@ pipeline {
         stage('E2E Test') {
             steps {
                 dir('Foodstore_User') {
-                    // รัน Cypress ผ่าน Docker container (headless)
                     sh """
                     docker run --rm \
                       --network ${COMPOSE_PROJECT_NAME}_default \
@@ -62,7 +61,6 @@ pipeline {
 
     post {
         always {
-            // 👉 เอา junit ออก เพราะ Cypress ยังไม่ได้ generate XML
             archiveArtifacts artifacts: 'Foodstore_User/cypress/screenshots/**', allowEmptyArchive: true
             archiveArtifacts artifacts: 'Foodstore_User/cypress/videos/**', allowEmptyArchive: true
         }
