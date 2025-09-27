@@ -16,21 +16,13 @@ pipeline {
             }
         }
 
-        stage('Build and Push Docker Images') {
+        stage('Unit Test') {
             steps {
-                sh "docker build -t ${IMAGE_NAME_ADMIN}:latest ./Foodstore_admin_Frontend"
-                sh "docker build -t ${IMAGE_NAME_USER}:latest ./Foodstore_User"
-                sh "docker build -t ${IMAGE_NAME_BACKEND}:latest ./firstapp"
-
-                withCredentials([usernamePassword(
-                    credentialsId: 'docker-hub-creds',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )]) {
-                    sh 'echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin'
-                    sh "docker push ${IMAGE_NAME_ADMIN}:latest"
-                    sh "docker push ${IMAGE_NAME_USER}:latest"
-                    sh "docker push ${IMAGE_NAME_BACKEND}:latest"
+                dir('Foodstore_User') {
+                    sh 'npm ci && npm test'
+                }
+                dir('Foodstore_admin_Frontend') {
+                    sh 'npm ci && npm test'
                 }
             }
         }
@@ -52,8 +44,28 @@ pipeline {
                       -v \$PWD:/e2e \
                       -w /e2e \
                       cypress/included:13.7.0 \
-                      cypress run --browser chrome --config-file cypress.config.cjs
+                      cypress run --browser chrome --config-file cypress.config.cjs \
+                      --no-sandbox --disable-dev-shm-usage
                     """
+                }
+            }
+        }
+
+        stage('Build and Push Docker Images') {
+            steps {
+                sh "docker build -t ${IMAGE_NAME_ADMIN}:latest ./Foodstore_admin_Frontend"
+                sh "docker build -t ${IMAGE_NAME_USER}:latest ./Foodstore_User"
+                sh "docker build -t ${IMAGE_NAME_BACKEND}:latest ./firstapp"
+
+                withCredentials([usernamePassword(
+                    credentialsId: 'docker-hub-creds',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh 'echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin'
+                    sh "docker push ${IMAGE_NAME_ADMIN}:latest"
+                    sh "docker push ${IMAGE_NAME_USER}:latest"
+                    sh "docker push ${IMAGE_NAME_BACKEND}:latest"
                 }
             }
         }
