@@ -27,7 +27,13 @@ pipeline {
             }
         }
 
-        
+        stage('Deploy') {
+            steps {
+                sh 'docker rm -f foodstore-db || true'
+                sh 'docker-compose down || true'
+                sh 'docker-compose up -d'
+            }
+        }
 
         stage('E2E Test') {
             steps {
