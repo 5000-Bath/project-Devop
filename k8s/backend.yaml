@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: backend
-        image: filmfilm/foodstore-backend:latest  # ← ดึงจาก Docker Hub โดยตรง
+        image: filmfilm/foodstore-backend:latest
         ports:
         - containerPort: 8080
         env:
@@ -38,7 +38,8 @@ spec:
           mountPath: /app/uploads/images
       volumes:
       - name: uploads
-        emptyDir: {}  # ใช้ PersistentVolume ใน production
+        persistentVolumeClaim:
+          claimName: backend-pvc   # ใช้ PVC ที่สร้างไว้
 ---
 apiVersion: v1
 kind: Service
@@ -46,8 +47,10 @@ metadata:
   name: backend
   namespace: production
 spec:
-  ports:
-  - port: 8080
-    targetPort: 8080
+  type: NodePort   # เปิด NodePort เพื่อเข้าจาก IP ภายนอก
   selector:
     app: backend
+  ports:
+    - port: 8080
+      targetPort: 8080
+      nodePort: 30000  # เลือก port ระหว่าง 30000-32767 หรือไม่กำหนดให้ k8s auto
