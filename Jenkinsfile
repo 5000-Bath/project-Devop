@@ -67,13 +67,13 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
-                // ติดตั้ง kubectl
+                // ติดตั้ง kubectl (ถ้ายังไม่มีใน agent)
                 sh 'curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"'
                 sh 'chmod +x kubectl && sudo mv kubectl /usr/local/bin/kubectl'
-
-                // ใช้ kubeconfig จาก Jenkins
-                withCredentials([file(credentialsId: 'kubeconfig-prod', variable: 'KUBECONFIG')]) {
-                    sh 'kubectl apply -f k8s/'
+        
+                // ใช้ kubeconfig จาก Jenkins Credentials
+                withCredentials([file(credentialsId: 'kubeconfig-prod', variable: 'KUBECONFIG_PATH')]) {
+                    sh 'kubectl --kubeconfig="$KUBECONFIG_PATH" apply -f k8s/'
                 }
             }
         }
