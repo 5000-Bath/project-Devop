@@ -1,5 +1,5 @@
 pipeline {
-    agent { label 'docker-host' } // agent ที่มี kubectl
+    agent { label 'docker-host' } // agent ที่มี kubectl ติดตั้งแล้ว
     environment {
         K8S_NAMESPACE = 'production'
     }
@@ -12,27 +12,19 @@ pipeline {
             }
         }
 
-        stage('Install kubectl') {
-            steps {
-                sh '''
-                if ! command -v kubectl &> /dev/null
-                then
-                    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-                    chmod +x kubectl
-                    sudo mv kubectl /usr/local/bin/kubectl
-                fi
-                kubectl version --client
-                '''
-            }
-        }
-
         stage('Deploy to Kubernetes') {
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig-prod', variable: 'KUBECONFIG_PATH')]) {
                     sh '''
                     export KUBECONFIG=$KUBECONFIG_PATH
-                    kubectl get ns || kubectl create ns $K8S_NAMESPACE
+
+                    # สร้าง namespace ถ้ายังไม่มี
+                    kubectl get ns $K8S_NAMESPACE || kubectl create ns $K8S_NAMESPACE
+
+                    # Apply ทุกไฟล์ YAML ในโฟลเดอร์ k8s
                     kubectl apply -f k8s/ -n $K8S_NAMESPACE
+
+                    # ตรวจสอบ rollout status ของแต่ละ deployment
                     kubectl rollout status deployment/backend -n $K8S_NAMESPACE
                     kubectl rollout status deployment/frontend-user -n $K8S_NAMESPACE
                     kubectl rollout status deployment/frontend-admin -n $K8S_NAMESPACE
