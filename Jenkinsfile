@@ -49,6 +49,7 @@ pipeline {
                 }
             }
         }
+        
 
         stage('Build and Push Docker Images') {
             steps {
@@ -69,6 +70,11 @@ pipeline {
                     sh "docker push ${IMAGE_NAME_USER}:latest"
                     sh "docker push ${IMAGE_NAME_BACKEND}:latest"
                 }
+            }
+        }
+        stage('unDeploy') {
+            steps {
+                sh 'docker-compose down || true'
             }
         }
     }
