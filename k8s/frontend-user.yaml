@@ -25,8 +25,10 @@ metadata:
   name: frontend-user
   namespace: production
 spec:
-  ports:
-  - port: 3000
-    targetPort: 3000
+  type: NodePort               # เปลี่ยนเป็น NodePort
   selector:
     app: frontend-user
+  ports:
+    - port: 3000               # service port
+      targetPort: 3000         # containerPort ของ pod
+      nodePort: 31000          # port ที่เปิดบน Node
