@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: backend-pvc
+  namespace: production
+spec:
+  accessModes:
+    - ReadWriteOnce   # pod เดียวเขียนอ่านได้
+  resources:
+    requests:
+      storage: 15Gi    # ขนาดพื้นที่ตามต้องการ
