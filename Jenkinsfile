@@ -5,7 +5,7 @@ pipeline {
         IMAGE_NAME_ADMIN = "${DOCKER_HUB_USERNAME}/foodstore-admin-frontend"
         IMAGE_NAME_USER  = "${DOCKER_HUB_USERNAME}/foodstore-user-frontend"
         IMAGE_NAME_BACKEND = "${DOCKER_HUB_USERNAME}/foodstore-backend"
-        COMPOSE_PROJECT_NAME = 'node1_devops'  // ชื่อ network จาก docker-compose
+        COMPOSE_PROJECT_NAME = 'node1_devops'
     }
     stages {
         stage('Checkout') {
@@ -27,23 +27,17 @@ pipeline {
             }
         }
 
-        stage('Deploy') {
-            steps {
-                sh 'docker rm -f foodstore-db || true'
-                sh 'docker-compose down || true'
-                sh 'docker-compose up -d'
-            }
-        }
+
 
         stage('E2E Test') {
             steps {
                 dir('Foodstore_User') {
                     sh """
-                    docker run --rm \
-                      --network ${COMPOSE_PROJECT_NAME}_default \
-                      -v \$PWD:/e2e \
-                      -w /e2e \
-                      cypress/included:13.7.0 \
+                    docker run --rm \\
+                      --network ${COMPOSE_PROJECT_NAME}_default \\
+                      -v \$PWD:/e2e \\
+                      -w /e2e \\
+                      cypress/included:13.7.0 \\
                       cypress run --browser chrome --config-file cypress.config.cjs --headless
                     """
                 }
@@ -52,7 +46,6 @@ pipeline {
 
         stage('Build and Push Docker Images') {
             steps {
-                // ลบ folder downloads ของ Cypress ก่อน build
                 sh 'rm -rf ./Foodstore_User/cypress/downloads || true'
 
                 sh "docker build -t ${IMAGE_NAME_ADMIN}:latest ./Foodstore_admin_Frontend"
@@ -68,6 +61,19 @@ pipeline {
                     sh "docker push ${IMAGE_NAME_ADMIN}:latest"
                     sh "docker push ${IMAGE_NAME_USER}:latest"
                     sh "docker push ${IMAGE_NAME_BACKEND}:latest"
+                }
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                // ติดตั้ง kubectl
+                sh 'curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"'
+                sh 'chmod +x kubectl && sudo mv kubectl /usr/local/bin/kubectl'
+
+                // ใช้ kubeconfig จาก Jenkins
+                withCredentials([file(credentialsId: 'kubeconfig-prod', variable: 'KUBECONFIG')]) {
+                    sh 'kubectl apply -f k8s/'
                 }
             }
         }
