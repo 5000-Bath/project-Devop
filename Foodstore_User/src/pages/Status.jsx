@@ -24,10 +24,17 @@ export default function Status() {
       return;
     }
     const found = getOrderById(trimmed).then(order => {
-      setOrder(order);
-  console.log(order);                  // ทั้ง object
-  console.log(order.orderItems[0]);    // item แรก
-  console.log(order.orderItems[0].product.name); // "ABC"
+      const updated = {
+    ...(order ?? {}),
+    status: "Complete",                           // กัน null/undefined
+    events: [ ...(order?.events ?? []), ...createInitialEvents ],
+  };
+  setOrder(updated);  
+//       setOrder(order => ({
+//   ...order, status: "Complete",
+//   events: [...(order.events || []), ...createInitialEvents]
+// }));
+console.log("CheckStatus", order)
 });
     // if (found) {
     //   console.log('test',found.id);
@@ -38,6 +45,13 @@ export default function Status() {
     //   setError(`Order with ID "${trimmed}" not found.`);
     // }
   };
+
+  const createInitialEvents = [
+    { icon: "https://api.iconify.design/ic/outline-restaurant.svg?color=%23000000", title: "Order Cancle", time: new Date().toLocaleString(), status: 'Cancle'},
+    { icon: "https://api.iconify.design/ic/outline-ramen-dining.svg?color=%23000000", title: "Cooking Order", time: "", status: 'Pending'},
+    { icon: "https://api.iconify.design/ic/outline-check-circle.svg?color=%23888888", title: "Order Finished", time: "", status: 'Complete'},
+  ];
+
 
   const handleSearch = () => {
     setIsAnimating(false);
@@ -58,7 +72,7 @@ export default function Status() {
       (s, it) =>
         s + Number(it?.product?.price ?? 0) * Number(it?.qty ?? it?.quantity ?? 1),
       0
-    ) + Number(order?.deliveryFee || 0);
+    ) + Number(40);
 
 function adaptOrder(api) {
   if (!api || typeof api !== 'object') return null;
@@ -147,7 +161,18 @@ function adaptOrder(api) {
               </div>
               <div className="order-id">#Your Order ID : {order.id}</div>
               <div style={{ marginTop: 18 }}>
-                
+                {order.events.map((ev, idx) => {
+                  const cls = ev.status === 'inprogress' ? 'pending' : ev.status; // เผื่อ CSS ไม่มี inprogress
+                  return (
+                    <div key={idx} className="event">
+                      <img src={ev.icon} alt="" className="event-icon" />
+                      <div className={`event-details ${cls}`}>
+                        <div>{ev.title}</div>
+                        {ev.time && <div className="event-time">{ev.time}</div>}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </section>
 
@@ -160,7 +185,7 @@ function adaptOrder(api) {
                     <div>
                       <div className="item-name">{it.product.name}</div>
                       <div className="item-price">
-                        {Number(it.product.price)} {order.currency} × {Number(it.qty ?? it.quantity ?? 1)}
+                        {Number(it.product.price)} {THB} × {Number(it.qty ?? it.quantity ?? 1)}
                       </div>
                     </div>
                   </div>
@@ -168,10 +193,10 @@ function adaptOrder(api) {
               </div>
               <div className="summary-meta">
                 <div className="summary-label">Delivery Fee</div>
-                <div>{order.deliveryFee} {order.currency}</div>
+                <div>{40} {THB}</div>
                 <div className="summary-line" style={{ gridColumn: '1 / -1' }}></div>
                 <div className="summary-total-label">Total Price</div>
-                <div className="summary-total-price">{total} {order.currency}</div>
+                <div className="summary-total-price">{total} {THB}</div>
               </div>
             </aside>
           </div>
