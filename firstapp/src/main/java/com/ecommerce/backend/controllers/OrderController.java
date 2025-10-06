@@ -1,5 +1,5 @@
 package com.ecommerce.backend.controllers;
-
+import com.ecommerce.backend.dtos.UpdateStatusRequest;
 import com.ecommerce.backend.models.Order;
 import com.ecommerce.backend.models.OrderStatus;
 import com.ecommerce.backend.models.OrderItem;
