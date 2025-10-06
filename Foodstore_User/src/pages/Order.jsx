@@ -10,6 +10,7 @@ export default function Order() {
 
   const [isCheckedOut, setIsCheckedOut] = useState(false);
   const [lastOrderId, setLastOrderId] = useState(null);
+  
 
   const deliveryFee = 40;
   const discount = 0;
@@ -25,15 +26,13 @@ export default function Order() {
     copy.forEach(it => removeFromCart(it));
   };
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     if (cartItems.length === 0) return;
-    const id = createOrderFromCart(cartItems, { userId : 1}); // 👈 บันทึกลง mockdb
-    if (id) {
+    const id = await createOrderFromCart(cartItems, { userId : 1});
+    if (id != null) {
       setLastOrderId(id);
-      setIsCheckedOut(true);   // แสดง popup พร้อม Order ID
+      setIsCheckedOut(true);   
       clearCart();
-      // ถ้าอยากไปหน้า Status ทันทีแทน popup:
-      // nav(`/status?orderId=${id}`);
     }
   };
 
