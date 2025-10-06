@@ -1,6 +1,7 @@
 package com.ecommerce.backend.controllers;
 
 import com.ecommerce.backend.models.Order;
+import com.ecommerce.backend.models.OrderStatus;
 import com.ecommerce.backend.models.OrderItem;
 import com.ecommerce.backend.models.Product;
 import com.ecommerce.backend.repositories.OrderItemRepository;
@@ -35,7 +36,8 @@ public class OrderController {
         Order order = orderRepository.findById(id).orElseThrow(() -> new RuntimeException("Order not found"));
         List<OrderItem> newOrderItems = new ArrayList<>();
         for (OrderItemRequest request : orderItemRequests) {
-            Product product = productRepository.findById(request.getProductId()).orElseThrow(() -> new RuntimeException("Product not found with id: " + request.getProductId()));
+            Product product = productRepository.findById(request.getProductId())
+                    .orElseThrow(() -> new RuntimeException("Product not found with id: " + request.getProductId()));
             OrderItem orderItem = new OrderItem();
             orderItem.setOrder(order);
             orderItem.setProduct(product);
@@ -47,7 +49,8 @@ public class OrderController {
 
     @GetMapping("/{id}")
     public Order getOrderById(@PathVariable Long id) {
-        return orderRepository.findByIdWithOrderItems(id).orElseThrow(() -> new RuntimeException("Order not found"));
+        return orderRepository.findByIdWithOrderItems(id)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
     }
 
     @GetMapping
@@ -58,5 +61,14 @@ public class OrderController {
     @DeleteMapping("/{id}")
     public void deleteOrder(@PathVariable Long id) {
         orderRepository.deleteById(id);
+    }
+
+    // ✅ New Endpoint: Update order status
+    @PutMapping("/{id}/status")
+    public Order updateOrderStatus(@PathVariable Long id, @RequestBody UpdateStatusRequest request) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+        order.setStatus(request.getStatus());
+        return orderRepository.save(order);
     }
 }
