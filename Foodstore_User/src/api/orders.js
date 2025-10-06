@@ -4,12 +4,10 @@ const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
 // สร้างออเดอร์จาก cartItems
 export async function createOrderFromCart(cartItems, { userId = 1 } = {}) {
     const orderItems = cartItems.map(it => ({
-        productId: it.id || it.productId || it.menuId ,  // map ให้ตรงของเดิม
-        // price: Number(it.price),
-        quantity: Number(it.quantity ?? it.qty ?? 1),
-        productName: it.name ?? it.title ?? it.productName ?? undefined
+        product: { id: it.id || it.productId || it.menuId },
+        quantity: Number(it.quantity ?? it.qty ?? 1)
     }));
-    return api_order('/api/orders', {
+    const res = await api_order('/api/orders', {
         method: 'POST',
         body: JSON.stringify({
             userId: userId,
@@ -17,10 +15,10 @@ export async function createOrderFromCart(cartItems, { userId = 1 } = {}) {
             orderItems,
         }),
     });
+    return res?.id
 }
 
-export async function api_order(path, options = {}) {
-    console.log('fetch =>', options);     
+export async function api_order(path, options = {}) {    
 const res = await fetch(`${API_BASE}${path}`, {
         headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
         ...options,
@@ -33,7 +31,6 @@ const res = await fetch(`${API_BASE}${path}`, {
 }
 
 export async function getOrderById(id) {
-    console.log('fetch =>', id); 
   if (id == null || String(id).trim() === '') {
     throw new Error('order id is required');
   }
@@ -42,8 +39,6 @@ export async function getOrderById(id) {
     });
     if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
     const data = await res.json();
-    console.log('data return', data); 
-
     return data;
 }
 
