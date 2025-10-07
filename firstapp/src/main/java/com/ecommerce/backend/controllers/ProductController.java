@@ -5,12 +5,14 @@ import com.ecommerce.backend.repositories.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.ResponseEntity;
 
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/products")
@@ -19,17 +21,20 @@ public class ProductController {
     @Autowired
     private ProductRepository productRepository;
 
+    // ✅ ดึงสินค้าทั้งหมด
     @GetMapping
     public List<Product> getAllProducts() {
         return productRepository.findAll();
     }
 
+    // ✅ ดึงสินค้าโดย id
     @GetMapping("/{id}")
     public Product getProductById(@PathVariable Long id) {
         return productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
     }
 
+    // ✅ เพิ่มสินค้าใหม่ (รองรับอัปโหลดรูปภาพ)
     @PostMapping
     public Product createProduct(
             @RequestParam("name") String name,
@@ -48,19 +53,16 @@ public class ProductController {
 
         if (image != null && !image.isEmpty()) {
             try {
-                // โฟลเดอร์จริงใน container
                 String folderPath = "/app/uploads/images/";
                 Path path = Paths.get(folderPath);
                 if (!Files.exists(path)) {
                     Files.createDirectories(path);
                 }
 
-                // สร้างชื่อไฟล์
                 String fileName = System.currentTimeMillis() + "_" + image.getOriginalFilename();
                 Path filePath = path.resolve(fileName);
                 image.transferTo(filePath.toFile());
 
-                // ✅ URL สำหรับ frontend / DB
                 product.setImageUrl("/uploads/images/" + fileName);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -70,6 +72,70 @@ public class ProductController {
         return productRepository.save(product);
     }
 
+    // ✅ อัปเดตสินค้า (PUT) → name, description, price, stockQty
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateProduct(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> body
+    ) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+
+        if (body.containsKey("name")) {
+            product.setName((String) body.get("name"));
+        }
+
+        if (body.containsKey("description")) {
+            product.setDescription((String) body.get("description"));
+        }
+
+        if (body.containsKey("price")) {
+            Object priceObj = body.get("price");
+            if (priceObj != null) {
+                product.setPrice(new BigDecimal(priceObj.toString()));
+            }
+        }
+
+        if (body.containsKey("stockQty")) {
+            Object qtyObj = body.get("stockQty");
+            if (qtyObj != null) {
+                product.setStockQty(Integer.parseInt(qtyObj.toString()));
+            }
+        }
+
+        Product updated = productRepository.save(product);
+        return ResponseEntity.ok(updated);
+    }
+
+    // ✅ ตัดจำนวนสินค้าออกจาก stock
+    @PostMapping("/{id}/quantity/cut")
+    public ResponseEntity<?> cutQuantityJson(
+            @PathVariable Long id,
+            @RequestBody Map<String, Integer> body
+    ) {
+        int qty = body.getOrDefault("qty", 0);
+
+        Product p = productRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+
+        if (qty <= 0) {
+            return ResponseEntity.badRequest().body("qty must be > 0");
+        }
+        if (p.getStockQty() < qty) {
+            return ResponseEntity.badRequest().body("insufficient stock");
+        }
+
+        p.setStockQty(p.getStockQty() - qty);
+        productRepository.save(p);
+
+        return ResponseEntity.ok(Map.of(
+                "id", p.getId(),
+                "deducted", qty,
+                "remainingQty", p.getStockQty()
+        ));
+    }
+
+    // ✅ ลบสินค้า
     @DeleteMapping("/{id}")
     public void deleteProduct(@PathVariable Long id) {
         productRepository.deleteById(id);

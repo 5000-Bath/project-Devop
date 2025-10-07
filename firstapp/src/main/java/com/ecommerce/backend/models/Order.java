@@ -18,6 +18,10 @@ public class Order {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
+    @Enumerated(EnumType.STRING) // map enum เป็น string ใน DB
+    @Column(name = "status", nullable = false)
+    private OrderStatus status = OrderStatus.PENDING; // ค่า default
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -27,7 +31,6 @@ public class Order {
     private List<OrderItem> orderItems;
 
     // Getters and Setters
-
     public Long getId() {
         return id;
     }
@@ -42,6 +45,14 @@ public class Order {
 
     public void setUserId(Long userId) {
         this.userId = userId;
+    }
+
+    public OrderStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(OrderStatus status) {
+        this.status = status;
     }
 
     public LocalDateTime getCreatedAt() {
