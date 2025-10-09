@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import '../component/Status.css';
-import { getOrderById } from '../api/orders';     // 👈 ดึงจาก mockdb
+import { getOrderById } from '../api/orders'; 
 import { useLocation } from 'react-router-dom';
 
 function useQuery() {
@@ -26,7 +26,7 @@ export default function Status() {
     const found = getOrderById(trimmed).then(order => {
       const updated = {
     ...(order ?? {}),
-    status: "Complete",                           // กัน null/undefined
+    status: "Complete",                           
     events: [ ...(order?.events ?? []), ...createInitialEvents ],
   };
   setOrder(updated);  
@@ -77,7 +77,6 @@ console.log("CheckStatus", order)
 function adaptOrder(api) {
   if (!api || typeof api !== 'object') return null;
 
-  // สร้าง items สำหรับฝั่ง UI (ชื่อ, ราคา, รูป, qty)
   const items = Array.isArray(api.orderItems)
     ? api.orderItems.map(it => ({
         id: it.id ?? null,
@@ -90,7 +89,6 @@ function adaptOrder(api) {
       }))
     : [];
 
-  // สร้าง events เบื้องต้น ถ้า backend ไม่ส่งมา
   const defaultEvents = [
     { title: 'Order Created',  status: 'done',      time: api.createdAt ?? '', icon: 'https://api.iconify.design/mdi:clipboard-text.svg' },
     { title: 'Payment Pending',status: api.status === 'PAID' ? 'done' : 'pending', time: '', icon: 'https://api.iconify.design/mdi:credit-card-outline.svg' },
