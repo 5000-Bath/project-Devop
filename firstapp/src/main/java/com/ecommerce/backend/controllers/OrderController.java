@@ -63,7 +63,6 @@ public class OrderController {
         orderRepository.deleteById(id);
     }
 
-    // ✅ New Endpoint: Update order status
     @PutMapping("/{id}/status")
     public Order updateOrderStatus(@PathVariable Long id, @RequestBody UpdateStatusRequest request) {
         Order order = orderRepository.findById(id)

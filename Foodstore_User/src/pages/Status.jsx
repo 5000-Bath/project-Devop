@@ -25,8 +25,8 @@ export default function Status() {
     }
     const found = getOrderById(trimmed).then(order => {
       const updated = {
-    ...(order ?? {}),
-    status: "Complete",                           
+    ...(order ?? {}),   
+    createdAt: new Date(order?.createdAt+"+07:00" ?? "").toLocaleString(),                   
     events: [ ...(order?.events ?? []), ...createInitialEvents ],
   };
   setOrder(updated);  
@@ -47,11 +47,9 @@ console.log("CheckStatus", order)
   };
 
   const createInitialEvents = [
-    { icon: "https://api.iconify.design/ic/outline-restaurant.svg?color=%23000000", title: "Order Cancle", time: new Date().toLocaleString(), status: 'Cancle'},
-    { icon: "https://api.iconify.design/ic/outline-ramen-dining.svg?color=%23000000", title: "Cooking Order", time: "", status: 'Pending'},
-    { icon: "https://api.iconify.design/ic/outline-check-circle.svg?color=%23888888", title: "Order Finished", time: "", status: 'Complete'},
+    { icon: "https://api.iconify.design/ic/outline-restaurant.svg?color=%23000000", title: "Cooking Order", time: order?.createdAt ?? "", status: 'Pending'}
   ];
-
+  
 
   const handleSearch = () => {
     setIsAnimating(false);
@@ -183,7 +181,7 @@ function adaptOrder(api) {
                     <div>
                       <div className="item-name">{it.product.name}</div>
                       <div className="item-price">
-                        {Number(it.product.price)} {THB} × {Number(it.qty ?? it.quantity ?? 1)}
+                        {Number(it.product.price)} {"THB"} × {Number(it.qty ?? it.quantity ?? 1)}
                       </div>
                     </div>
                   </div>
@@ -191,10 +189,10 @@ function adaptOrder(api) {
               </div>
               <div className="summary-meta">
                 <div className="summary-label">Delivery Fee</div>
-                <div>{40} {THB}</div>
+                <div>{40} {"THB"}</div>
                 <div className="summary-line" style={{ gridColumn: '1 / -1' }}></div>
                 <div className="summary-total-label">Total Price</div>
-                <div className="summary-total-price">{total} {THB}</div>
+                <div className="summary-total-price">{total} {"THB"}</div>
               </div>
             </aside>
           </div>
