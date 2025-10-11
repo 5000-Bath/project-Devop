@@ -21,20 +21,17 @@ public class ProductController {
     @Autowired
     private ProductRepository productRepository;
 
-    // ✅ ดึงสินค้าทั้งหมด
     @GetMapping
     public List<Product> getAllProducts() {
         return productRepository.findAll();
     }
 
-    // ✅ ดึงสินค้าโดย id
     @GetMapping("/{id}")
     public Product getProductById(@PathVariable Long id) {
         return productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
     }
 
-    // ✅ เพิ่มสินค้าใหม่ (รองรับอัปโหลดรูปภาพ)
     @PostMapping
     public Product createProduct(
             @RequestParam("name") String name,
@@ -72,7 +69,6 @@ public class ProductController {
         return productRepository.save(product);
     }
 
-    // ✅ อัปเดตสินค้า (PUT) → name, description, price, stockQty
     @PutMapping("/{id}")
     public ResponseEntity<?> updateProduct(
             @PathVariable Long id,
@@ -107,7 +103,6 @@ public class ProductController {
         return ResponseEntity.ok(updated);
     }
 
-    // ✅ ตัดจำนวนสินค้าออกจาก stock
     @PostMapping("/{id}/quantity/cut")
     public ResponseEntity<?> cutQuantityJson(
             @PathVariable Long id,
@@ -135,7 +130,6 @@ public class ProductController {
         ));
     }
 
-    // ✅ ลบสินค้า
     @DeleteMapping("/{id}")
     public void deleteProduct(@PathVariable Long id) {
         productRepository.deleteById(id);
