@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import '../component/Status.css';
-import { getOrderById } from '../api/orders'; 
+import { getOrderById } from '../api/orders';
 import { useLocation } from 'react-router-dom';
 
 function useQuery() {
@@ -15,6 +15,7 @@ export default function Status() {
   const [order, setOrder] = useState(null);
   const [error, setError] = useState('');
   const [isAnimating, setIsAnimating] = useState(false);
+  const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
 
   const findOrder = async (id) => {
     const trimmed = String(id || '').trim();
@@ -23,33 +24,37 @@ export default function Status() {
       setError('');
       return;
     }
-    const found = getOrderById(trimmed).then(order => {
-      const updated = {
-    ...(order ?? {}),   
-    createdAt: new Date(order?.createdAt+"+07:00" ?? "").toLocaleString(),                   
-    events: [ ...(order?.events ?? []), ...createInitialEvents ],
-  };
-  setOrder(updated);  
-//       setOrder(order => ({
-//   ...order, status: "Complete",
-//   events: [...(order.events || []), ...createInitialEvents]
-// }));
-console.log("CheckStatus", order)
-});
-    // if (found) {
-    //   console.log('test',found.id);
-    //   setOrder(found);
-    //   setError('');
-    // } else {
-    //   setOrder(null);
-    //   setError(`Order with ID "${trimmed}" not found.`);
-    // }
+
+    const found = await getOrderById(trimmed)
+    const createdAtstring = found?.createdAt ?? ''
+    const updated = {
+      ...(found ?? {}),
+      createdAt: new Date(createdAtstring).toLocaleString(),
+      events: [...(found?.events ?? []), ...createInitialEvents(found)],
+    };
+    setOrder(updated);
   };
 
-  const createInitialEvents = [
-    { icon: "https://api.iconify.design/ic/outline-restaurant.svg?color=%23000000", title: "Cooking Order", time: order?.createdAt ?? "", status: 'Pending'}
+  function formatThaiFromLocalInput(inputStr) {
+
+    const iso = inputStr.replace(' ', 'T') + 'Z';
+    const d = new Date(iso);
+
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const yearBE = d.getFullYear() + 543;
+
+    const hour = String(d.getHours()).padStart(2, '0');
+    const minute = String(d.getMinutes()).padStart(2, '0');
+
+    const timee = day + '/' + month + '/' + yearBE + ' ' + hour + ':' + minute;
+    return timee;
+  }
+
+  const createInitialEvents = (order) => [
+    { icon: "https://api.iconify.design/ic/outline-restaurant.svg?color=%23000000", title: "Cooking Order", time: order?.createdAt ? formatThaiFromLocalInput(order.createdAt) : "", status: 'Pending' }
   ];
-  
+
 
   const handleSearch = () => {
     setIsAnimating(false);
@@ -61,7 +66,6 @@ console.log("CheckStatus", order)
 
   useEffect(() => {
     if (searchInput) handleSearch(); else setIsAnimating(true);
-    // eslint-disable-next-line
   }, []);
 
   const items = Array.isArray(order?.orderItems) ? order.orderItems : [];
@@ -72,11 +76,11 @@ console.log("CheckStatus", order)
       0
     ) + Number(40);
 
-function adaptOrder(api) {
-  if (!api || typeof api !== 'object') return null;
+  function adaptOrder(api) {
+    if (!api || typeof api !== 'object') return null;
 
-  const items = Array.isArray(api.orderItems)
-    ? api.orderItems.map(it => ({
+    const items = Array.isArray(api.orderItems)
+      ? api.orderItems.map(it => ({
         id: it.id ?? null,
         name: it.product?.name ?? '',
         price: Number(it.product?.price ?? 0),
@@ -85,34 +89,31 @@ function adaptOrder(api) {
           ? it.product.imageUrl
           : null,
       }))
-    : [];
+      : [];
 
-  const defaultEvents = [
-    { title: 'Order Created',  status: 'done',      time: api.createdAt ?? '', icon: 'https://api.iconify.design/mdi:clipboard-text.svg' },
-    { title: 'Payment Pending',status: api.status === 'PAID' ? 'done' : 'pending', time: '', icon: 'https://api.iconify.design/mdi:credit-card-outline.svg' },
-    { title: 'Preparing',      status: (api.status === 'PREPARING' || api.status === 'SHIPPED' || api.status === 'DELIVERED') ? 'inprogress' : 'pending', time: '', icon: 'https://api.iconify.design/mdi:chef-hat.svg' },
-    { title: 'Shipped',        status: (api.status === 'SHIPPED' || api.status === 'DELIVERED') ? 'done' : 'pending', time: '', icon: 'https://api.iconify.design/mdi:truck-delivery.svg' },
-    { title: 'Delivered',      status: api.status === 'DELIVERED' ? 'done' : 'pending', time: '', icon: 'https://api.iconify.design/mdi:home-check.svg' },
-  ];
+    const defaultEvents = [
+      { title: 'Order Created', status: 'done', time: api.createdAt ?? '', icon: 'https://api.iconify.design/mdi:clipboard-text.svg' },
+      { title: 'Payment Pending', status: api.status === 'PAID' ? 'done' : 'pending', time: '', icon: 'https://api.iconify.design/mdi:credit-card-outline.svg' },
+      { title: 'Preparing', status: (api.status === 'PREPARING' || api.status === 'SHIPPED' || api.status === 'DELIVERED') ? 'inprogress' : 'pending', time: '', icon: 'https://api.iconify.design/mdi:chef-hat.svg' },
+      { title: 'Shipped', status: (api.status === 'SHIPPED' || api.status === 'DELIVERED') ? 'done' : 'pending', time: '', icon: 'https://api.iconify.design/mdi:truck-delivery.svg' },
+      { title: 'Delivered', status: api.status === 'DELIVERED' ? 'done' : 'pending', time: '', icon: 'https://api.iconify.design/mdi:home-check.svg' },
+    ];
 
-  return {
-    id: api.id ?? null,
-    userId: api.userId ?? null,
-    status: api.status ?? 'PENDING',
-    createdAt: api.createdAt ?? null,
-    currency: api.currency ?? 'THB',
-    deliveryFee: Number(api.deliveryFee ?? 0),
+    return {
+      id: api.id ?? null,
+      userId: api.userId ?? null,
+      status: api.status ?? 'PENDING',
+      createdAt: api.createdAt ?? null,
+      currency: api.currency ?? 'THB',
+      deliveryFee: Number(api.deliveryFee ?? 0),
 
-    // สำหรับคำนวณรวม (ใช้โครงสร้างดิบเดิมไว้)
-    orderItems: Array.isArray(api.orderItems) ? api.orderItems : [],
+      orderItems: Array.isArray(api.orderItems) ? api.orderItems : [],
 
-    // สำหรับแสดงใน Summary (UI-friendly)
-    items,
+      items,
 
-    // ไทม์ไลน์ (ใช้ของ backend ถ้ามี ไม่งั้น default)
-    events: Array.isArray(api.events) ? api.events : defaultEvents,
-  };
-}
+      events: Array.isArray(api.events) ? api.events : defaultEvents,
+    };
+  }
 
   return (
     <div className="status-page">
@@ -177,7 +178,7 @@ function adaptOrder(api) {
               <div>
                 {order.orderItems.map((it, i) => (
                   <div key={i} className="item-row">
-                    {it.product.imageUrl ? <img src={it.product.imageUrl} alt={it.product.name} className="item-thumb" /> : <div className="item-thumb" style={{ background: '#f3f4f6' }} />}
+                    {it.product.imageUrl ? <img src={API_BASE + it.product.imageUrl} alt={it.product.name} className="item-thumb" /> : <img src="/src/assets/menupic/khao-man-kai.jpg"  alt={it.product.name} className="item-thumb" />}
                     <div>
                       <div className="item-name">{it.product.name}</div>
                       <div className="item-price">
