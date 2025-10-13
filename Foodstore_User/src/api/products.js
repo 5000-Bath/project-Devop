@@ -1,7 +1,3 @@
-// import { api } from './client';
-// export const listProducts = () => api('/products');
-// export const getProduct = (id) => api(`/products/${id}`);
-// src/api/products.js
 const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
 
 export async function listProducts() {
@@ -19,4 +15,22 @@ export async function listProducts() {
                 ? `${API_BASE}${p.imageUrl}`
                 : p.imageUrl,
     }));
+}
+
+export async function cutStock(cartItems) {
+  for (const it of cartItems) {
+    const id = it.id || it.productId || it.menuId;          
+    const quantity = Number(it.quantity ?? it.qty ?? 1);    
+
+    const res = await fetch(`${API_BASE}/api/products/${id}/quantity/cut`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ qty: quantity }),                    
+    });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`cutStock failed for id=${id}: ${res.status} ${text}`);
+    }
+  }
 }
