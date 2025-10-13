@@ -27,10 +27,26 @@ export default function Additem() {
   const handleImageUpload = (e) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      console.log("📦 File size:", file.size, "bytes");
+
+      const maxSize = 1 * 1024 * 1024; // 1MB
+      if (file.size > maxSize) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'ไฟล์ใหญ่เกินไป',
+          text: 'กรุณาอัปโหลดรูปภาพขนาดไม่เกิน 1MB',
+          confirmButtonText: 'ตกลง'
+        });
+        e.target.value = ''; // reset ค่า input file
+        return;
+      }
+
       setCoverImage(file);
-      setPreviewUrl(URL.createObjectURL(file)); // ✅ สร้าง preview
+      setPreviewUrl(URL.createObjectURL(file));
     }
   };
+
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
