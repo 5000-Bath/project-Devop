@@ -19,48 +19,20 @@ pipeline {
         stage('Unit Test') {
             steps {
                 echo "Skipping Unit Tests for now"
-                /*
-                dir('Foodstore_User') {
-                    sh 'npm ci && npm test'
-                }
-                dir('Foodstore_admin_Frontend') {
-                    sh 'npm ci && npm test'
-                }
-                */
             }
         }
-
 
         stage('Deploy') {
             steps {
                 echo "Skipping Docker Compose deploy due to port conflict"
-                /*
-                sh 'docker rm -f foodstore-db firstapp-backend foodstore-user-frontend foodstore-admin-frontend phpmyadmin || true'
-                sh 'docker-compose down || true'
-                sh 'docker-compose up -d'
-                */
             }
         }
-
 
         stage('E2E Test') {
             steps {
-                echo "Skipping"
-                /*
-                dir('Foodstore_User') {
-                    sh """
-                    docker run --rm \
-                      --network ${COMPOSE_PROJECT_NAME}_default \
-                      -v \$PWD:/e2e \
-                      -w /e2e \
-                      cypress/included:13.7.0 \
-                      cypress run --browser chrome --config-file cypress.config.cjs --headless
-                    """
-                    */
-                }
+                echo "Skipping E2E Test for now"
             }
         }
-        
 
         stage('Build and Push Docker Images') {
             steps {
@@ -83,9 +55,11 @@ pipeline {
                 }
             }
         }
+
         stage('unDeploy') {
             steps {
-                sh 'docker-compose down || true'
+                echo "Skipping unDeploy for safety"
+                // sh 'docker-compose down || true'
             }
         }
     }
