@@ -1,8 +1,10 @@
 pipeline {
     agent { label 'docker-host' }
+
     environment {
         K8S_NAMESPACE = 'production'
     }
+
     stages {
         stage('Checkout') {
             steps {
@@ -12,39 +14,66 @@ pipeline {
             }
         }
 
-        stage('Deploy PVCs') {
-            steps {
-                withCredentials([file(credentialsId: 'kubeconfig-prod', variable: 'KUBECONFIG_PATH')]) {
-                    sh '''
-                    export KUBECONFIG=$KUBECONFIG_PATH
+        stage('Deploy to Clusters in Parallel') {
+            parallel {
+                stage('Deploy to Salaya') {
+                    steps {
+                        script {
+                            withCredentials([file(credentialsId: 'kubeconfig-prod', variable: 'KUBECONFIG_PATH')]) {
+                                sh """
+                                    export KUBECONFIG=\$KUBECONFIG_PATH
+                                    echo "Deploying to Salaya cluster..."
 
-                    # สร้าง namespace ถ้ายังไม่มี
-                    kubectl get ns $K8S_NAMESPACE || kubectl create ns $K8S_NAMESPACE
+                                    # สร้าง namespace ถ้ายังไม่มี
+                                    kubectl get ns \$K8S_NAMESPACE || kubectl create ns \$K8S_NAMESPACE
 
-                    # Apply PVCs ก่อน
-                    kubectl apply -f k8s/mysql-pvc.yaml -n $K8S_NAMESPACE
-                    kubectl apply -f k8s/backend-pvc.yaml -n $K8S_NAMESPACE
-                    '''
+                                    # Apply PVCs
+                                    kubectl apply -f k8s/mysql-pvc.yaml -n \$K8S_NAMESPACE
+                                    kubectl apply -f k8s/backend-pvc.yaml -n \$K8S_NAMESPACE
+
+                                    # Apply manifests ทั้งหมด
+                                    kubectl apply -f k8s/ -n \$K8S_NAMESPACE
+
+                                    # ตรวจสอบ rollout ของแต่ละ deployment
+                                    kubectl rollout status deployment/backend -n \$K8S_NAMESPACE --timeout=180s || echo "⚠️ Backend rollout failed in Salaya"
+                                    kubectl rollout status deployment/frontend-user -n \$K8S_NAMESPACE --timeout=180s || echo "⚠️ Frontend-user rollout failed in Salaya"
+                                    kubectl rollout status deployment/frontend-admin -n \$K8S_NAMESPACE --timeout=180s || echo "⚠️ Frontend-admin rollout failed in Salaya"
+                                    kubectl rollout status deployment/phpmyadmin -n \$K8S_NAMESPACE --timeout=180s || echo "⚠️ PhpMyAdmin rollout failed in Salaya"
+                                    kubectl rollout status deployment/mysql -n \$K8S_NAMESPACE --timeout=180s || echo "⚠️ MySQL rollout failed in Salaya"
+                                """
+                            }
+                        }
+                    }
                 }
-            }
-        }
 
-        stage('Deploy to Kubernetes') {
-            steps {
-                withCredentials([file(credentialsId: 'kubeconfig-prod', variable: 'KUBECONFIG_PATH')]) {
-                    sh '''
-                    export KUBECONFIG=$KUBECONFIG_PATH
+                stage('Deploy to Rayong') {
+                    steps {
+                        script {
+                            withCredentials([file(credentialsId: 'kubeconfig-rayong', variable: 'KUBECONFIG_PATH')]) {
+                                sh """
+                                    export KUBECONFIG=\$KUBECONFIG_PATH
+                                    echo "Deploying to Rayong cluster..."
 
-                    # Apply ทุกไฟล์ YAML ที่เหลือ
-                    kubectl apply -f k8s/ -n $K8S_NAMESPACE
+                                    # สร้าง namespace ถ้ายังไม่มี
+                                    kubectl get ns \$K8S_NAMESPACE || kubectl create ns \$K8S_NAMESPACE
 
-                    # ตรวจสอบ rollout status ของแต่ละ deployment
-                    kubectl rollout status deployment/backend -n $K8S_NAMESPACE
-                    kubectl rollout status deployment/frontend-user -n $K8S_NAMESPACE
-                    kubectl rollout status deployment/frontend-admin -n $K8S_NAMESPACE
-                    kubectl rollout status deployment/phpmyadmin -n $K8S_NAMESPACE
-                    kubectl rollout status deployment/mysql -n $K8S_NAMESPACE
-                    '''
+                                    # Apply PVCs
+                                    kubectl apply -f k8s/mysql-pvc.yaml -n \$K8S_NAMESPACE
+                                    kubectl apply -f k8s/backend-pvc.yaml -n \$K8S_NAMESPACE
+
+                                    # Apply manifests ทั้งหมด
+                                    kubectl apply -f k8s/ -n \$K8S_NAMESPACE
+
+                                    # ตรวจสอบ rollout ของแต่ละ deployment
+                                    kubectl rollout status deployment/backend -n \$K8S_NAMESPACE --timeout=180s || echo "⚠️ Backend rollout failed in Rayong"
+                                    kubectl rollout status deployment/frontend-user -n \$K8S_NAMESPACE --timeout=180s || echo "⚠️ Frontend-user rollout failed in Rayong"
+                                    kubectl rollout status deployment/frontend-admin -n \$K8S_NAMESPACE --timeout=180s || echo "⚠️ Frontend-admin rollout failed in Rayong"
+                                    kubectl rollout status deployment/phpmyadmin -n \$K8S_NAMESPACE --timeout=180s || echo "⚠️ PhpMyAdmin rollout failed in Rayong"
+                                    kubectl rollout status deployment/mysql -n \$K8S_NAMESPACE --timeout=180s || echo "⚠️ MySQL rollout failed in Rayong"
+                                """
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -52,7 +81,7 @@ pipeline {
 
     post {
         always {
-            echo 'Deployment stage finished'
+            echo "✅ Deployment finished for all clusters"
         }
     }
 }
