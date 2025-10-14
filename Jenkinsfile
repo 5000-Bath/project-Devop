@@ -11,7 +11,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 deleteDir()
-                git branch: 'changename',
+                git branch: 'feature/prod',
                     url: 'https://github.com/5000-Bath/project-Devop.git'
             }
         }
