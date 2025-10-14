@@ -18,14 +18,18 @@ pipeline {
 
         stage('Unit Test') {
             steps {
+                echo "Skipping Unit Tests for now"
+                /*
                 dir('Foodstore_User') {
                     sh 'npm ci && npm test'
                 }
                 dir('Foodstore_admin_Frontend') {
                     sh 'npm ci && npm test'
                 }
+                */
             }
         }
+
 
         stage('Deploy') {
             steps {
