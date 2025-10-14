@@ -187,7 +187,7 @@ export default function Landing() {
           </p>
           <div className="cta">
             <Link className="btn primary" to="/Home">🍜 Browse Menu</Link>
-            <Link className="btn ghost" to="/Order">🧾 Go to Orders</Link>
+            <Link className="btn ghost" to="/Status">🧾 Go to Orders Status</Link>
           </div>
         </div>
       </section>

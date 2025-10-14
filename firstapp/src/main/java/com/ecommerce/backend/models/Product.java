@@ -25,8 +25,9 @@ public class Product {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
-    @Column(nullable = false)
-    private int stockQty = 0;
+    // ✅ ใช้ชื่อเดียว map ตรงกับ column stock_qty ใน database
+    @Column(name = "stock_qty", nullable = false)
+    private int stock = 0;
 
     @Column(nullable = false)
     private boolean isActive = true;
@@ -37,7 +38,7 @@ public class Product {
     @CreationTimestamp
     private LocalDateTime createdAt;
 
-    // Getters and Setters
+    // --- Getter / Setter ---
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -50,8 +51,8 @@ public class Product {
     public BigDecimal getPrice() { return price; }
     public void setPrice(BigDecimal price) { this.price = price; }
 
-    public int getStockQty() { return stockQty; }
-    public void setStockQty(int stockQty) { this.stockQty = stockQty; }
+    public int getStock() { return stock; }
+    public void setStock(int stock) { this.stock = stock; }
 
     public boolean getIsActive() { return isActive; }
     public void setIsActive(boolean isActive) { this.isActive = isActive; }

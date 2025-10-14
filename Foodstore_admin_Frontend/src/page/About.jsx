@@ -140,7 +140,7 @@ export default function About() {
                 <div style={{ flex: 1, overflow: 'hidden' }}>
                   <div style={{ fontWeight: 600, fontSize: 16, marginBottom: 4 }}>{item.name}</div>
                   <div style={{ fontSize: 14, color: '#555', marginBottom: 4 }}>฿{item.price}</div>
-                  <div style={{ fontSize: 13, color: '#888' }}>Stock: {item.stockQty}</div>
+                  <div style={{ fontSize: 13, color: '#888' }}>Stock: {item.stock}</div>
                 </div>
               </div>
             ))}
@@ -181,7 +181,7 @@ export default function About() {
                   <td style={{ padding: '12px 8px' }}>{item.id}</td>
                   <td style={{ padding: '12px 8px' }}>{item.description}</td>
                   <td style={{ padding: '12px 8px' }}>{item.price} บาท</td>
-                  <td style={{ padding: '12px 8px' }}>{item.stockQty}</td>
+                  <td style={{ padding: '12px 8px' }}>{item.stock}</td>
                   <td style={{ padding: '12px 8px' }}>
                     <button
                       style={{
@@ -296,7 +296,7 @@ export default function About() {
             <p><b>ID:</b> {selectedItem.id}</p>
             <p><b>Description:</b> {selectedItem.description}</p>
             <p><b>Price:</b> {selectedItem.price} บาท</p>
-            <p><b>Stock:</b> {selectedItem.stockQty}</p>
+            <p><b>Stock:</b> {selectedItem.stock}</p>
 
             <button
               onClick={() => handleDelete(selectedItem.id)}

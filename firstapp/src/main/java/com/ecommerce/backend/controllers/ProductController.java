@@ -37,7 +37,7 @@ public class ProductController {
             @RequestParam("name") String name,
             @RequestParam(value = "description", required = false) String description,
             @RequestParam("price") BigDecimal price,
-            @RequestParam(value = "stockQty", required = false, defaultValue = "0") int stockQty,
+            @RequestParam(value = "stock", required = false, defaultValue = "0") int stock,
             @RequestParam(value = "isActive", required = false, defaultValue = "true") boolean isActive,
             @RequestParam(value = "image", required = false) MultipartFile image
     ) {
@@ -45,7 +45,7 @@ public class ProductController {
         product.setName(name);
         product.setDescription(description);
         product.setPrice(price);
-        product.setStockQty(stockQty);
+        product.setStock(stock);
         product.setIsActive(isActive);
 
         if (image != null && !image.isEmpty()) {
@@ -92,10 +92,10 @@ public class ProductController {
             }
         }
 
-        if (body.containsKey("stockQty")) {
-            Object qtyObj = body.get("stockQty");
+        if (body.containsKey("stock")) {
+            Object qtyObj = body.get("stock");
             if (qtyObj != null) {
-                product.setStockQty(Integer.parseInt(qtyObj.toString()));
+                product.setStock(Integer.parseInt(qtyObj.toString()));
             }
         }
 
@@ -116,17 +116,17 @@ public class ProductController {
         if (qty <= 0) {
             return ResponseEntity.badRequest().body("qty must be > 0");
         }
-        if (p.getStockQty() < qty) {
+        if (p.getStock() < qty) {
             return ResponseEntity.badRequest().body("insufficient stock");
         }
 
-        p.setStockQty(p.getStockQty() - qty);
+        p.setStock(p.getStock() - qty);
         productRepository.save(p);
 
         return ResponseEntity.ok(Map.of(
                 "id", p.getId(),
                 "deducted", qty,
-                "remainingQty", p.getStockQty()
+                "remainingQty", p.getStock()
         ));
     }
 

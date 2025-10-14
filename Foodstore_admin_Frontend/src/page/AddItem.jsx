@@ -8,7 +8,7 @@ export default function Additem() {
     description: '',
     price: '',
     imageUrl: '',
-    stockQty: 0,
+    stock: 0,
     isActive: true
   });
 
@@ -65,7 +65,7 @@ export default function Additem() {
     formDataToSend.append('name', formData.name);
     formDataToSend.append('description', formData.description || '');
     formDataToSend.append('price', parseFloat(formData.price));
-    formDataToSend.append('stockQty', parseInt(formData.stockQty) || 0);
+    formDataToSend.append('stock', parseInt(formData.stock) || 0);
     formDataToSend.append('isActive', formData.isActive);
 
     if (coverImage) {
@@ -90,7 +90,7 @@ export default function Additem() {
           name: '',
           description: '',
           price: '',
-          stockQty: 0,
+          stock: 0,
           isActive: true
         });
         setCoverImage(null);
@@ -180,8 +180,8 @@ export default function Additem() {
               </label>
               <input
                 type="number"
-                name="stockQty"
-                value={formData.stockQty}
+                name="stock"
+                value={formData.stock}
                 onChange={handleChange}
                 min="0"
                 style={{ width: '100%', padding: '12px 16px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, boxSizing: 'border-box' }}
