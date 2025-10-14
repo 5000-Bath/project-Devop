@@ -6,7 +6,7 @@ import { useIsMobile } from "./useIsMobile"; // ✅ นำเข้า hook ท�
 
 
 
-const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
+const API_BASE = "/";
 
 export default function LoginPage() {
     const navigate = useNavigate();
@@ -32,7 +32,7 @@ export default function LoginPage() {
         }
 
         try {
-            const res = await fetch(`${API_BASE}/auth/login`, {
+            const res = await fetch(`${API_BASE}auth/login`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ username: user.trim(), password: password.trim() }),
