@@ -7,8 +7,18 @@ pipeline {
         stage('Checkout') {
             steps {
                 deleteDir()
-                git branch: 'changename',
-                    url: 'https://github.com/5000-Bath/project-Devop.git'
+                timeout(time: 5, unit: 'MINUTES') { 
+                    checkout([$class: 'GitSCM',
+                        branches: [[name: 'changename']],
+                        doGenerateSubmoduleConfigurations: false,
+                        extensions: [
+                            [$class: 'CleanBeforeCheckout'],
+                            // 👈 เพิ่ม Shallow Clone ตรงนี้
+                            [$class: 'CloneOption', depth: 1, noTags: false, reference: '', shallow: true] 
+                        ],
+                        userRemoteConfigs: [[url: 'https://github.com/5000-Bath/project-Devop.git']]
+                    ])
+                }
             }
         }
 
