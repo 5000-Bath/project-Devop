@@ -19,7 +19,7 @@ pipeline {
                 stage('Deploy to Salaya') {
                     steps {
                         script {
-                            withCredentials([file(credentialsId: 'kubeconfig-salaya', variable: 'KUBECONFIG_PATH')]) {
+                            withCredentials([file(credentialsId: 'kubeconfig-prod', variable: 'KUBECONFIG_PATH')]) {
                                 sh '''
                                 export KUBECONFIG=$KUBECONFIG_PATH
                                 # สร้าง namespace ถ้ายังไม่มี
