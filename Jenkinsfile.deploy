@@ -1,60 +1,105 @@
 pipeline {
     agent { label 'docker-host' }
+
     environment {
         K8S_NAMESPACE = 'production'
     }
+
     stages {
         stage('Checkout') {
             steps {
                 deleteDir()
-                timeout(time: 5, unit: 'MINUTES') { 
-                    checkout([$class: 'GitSCM',
-                        branches: [[name: 'changename']],
-                        doGenerateSubmoduleConfigurations: false,
-                        extensions: [
-                            [$class: 'CleanBeforeCheckout'],
-                            // 👈 เพิ่ม Shallow Clone ตรงนี้
-                            [$class: 'CloneOption', depth: 1, noTags: false, reference: '', shallow: true] 
-                        ],
-                        userRemoteConfigs: [[url: 'https://github.com/5000-Bath/project-Devop.git']]
-                    ])
-                }
+                git branch: 'changename',
+                    url: 'https://github.com/5000-Bath/project-Devop.git'
             }
         }
 
-        stage('Deploy PVCs') {
-            steps {
-                withCredentials([file(credentialsId: 'kubeconfig-prod', variable: 'KUBECONFIG_PATH')]) {
-                    sh '''
-                    export KUBECONFIG=$KUBECONFIG_PATH
+        stage('Deploy to Clusters in Parallel') {
+            parallel {
+                stage('Deploy to Salaya') {
+                    steps {
+                        script {
+                            withCredentials([file(credentialsId: 'kubeconfig-prod', variable: 'KUBECONFIG_PATH')]) {
+                                sh '''
+                                export KUBECONFIG=$KUBECONFIG_PATH
+                                # สร้าง namespace ถ้ายังไม่มี
+                                kubectl get ns $K8S_NAMESPACE || kubectl create ns $K8S_NAMESPACE
 
-                    # สร้าง namespace ถ้ายังไม่มี
-                    kubectl get ns $K8S_NAMESPACE || kubectl create ns $K8S_NAMESPACE
+                                # Deploy PVCs
+                                kubectl apply -f k8s/mysql-pvc.yaml -n $K8S_NAMESPACE
+                                kubectl apply -f k8s/backend-pvc.yaml -n $K8S_NAMESPACE
 
-                    # Apply PVCs ก่อน
-                    kubectl apply -f k8s/mysql-pvc.yaml -n $K8S_NAMESPACE
-                    kubectl apply -f k8s/backend-pvc.yaml -n $K8S_NAMESPACE
-                    '''
+                                # Deploy manifests ทั้งหมด
+                                kubectl apply -f k8s/ -n $K8S_NAMESPACE
+                                '''
+                            }
+
+                            // ตรวจสอบ rollout และ rollback หาก fail
+                            try {
+                                sh '''
+                                export KUBECONFIG=$KUBECONFIG_PATH
+                                kubectl rollout status deployment/backend -n $K8S_NAMESPACE --timeout=120s
+                                kubectl rollout status deployment/frontend-user -n $K8S_NAMESPACE --timeout=120s
+                                kubectl rollout status deployment/frontend-admin -n $K8S_NAMESPACE --timeout=120s
+                                kubectl rollout status deployment/phpmyadmin -n $K8S_NAMESPACE --timeout=120s
+                                kubectl rollout status deployment/mysql -n $K8S_NAMESPACE --timeout=120s
+                                '''
+                            } catch (err) {
+                                echo "⚠️ Rollout failed in Salaya cluster, rolling back..."
+                                sh '''
+                                export KUBECONFIG=$KUBECONFIG_PATH
+                                kubectl rollout undo deployment/backend -n $K8S_NAMESPACE
+                                kubectl rollout undo deployment/frontend-user -n $K8S_NAMESPACE
+                                kubectl rollout undo deployment/frontend-admin -n $K8S_NAMESPACE
+                                kubectl rollout undo deployment/phpmyadmin -n $K8S_NAMESPACE
+                                kubectl rollout undo deployment/mysql -n $K8S_NAMESPACE
+                                '''
+                                error "Deployment failed and rolled back in Salaya"
+                            }
+                        }
+                    }
                 }
-            }
-        }
 
-        stage('Deploy to Kubernetes') {
-            steps {
-                withCredentials([file(credentialsId: 'kubeconfig-prod', variable: 'KUBECONFIG_PATH')]) {
-                    sh '''
-                    export KUBECONFIG=$KUBECONFIG_PATH
+                stage('Deploy to Rayong') {
+                    steps {
+                        script {
+                            withCredentials([file(credentialsId: 'kubeconfig-rayong', variable: 'KUBECONFIG_PATH')]) {
+                                sh '''
+                                export KUBECONFIG=$KUBECONFIG_PATH
+                                kubectl get ns $K8S_NAMESPACE || kubectl create ns $K8S_NAMESPACE
 
-                    # Apply ทุกไฟล์ YAML ที่เหลือ
-                    kubectl apply -f k8s/ -n $K8S_NAMESPACE
+                                # Deploy PVCs
+                                kubectl apply -f k8s/mysql-pvc.yaml -n $K8S_NAMESPACE
+                                kubectl apply -f k8s/backend-pvc.yaml -n $K8S_NAMESPACE
 
-                    # ตรวจสอบ rollout status ของแต่ละ deployment
-                    kubectl rollout status deployment/backend -n $K8S_NAMESPACE
-                    kubectl rollout status deployment/frontend-user -n $K8S_NAMESPACE
-                    kubectl rollout status deployment/frontend-admin -n $K8S_NAMESPACE
-                    kubectl rollout status deployment/phpmyadmin -n $K8S_NAMESPACE
-                    kubectl rollout status deployment/mysql -n $K8S_NAMESPACE
-                    '''
+                                # Deploy manifests ทั้งหมด
+                                kubectl apply -f k8s/ -n $K8S_NAMESPACE
+                                '''
+                            }
+
+                            try {
+                                sh '''
+                                export KUBECONFIG=$KUBECONFIG_PATH
+                                kubectl rollout status deployment/backend -n $K8S_NAMESPACE --timeout=120s
+                                kubectl rollout status deployment/frontend-user -n $K8S_NAMESPACE --timeout=120s
+                                kubectl rollout status deployment/frontend-admin -n $K8S_NAMESPACE --timeout=120s
+                                kubectl rollout status deployment/phpmyadmin -n $K8S_NAMESPACE --timeout=120s
+                                kubectl rollout status deployment/mysql -n $K8S_NAMESPACE --timeout=120s
+                                '''
+                            } catch (err) {
+                                echo "⚠️ Rollout failed in Rayong cluster, rolling back..."
+                                sh '''
+                                export KUBECONFIG=$KUBECONFIG_PATH
+                                kubectl rollout undo deployment/backend -n $K8S_NAMESPACE
+                                kubectl rollout undo deployment/frontend-user -n $K8S_NAMESPACE
+                                kubectl rollout undo deployment/frontend-admin -n $K8S_NAMESPACE
+                                kubectl rollout undo deployment/phpmyadmin -n $K8S_NAMESPACE
+                                kubectl rollout undo deployment/mysql -n $K8S_NAMESPACE
+                                '''
+                                error "Deployment failed and rolled back in Rayong"
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -62,7 +107,7 @@ pipeline {
 
     post {
         always {
-            echo 'Deployment stage finished'
+            echo "✅ Deployment finished for all clusters"
         }
     }
 }
