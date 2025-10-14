@@ -266,18 +266,15 @@ export default function Ordersdetail() {
         fetchOrder();
     }, [id]);
 
-    // ✅ ฟังก์ชันอัปเดตสถานะ
+    // ✅ ฟังก์ชันอัปเดตสถานะ (แก้ path และ body ให้ตรงกับ backend)
     const updateOrderStatus = async (newStatus) => {
         try {
-            const res = await fetch(`${API_BASE}/api/orders/${id}`, {
+            const res = await fetch(`${API_BASE}/api/orders/${id}/status`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({
-                    ...order,
-                    status: newStatus,
-                }),
+                body: JSON.stringify({ status: newStatus }), // ✅ ส่งเฉพาะ status
             });
 
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -418,6 +415,7 @@ export default function Ordersdetail() {
                 {order.userId}
               </span>
                         </div>
+
                         <div style={{ display: "flex", justifyContent: "space-between" }}>
                             <span style={{ color: "#666", fontSize: 14 }}>Created At</span>
                             <span style={{ color: "#333", fontSize: 14 }}>
@@ -429,14 +427,15 @@ export default function Ordersdetail() {
                     : "-"}
               </span>
                         </div>
+
                         <div style={{ display: "flex", justifyContent: "space-between" }}>
                             <span style={{ color: "#666", fontSize: 14 }}>Status</span>
                             <span
                                 style={{
                                     color:
-                                        order.status === "COMPLETE"
+                                        order.status === "SUCCESS"
                                             ? "#4CAF50"
-                                            : order.status === "CANCEL"
+                                            : order.status === "CANCELLED"
                                                 ? "#FF6B6B"
                                                 : "#FFA500",
                                     fontSize: 14,
@@ -479,7 +478,7 @@ export default function Ordersdetail() {
                             </button>
 
                             <button
-                                onClick={() => updateOrderStatus("COMPLETE")}
+                                onClick={() => updateOrderStatus("SUCCESS")} // ✅ ใช้ enum ตรงกับ backend
                                 style={{
                                     backgroundColor: "#4CAF50",
                                     color: "white",
@@ -497,11 +496,11 @@ export default function Ordersdetail() {
                                     (e.currentTarget.style.backgroundColor = "#4CAF50")
                                 }
                             >
-                                 Complete
+                                Complete
                             </button>
 
                             <button
-                                onClick={() => updateOrderStatus("CANCEL")}
+                                onClick={() => updateOrderStatus("CANCELLED")} // ✅ ใช้ enum ตรงกับ backend
                                 style={{
                                     backgroundColor: "#FF6B6B",
                                     color: "white",
@@ -519,7 +518,7 @@ export default function Ordersdetail() {
                                     (e.currentTarget.style.backgroundColor = "#FF6B6B")
                                 }
                             >
-                                 Cancel
+                                Cancel
                             </button>
                         </div>
                     </div>
