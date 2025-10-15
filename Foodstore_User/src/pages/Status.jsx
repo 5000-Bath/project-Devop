@@ -178,7 +178,7 @@ export default function Status() {
               <div>
                 {order.orderItems.map((it, i) => (
                   <div key={i} className="item-row">
-                    {it.product.imageUrl ? <img src={API_BASE + it.product.imageUrl} alt={it.product.name} className="item-thumb" /> : <img src="/src/assets/menupic/khao-man-kai.jpg"  alt={it.product.name} className="item-thumb" />}
+                    {it.product.imageUrl ? <img src={API_BASE + it.product.imageUrl} alt={it.product.name} className="item-thumb" /> : <img src="/src/assets/menupic/khao-man-kai.jpg" alt={it.product.name} className="item-thumb" />}
                     <div>
                       <div className="item-name">{it.product.name}</div>
                       <div className="item-price">
