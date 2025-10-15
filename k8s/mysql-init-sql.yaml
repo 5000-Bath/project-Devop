@@ -124,7 +124,7 @@ data:
     (1, 'user01', 'user', 'demo', 'user@demo.com', '1234', '123456789', NULL, NULL, 'bangkok,thailand', '2025-09-10 12:34:13');
 
     -- 🛑 ส่วนที่เพิ่ม: สร้างและให้สิทธิ์สูงสุดสำหรับ Backend User
-    CREATE USER IF NOT EXISTS 'shopuser'@'%' IDENTIFIED BY 'YOUR_SHOPUSER_PASSWORD'; 
+    CREATE USER IF NOT EXISTS 'shopuser'@'%' IDENTIFIED BY 'shoppassword'; 
     GRANT ALL PRIVILEGES ON *.* TO 'shopuser'@'%' WITH GRANT OPTION;
     
     FLUSH PRIVILEGES;
