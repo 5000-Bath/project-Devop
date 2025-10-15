@@ -198,21 +198,25 @@ export default function About() {
                                 }}
                             >
                                 <td style={{ padding: "12px 8px" }}>
-                                    {resolveImageUrl(item.imageUrl) ? (
-                                        <img
-                                            src={resolveImageUrl(item.imageUrl)}
-                                            alt={item.name}
-                                            style={{
-                                                width: 50,
-                                                height: 50,
-                                                objectFit: "cover",
-                                                borderRadius: 6,
-                                            }}
-                                        />
-                                    ) : (
-                                        <span style={{ fontSize: 12, color: "#aaa" }}>No Image</span>
-                                    )}
+                                    <img
+                                        src={
+                                            resolveImageUrl(item.imageUrl) ||
+                                            "/src/menupic/khao-man-kai.jpg"
+                                        }
+                                        alt={item.name}
+                                        style={{
+                                            width: 50,
+                                            height: 50,
+                                            objectFit: "cover",
+                                            borderRadius: 6,
+                                        }}
+                                        onError={(e) => {
+                                            e.target.src = "/src/menupic/khao-man-kai.jpg"; // fallback เผื่อไฟล์หาย
+                                        }}
+                                    />
                                 </td>
+
+
                                 <td style={{ padding: "12px 8px", fontWeight: 500 }}>
                                     {item.name}
                                 </td>
