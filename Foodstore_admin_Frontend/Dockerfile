@@ -1,15 +1,25 @@
-# ใช้ Node รุ่นใหม่
-FROM node:22-alpine
-
+# Stage 1: Build
+FROM node:22-alpine AS build
 WORKDIR /app
 
+# Copy package files
 COPY package*.json ./
 
-# ติดตั้ง dependencies (รวม devDependencies สำหรับ dev server)
-RUN npm install
+# Install dependencies
+RUN npm ci
 
+# Copy source code
 COPY . .
 
-EXPOSE 3000
+# Build production files
+RUN npm run build
 
-CMD ["npm", "run", "dev"]
+# Stage 2: Serve with nginx
+FROM nginx:alpine
+COPY --from=build /app/dist /usr/share/nginx/html
+
+# Optional: custom nginx config (ใช้ถ้ามี React Router)
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 3000
+CMD ["nginx", "-g", "daemon off;"]

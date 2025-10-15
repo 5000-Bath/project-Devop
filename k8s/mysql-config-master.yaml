@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-config-master
+  namespace: production
+data:
+  my.cnf: |
+    [mysqld]
+    server-id=1
+    log_bin=mysql-bin
+    gtid_mode=ON
+    enforce_gtid_consistency=ON
+    binlog_format=ROW
+
+    bind-address=0.0.0.0 

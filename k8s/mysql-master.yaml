@@ -1,17 +1,17 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mysql
+  name: mysql-rayong
   namespace: production
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: mysql
+      app: mysql-rayong
   template:
     metadata:
       labels:
-        app: mysql
+        app: mysql-rayong
     spec:
       containers:
       - name: mysql
@@ -42,25 +42,31 @@ spec:
         volumeMounts:
         - name: mysql-storage
           mountPath: /var/lib/mysql
-        - name: init-sql
+        - name: mysql-init
           mountPath: /docker-entrypoint-initdb.d
+        - name: mysql-config
+          mountPath: /etc/mysql/conf.d
       volumes:
       - name: mysql-storage
         persistentVolumeClaim:
-          claimName: mysql-pvc   # ใช้ PVC 
-      - name: init-sql
+          claimName: mysql-pvc
+      - name: mysql-init
         configMap:
-          name: mysql-init-sql
+          name: mysql-init-master
+      - name: mysql-config
+        configMap:
+          name: mysql-config-master
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: mysql
+  name: mysql-rayong
   namespace: production
 spec:
   selector:
-    app: mysql
+    app: mysql-rayong
   ports:
     - port: 3306
       targetPort: 3306
-  type: ClusterIP
+      nodePort: 31006  # 🛑 กำหนด NodePort ให้ชัดเจน (พอร์ต 30000-32767)
+  type: NodePort       # ✅ เปลี่ยนจาก ClusterIP เป็น NodePort

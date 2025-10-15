@@ -3,74 +3,129 @@ pipeline {
 
     environment {
         K8S_NAMESPACE = 'production'
+        // IP Master ของ Rayong
+        MASTER_K8S_IP = '10.10.10.8'
+        // 🛑 PORT NodePort ที่ Master DB เปิดออก
+        MASTER_K8S_PORT = '31006' 
     }
 
     stages {
         stage('Checkout') {
             steps {
                 deleteDir()
-                git branch: 'changename',
+                git branch: 'feature/prod',
                     url: 'https://github.com/5000-Bath/project-Devop.git'
             }
         }
 
         stage('Deploy to Clusters in Parallel') {
             parallel {
-                stage('Deploy to Salaya') {
+
+                stage('Deploy Rayong (Master)') {
                     steps {
                         script {
-                            withCredentials([file(credentialsId: 'kubeconfig-prod', variable: 'KUBECONFIG_PATH')]) {
-                                sh """
-                                    export KUBECONFIG=\$KUBECONFIG_PATH
-                                    echo "Deploying to Salaya cluster..."
+                            withCredentials([file(credentialsId: 'kubeconfig-rayong', variable: 'KUBECONFIG_PATH')]) {
+                                sh '''
+                                    export KUBECONFIG=$KUBECONFIG_PATH
+                                    echo "Deploying Master to Rayong..."
 
-                                    # สร้าง namespace ถ้ายังไม่มี
-                                    kubectl get ns \$K8S_NAMESPACE || kubectl create ns \$K8S_NAMESPACE
+                                    # Namespace, PVCs, ConfigMap, Secret, Init SQL
+                                    # NOTE: ต้องมั่นใจว่าไฟล์ mysql-config-master.yaml มี bind-address=0.0.0.0
+                                    kubectl get ns $K8S_NAMESPACE || kubectl create ns $K8S_NAMESPACE
+                                    kubectl apply -f k8s/mysql-pvc.yaml -n $K8S_NAMESPACE
+                                    kubectl apply -f k8s/backend-pvc.yaml -n $K8S_NAMESPACE
+                                    kubectl apply -f k8s/mysql-config-master.yaml -n $K8S_NAMESPACE
+                                    kubectl apply -f k8s/mysql-secret.yaml -n $K8S_NAMESPACE
+                                    kubectl apply -f k8s/mysql-init-master.yaml -n $K8S_NAMESPACE
+                                    
+                                    # 🛑 Deployments (ใช้ NodePort)
+                                    kubectl apply -f k8s/mysql-master.yaml -n $K8S_NAMESPACE
+                                    
+                                    # Backend, phpMyAdmin, Frontend (Envsubst)
+                                    export DB_HOST_NAME="mysql-rayong"
+                                    cat k8s/backend.yaml | envsubst | kubectl apply -f - -n $K8S_NAMESPACE
+                                    cat k8s/phpmyadmin.yaml | envsubst | kubectl apply -f - -n $K8S_NAMESPACE
+                                    kubectl apply -f k8s/frontend-admin.yaml -n $K8S_NAMESPACE
+                                    kubectl apply -f k8s/frontend-user.yaml -n $K8S_NAMESPACE
 
-                                    # Apply PVCs
-                                    kubectl apply -f k8s/mysql-pvc.yaml -n \$K8S_NAMESPACE
-                                    kubectl apply -f k8s/backend-pvc.yaml -n \$K8S_NAMESPACE
-
-                                    # Apply manifests ทั้งหมด
-                                    kubectl apply -f k8s/ -n \$K8S_NAMESPACE
-
-                                    # ตรวจสอบ rollout ของแต่ละ deployment
-                                    kubectl rollout status deployment/backend -n \$K8S_NAMESPACE --timeout=180s || echo "⚠️ Backend rollout failed in Salaya"
-                                    kubectl rollout status deployment/frontend-user -n \$K8S_NAMESPACE --timeout=180s || echo "⚠️ Frontend-user rollout failed in Salaya"
-                                    kubectl rollout status deployment/frontend-admin -n \$K8S_NAMESPACE --timeout=180s || echo "⚠️ Frontend-admin rollout failed in Salaya"
-                                    kubectl rollout status deployment/phpmyadmin -n \$K8S_NAMESPACE --timeout=180s || echo "⚠️ PhpMyAdmin rollout failed in Salaya"
-                                    kubectl rollout status deployment/mysql -n \$K8S_NAMESPACE --timeout=180s || echo "⚠️ MySQL rollout failed in Salaya"
-                                """
+                                    # Rollout check
+                                    kubectl rollout status deployment/mysql-rayong -n $K8S_NAMESPACE --timeout=180s
+                                    kubectl rollout status deployment/backend -n $K8S_NAMESPACE --timeout=180s
+                                    kubectl rollout status deployment/frontend-admin -n $K8S_NAMESPACE --timeout=180s
+                                    kubectl rollout status deployment/frontend-user -n $K8S_NAMESPACE --timeout=180s
+                                    kubectl rollout status deployment/phpmyadmin -n $K8S_NAMESPACE --timeout=180s
+                                    
+                                    # 🛑 เพิ่มการแก้ไข User ใน Runtime: บังคับใช้ mysql_native_password
+                                    # NOTE: ทำซ้ำเพื่อยืนยันว่า User ถูกตั้งค่าถูกต้องแม้ Pod จะ restart
+                                    # NOTE: คำสั่งนี้จะแก้ไขปัญหา ERROR 2061 (Authentication requires secure connection)
+                                    kubectl exec deploy/mysql-rayong -n $K8S_NAMESPACE --container mysql -- \
+                                        mysql -h 127.0.0.1 -P 3306 -uroot -p$(kubectl get secret mysql-secret -n $K8S_NAMESPACE -o jsonpath="{.data.MYSQL_ROOT_PASSWORD}" | base64 --decode) -e "
+                                            ALTER USER 'repl'@'%' 
+                                            IDENTIFIED WITH mysql_native_password BY 'replpassword';
+                                            FLUSH PRIVILEGES;
+                                        "
+                                '''
                             }
                         }
                     }
                 }
 
-                stage('Deploy to Rayong') {
+                stage('Deploy Salaya (Slave)') {
                     steps {
                         script {
-                            withCredentials([file(credentialsId: 'kubeconfig-rayong', variable: 'KUBECONFIG_PATH')]) {
-                                sh """
-                                    export KUBECONFIG=\$KUBECONFIG_PATH
-                                    echo "Deploying to Rayong cluster..."
+                            withCredentials([file(credentialsId: 'kubeconfig-prod', variable: 'KUBECONFIG_PATH')]) {
+                                sh '''
+                                    export KUBECONFIG=$KUBECONFIG_PATH
+                                    echo "Deploying Slave to Salaya..."
 
-                                    # สร้าง namespace ถ้ายังไม่มี
-                                    kubectl get ns \$K8S_NAMESPACE || kubectl create ns \$K8S_NAMESPACE
+                                    # Namespace, PVCs, ConfigMap, Secret
+                                    kubectl get ns $K8S_NAMESPACE || kubectl create ns $K8S_NAMESPACE
+                                    kubectl apply -f k8s/mysql-pvc.yaml -n $K8S_NAMESPACE
+                                    kubectl apply -f k8s/backend-pvc.yaml -n $K8S_NAMESPACE
+                                    kubectl apply -f k8s/mysql-config-slave.yaml -n $K8S_NAMESPACE
+                                    kubectl apply -f k8s/mysql-secret.yaml -n $K8S_NAMESPACE
 
-                                    # Apply PVCs
-                                    kubectl apply -f k8s/mysql-pvc.yaml -n \$K8S_NAMESPACE
-                                    kubectl apply -f k8s/backend-pvc.yaml -n \$K8S_NAMESPACE
+                                    # Deployments
+                                    kubectl apply -f k8s/mysql-slave.yaml -n $K8S_NAMESPACE
 
-                                    # Apply manifests ทั้งหมด
-                                    kubectl apply -f k8s/ -n \$K8S_NAMESPACE
+                                    # Backend, phpMyAdmin, Frontend (Envsubst)
+                                    export DB_HOST_NAME="mysql-salaya"
+                                    cat k8s/backend.yaml | envsubst | kubectl apply -f - -n $K8S_NAMESPACE
+                                    cat k8s/phpmyadmin.yaml | envsubst | kubectl apply -f - -n $K8S_NAMESPACE
 
-                                    # ตรวจสอบ rollout ของแต่ละ deployment
-                                    kubectl rollout status deployment/backend -n \$K8S_NAMESPACE --timeout=180s || echo "⚠️ Backend rollout failed in Rayong"
-                                    kubectl rollout status deployment/frontend-user -n \$K8S_NAMESPACE --timeout=180s || echo "⚠️ Frontend-user rollout failed in Rayong"
-                                    kubectl rollout status deployment/frontend-admin -n \$K8S_NAMESPACE --timeout=180s || echo "⚠️ Frontend-admin rollout failed in Rayong"
-                                    kubectl rollout status deployment/phpmyadmin -n \$K8S_NAMESPACE --timeout=180s || echo "⚠️ PhpMyAdmin rollout failed in Rayong"
-                                    kubectl rollout status deployment/mysql -n \$K8S_NAMESPACE --timeout=180s || echo "⚠️ MySQL rollout failed in Rayong"
-                                """
+                                    kubectl apply -f k8s/frontend-admin.yaml -n $K8S_NAMESPACE
+                                    kubectl apply -f k8s/frontend-user.yaml -n $K8S_NAMESPACE
+
+                                    # Rollout check
+                                    kubectl rollout status deployment/mysql-salaya -n $K8S_NAMESPACE --timeout=180s
+                                    kubectl rollout status deployment/backend -n $K8S_NAMESPACE --timeout=180s
+                                    kubectl rollout status deployment/frontend-admin -n $K8S_NAMESPACE --timeout=180s
+                                    kubectl rollout status deployment/frontend-user -n $K8S_NAMESPACE --timeout=180s
+                                    kubectl rollout status deployment/phpmyadmin -n $K8S_NAMESPACE --timeout=180s
+
+                                    # Set up replication
+                                    MASTER_HOST="$MASTER_K8S_IP" 
+                                    MASTER_PORT="$MASTER_K8S_PORT"
+                                    
+                                    MYSQL_ROOT_PASSWORD=$(kubectl get secret mysql-secret -n $K8S_NAMESPACE -o jsonpath="{.data.MYSQL_ROOT_PASSWORD}" | base64 --decode)
+
+                                    # เพิ่ม Delay 30 วินาที เพื่อให้ MySQL Server เริ่มทำงาน
+                                    echo "Waiting 30 seconds for MySQL Slave to fully initialize..."
+                                    sleep 30 
+
+                                    # 🛑 Final Replication Command: ใช้ MASTER_PORT และ RESET REPLICA
+                                    kubectl exec deploy/mysql-salaya -n $K8S_NAMESPACE --container mysql -- \
+                                        mysql -h 127.0.0.1 -P 3306 -uroot -p$MYSQL_ROOT_PASSWORD -e "
+                                            STOP REPLICA; 
+                                            RESET REPLICA; 
+                                            CHANGE MASTER TO
+                                              MASTER_HOST='$MASTER_HOST',
+                                              MASTER_PORT=$MASTER_PORT,
+                                              MASTER_USER='repl',
+                                              MASTER_PASSWORD='replpassword',
+                                              MASTER_AUTO_POSITION=1;
+                                            START REPLICA;"
+                                '''
                             }
                         }
                     }

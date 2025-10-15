@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-init-slave
+  namespace: production
+data:
+  mysql-init.sql: |
+    -- การตั้งค่า replication จะ run หลัง deploy
+    -- ตัวอย่าง: ใช้ MASTER_AUTO_POSITION
+    -- ต้องแก้ IP ของ Master ให้ตรงกับ cluster Rayong
+    CHANGE MASTER TO
+      MASTER_HOST='mysql-rayong.production.svc.cluster.local',
+      MASTER_USER='repl',
+      MASTER_PASSWORD='replpassword',
+      MASTER_AUTO_POSITION=1;
+    START SLAVE;

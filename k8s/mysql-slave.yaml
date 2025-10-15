@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-salaya
+  namespace: production
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql-salaya
+  template:
+    metadata:
+      labels:
+        app: mysql-salaya
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:8.0
+        ports:
+        - containerPort: 3306
+        env:
+        # 🛑 ส่วนที่ถูกแก้ไข/เพิ่ม: ต้องมี ENV ครบเหมือน Master เพื่อให้รู้จัก shopuser/shopdb
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: MYSQL_ROOT_PASSWORD
+        - name: MYSQL_DATABASE
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: MYSQL_DATABASE
+        - name: MYSQL_USER
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: MYSQL_USER
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: MYSQL_PASSWORD
+        # -------------------
+        volumeMounts:
+        - name: mysql-storage
+          mountPath: /var/lib/mysql
+        - name: mysql-config
+          mountPath: /etc/mysql/conf.d
+      volumes:
+      - name: mysql-storage
+        persistentVolumeClaim:
+          claimName: mysql-pvc
+      - name: mysql-config
+        configMap:
+          name: mysql-config-slave # ใช้ ConfigMap ของ Slave
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-salaya
+  namespace: production
+spec:
+  selector:
+    app: mysql-salaya
+  ports:
+    - port: 3306
+      targetPort: 3306
+  type: ClusterIP

@@ -14,10 +14,10 @@ spec:
         app: frontend-admin
     spec:
       containers:
-      - name: frontend
+      - name: frontend-admin
         image: filmfilm/foodstore-admin-frontend:latest
         ports:
-        - containerPort: 3001
+        - containerPort: 80
 ---
 apiVersion: v1
 kind: Service
@@ -25,10 +25,10 @@ metadata:
   name: frontend-admin
   namespace: production
 spec:
-  type: NodePort               # เปลี่ยนเป็น NodePort
+  type: NodePort
   selector:
     app: frontend-admin
   ports:
-    - port: 3001               # service port
-      targetPort: 3001         # containerPort ของ pod
-      nodePort: 31001          # port ที่เปิดบน Node (สามารถเลือก 30000-32767)
+    - port: 80
+      targetPort: 80
+      nodePort: 31001

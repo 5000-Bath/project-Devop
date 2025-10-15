@@ -14,10 +14,10 @@ spec:
         app: frontend-user
     spec:
       containers:
-      - name: frontend
+      - name: frontend-user
         image: filmfilm/foodstore-user-frontend:latest
         ports:
-        - containerPort: 3000
+        - containerPort: 80
 ---
 apiVersion: v1
 kind: Service
@@ -25,10 +25,10 @@ metadata:
   name: frontend-user
   namespace: production
 spec:
-  type: NodePort               # เปลี่ยนเป็น NodePort
+  type: NodePort
   selector:
     app: frontend-user
   ports:
-    - port: 3000               # service port
-      targetPort: 3000         # containerPort ของ pod
-      nodePort: 31000          # port ที่เปิดบน Node
+    - port: 80
+      targetPort: 80
+      nodePort: 31000

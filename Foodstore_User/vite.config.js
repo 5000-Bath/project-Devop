@@ -1,28 +1,28 @@
-// import { defineConfig } from 'vite';
-// import react from '@vitejs/plugin-react';
-//
-// // เรารันใน Docker → ต้องชี้ไปที่ service name ของ backend (ไม่ใช่ localhost)
-// export default defineConfig({
-//     plugins: [react()],
-//     server: {
-//         host: true,
-//         port: 3000,
-//         proxy: {
-//             '/api': {
-//                 target: 'http://backend:8080',   // <<< ชื่อ service จาก docker-compose
-//                 changeOrigin: true,
-//                 // backend มี /products (ไม่มี /api) → ตัด /api ออก
-//                 rewrite: (p) => p.replace(/^\/api/, ''),
-//             },
-//         },
-//     },
-// });
+import { defineConfig, loadEnv } from 'vite'
+import react from '@vitejs/plugin-react'
 
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+export default ({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+  const apiUrl = env.VITE_API_URL || 'http://localhost:8080' // ใช้ backend IP/port
 
-export default defineConfig({
+  return defineConfig({
     plugins: [react()],
-    server: { host: true, port: 3000, strictPort: true },
-});
-
+    server: {
+      host: true,
+      port: 3000,
+      proxy: {
+        '/api': {
+          target: apiUrl,       // ทุก request /api จะส่งไป backend
+          changeOrigin: true,
+          secure: false,
+        },
+      },
+    },
+    define: { 'process.env': {} },
+    build: {
+      outDir: 'dist',
+      sourcemap: false,
+    },
+    envPrefix: 'VITE_',
+  })
+}

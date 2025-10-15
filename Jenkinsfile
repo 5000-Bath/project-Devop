@@ -11,7 +11,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 deleteDir()
-                git branch: 'changename',
+                git branch: 'feature/prod',
                     url: 'https://github.com/5000-Bath/project-Devop.git'
             }
         }
@@ -36,9 +36,6 @@ pipeline {
 
         stage('Build and Push Docker Images') {
             steps {
-                // ลบ folder downloads ของ Cypress ก่อน build
-                sh 'rm -rf ./Foodstore_User/cypress/downloads || true'
-
                 sh "docker build -t ${IMAGE_NAME_ADMIN}:latest ./Foodstore_admin_Frontend"
                 sh "docker build -t ${IMAGE_NAME_USER}:latest ./Foodstore_User"
                 sh "docker build -t ${IMAGE_NAME_BACKEND}:latest ./firstapp"
@@ -55,6 +52,7 @@ pipeline {
                 }
             }
         }
+
 
         stage('unDeploy') {
             steps {
