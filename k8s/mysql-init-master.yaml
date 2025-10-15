@@ -5,6 +5,11 @@ metadata:
   namespace: production
 data:
   mysql-init.sql: |
-    CREATE USER 'repl'@'%' IDENTIFIED BY 'replpassword';
+    -- 🛑 สร้าง User 'repl' ด้วย Plugin เก่า (mysql_native_password) เพื่อแก้ปัญหา Error 2061
+    CREATE USER IF NOT EXISTS 'repl'@'%' 
+    IDENTIFIED WITH mysql_native_password BY 'replpassword';
+    
     GRANT REPLICATION SLAVE ON *.* TO 'repl'@'%';
     FLUSH PRIVILEGES;
+
+   
