@@ -3,6 +3,8 @@ pipeline {
 
     environment {
         K8S_NAMESPACE = 'production'
+        // กำหนด Master IP Address ของ Rayong ไว้เป็น Environment Variable
+        MASTER_K8S_IP = '10.10.10.8' 
     }
 
     stages {
@@ -92,17 +94,21 @@ pipeline {
                                     kubectl rollout status deployment/phpmyadmin -n $K8S_NAMESPACE --timeout=180s
 
                                     # Set up replication
-                                    MASTER_HOST=$(kubectl get svc mysql-rayong -n $K8S_NAMESPACE -o jsonpath='{.spec.clusterIP}')
+                                    # 🛑 แก้ไข: ใช้ IP Master (Rayong) ผ่าน VPN โดยตรง
+                                    MASTER_HOST="$MASTER_K8S_IP" 
+                                    
+                                    # ดึงรหัสผ่านจาก Secret ในคลัสเตอร์ Salaya
                                     MYSQL_ROOT_PASSWORD=$(kubectl get secret mysql-secret -n $K8S_NAMESPACE -o jsonpath="{.data.MYSQL_ROOT_PASSWORD}" | base64 --decode)
 
+                                    # รันคำสั่ง Replication บน Slave Pod
                                     kubectl exec deploy/mysql-salaya -n $K8S_NAMESPACE -- \
                                         mysql -uroot -p$MYSQL_ROOT_PASSWORD -e "
-                                        CHANGE MASTER TO
-                                          MASTER_HOST='$MASTER_HOST',
-                                          MASTER_USER='repl',
-                                          MASTER_PASSWORD='replpassword',
-                                          MASTER_AUTO_POSITION=1;
-                                        START SLAVE;"
+                                            CHANGE MASTER TO
+                                              MASTER_HOST='$MASTER_HOST',
+                                              MASTER_USER='repl',
+                                              MASTER_PASSWORD='replpassword',
+                                              MASTER_AUTO_POSITION=1;
+                                            START SLAVE;"
                                 '''
                             }
                         }
