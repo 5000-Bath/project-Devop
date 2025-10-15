@@ -68,4 +68,5 @@ spec:
   ports:
     - port: 3306
       targetPort: 3306
-  type: ClusterIP
+      nodePort: 31006  # 🛑 กำหนด NodePort ให้ชัดเจน (พอร์ต 30000-32767)
+  type: NodePort       # ✅ เปลี่ยนจาก ClusterIP เป็น NodePort
