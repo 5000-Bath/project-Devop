@@ -153,6 +153,24 @@
   color: #28a745;
 }
 
+.popup-content-error {
+  background: white;
+  padding: 2rem 3rem;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  animation: fadeInScaleUp 0.3s ease-out forwards;
+}
+
+
+.popup-content-error p {
+  margin: 0 0 1.5rem 0;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #e60808;
+}
+
+
 .popup-close-button {
     padding: 0.5rem 1.5rem;
     background-color: #007bff;

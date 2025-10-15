@@ -1,7 +1,8 @@
 import React, { useContext, useState } from 'react';
 import './Order.css';
 import { CartContext } from '../context/CartContext';
-import { createOrderFromCart } from '../api/orders';   
+import { createOrderFromCart } from '../api/orders';
+import { cutStock ,checkStock} from '../api/products';
 import { useNavigate } from 'react-router-dom';
 
 export default function Order() {
@@ -10,14 +11,14 @@ export default function Order() {
 
   const [isCheckedOut, setIsCheckedOut] = useState(false);
   const [lastOrderId, setLastOrderId] = useState(null);
-  
+  const [stockError,setStockError] = useState(null)
+
 
   const deliveryFee = 40;
   const discount = 0;
 
   const subtotal = cartItems.reduce(
-    (sum, item) => sum + (Number(item.price) * Number(item.quantity)),
-    0
+    (sum, item) => sum + (Number(item.price) * Number(item.quantity)), 0
   );
   const totalPrice = subtotal + deliveryFee - discount;
 
@@ -28,15 +29,22 @@ export default function Order() {
 
   const handleCheckout = async () => {
     if (cartItems.length === 0) return;
-    const id = await createOrderFromCart(cartItems, { userId : 1});
+     try {
+    await checkStock(cartItems);
+    await cutStock(cartItems)
+    const id = await createOrderFromCart(cartItems, { userId: 1 });
     if (id != null) {
       setLastOrderId(id);
-      setIsCheckedOut(true);   
+      setIsCheckedOut(true);
       clearCart();
     }
+   } catch (error) {
+    setStockError(error.message || "ตรวจสอบสต็อกไม่สำเร็จ");
+  }
   };
 
   const closePopup = () => setIsCheckedOut(false);
+  const closePopupError = () => setStockError(false);
 
   return (
     <div className="order-page">
@@ -45,7 +53,6 @@ export default function Order() {
       </div>
 
       <div className="order-container">
-        {/* ซ้าย: รายการสินค้า */}
         <div className="order-summary">
           <div className="summary-title">
             <div className="title-decorator"></div>
@@ -58,7 +65,7 @@ export default function Order() {
             cartItems.map((item) => (
               <div className="order-item" key={item.name}>
                 <div className="item-info">
-                  {item.img ? <img src={item.img} alt={item.name} /> : <div style={{width:80, height:80, background:'#f3f4f6'}} />}
+                  {item.imageUrl ? <img src={item.imageUrl} alt={item.name} /> : <div style={{ width: 80, height: 80, background: '#f3f4f6' }} />}
                   <div className="item-details">
                     <p className="item-name">{item.name}</p>
                     <p className="item-price">{item.price} THB</p>
@@ -75,7 +82,6 @@ export default function Order() {
           )}
         </div>
 
-        {/* ขวา: สรุปยอด + ปุ่ม Checkout */}
         <div className="checkout-summary">
           <div className="summary-line">
             <span>Delivery Fee</span>
@@ -100,7 +106,6 @@ export default function Order() {
         </div>
       </div>
 
-      {/* Popup หลัง Checkout สำเร็จ */}
       {isCheckedOut && (
         <div className="popup-overlay">
           <div className="popup-content">
@@ -109,10 +114,21 @@ export default function Order() {
               <button className="popup-close-button" onClick={closePopup}>Close</button>
               <button
                 className="popup-close-button"
-                onClick={() => nav(`/status?orderId=${lastOrderId}`)}  // 👈 ไปหน้า Status
+                onClick={() => nav(`/status?orderId=${lastOrderId}`)} 
               >
                 Go to Status
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {stockError && (
+        <div className="popup-overlay">
+          <div className="popup-content-error">
+            <p>{stockError}</p>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+              <button className="popup-close-button" onClick={closePopupError}>Close</button>
             </div>
           </div>
         </div>
