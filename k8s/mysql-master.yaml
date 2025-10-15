@@ -39,10 +39,6 @@ spec:
             secretKeyRef:
               name: mysql-secret
               key: MYSQL_PASSWORD
-        - name: MYSQL_SERVER_ID
-          value: "1"
-        - name: MYSQL_LOG_BIN
-          value: "mysql-bin"
         volumeMounts:
         - name: mysql-storage
           mountPath: /var/lib/mysql
