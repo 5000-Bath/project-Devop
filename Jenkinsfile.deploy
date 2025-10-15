@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         K8S_NAMESPACE = 'production'
-        // กำหนด Master IP Address ของ Rayong ไว้เป็น Environment Variable
+        // IP Master ของ Rayong ใช้สำหรับการตั้งค่า Replication ข้ามคลัสเตอร์เท่านั้น
         MASTER_K8S_IP = '10.10.10.8' 
     }
 
@@ -22,6 +22,8 @@ pipeline {
                 stage('Deploy Rayong (Master)') {
                     steps {
                         script {
+                            // 🛑 ขั้นตอนที่ 1: กำหนด DB Hostname สำหรับ Rayong (ชี้ไปที่ mysql-rayong)
+                            withEnv(["DB_HOST_NAME=mysql-rayong"]) { 
                             withCredentials([file(credentialsId: 'kubeconfig-rayong', variable: 'KUBECONFIG_PATH')]) {
                                 sh '''
                                     export KUBECONFIG=$KUBECONFIG_PATH
@@ -34,15 +36,14 @@ pipeline {
                                     kubectl apply -f k8s/mysql-pvc.yaml -n $K8S_NAMESPACE
                                     kubectl apply -f k8s/backend-pvc.yaml -n $K8S_NAMESPACE
 
-                                    # ConfigMap + Secret
+                                    # ConfigMap + Secret + Init SQL
                                     kubectl apply -f k8s/mysql-config-master.yaml -n $K8S_NAMESPACE
                                     kubectl apply -f k8s/mysql-secret.yaml -n $K8S_NAMESPACE
-
-                                    # Init SQL
                                     kubectl apply -f k8s/mysql-init-master.yaml -n $K8S_NAMESPACE
 
                                     # Deployments
                                     kubectl apply -f k8s/mysql-master.yaml -n $K8S_NAMESPACE
+                                    # ✅ Backend จะใช้ DB_HOST_NAME=mysql-rayong
                                     kubectl apply -f k8s/backend.yaml -n $K8S_NAMESPACE
                                     kubectl apply -f k8s/frontend-admin.yaml -n $K8S_NAMESPACE
                                     kubectl apply -f k8s/frontend-user.yaml -n $K8S_NAMESPACE
@@ -56,6 +57,7 @@ pipeline {
                                     kubectl rollout status deployment/phpmyadmin -n $K8S_NAMESPACE --timeout=180s
                                 '''
                             }
+                            } // End withEnv(Rayong)
                         }
                     }
                 }
@@ -63,6 +65,8 @@ pipeline {
                 stage('Deploy Salaya (Slave)') {
                     steps {
                         script {
+                            // 🛑 ขั้นตอนที่ 1: กำหนด DB Hostname สำหรับ Salaya (ชี้ไปที่ mysql-salaya)
+                            withEnv(["DB_HOST_NAME=mysql-salaya"]) { 
                             withCredentials([file(credentialsId: 'kubeconfig-prod', variable: 'KUBECONFIG_PATH')]) {
                                 sh '''
                                     export KUBECONFIG=$KUBECONFIG_PATH
@@ -81,6 +85,7 @@ pipeline {
 
                                     # Deployments
                                     kubectl apply -f k8s/mysql-slave.yaml -n $K8S_NAMESPACE
+                                    # ✅ Backend จะใช้ DB_HOST_NAME=mysql-salaya
                                     kubectl apply -f k8s/backend.yaml -n $K8S_NAMESPACE
                                     kubectl apply -f k8s/frontend-admin.yaml -n $K8S_NAMESPACE
                                     kubectl apply -f k8s/frontend-user.yaml -n $K8S_NAMESPACE
@@ -99,8 +104,7 @@ pipeline {
                                     # ดึงรหัสผ่านจาก Secret ในคลัสเตอร์ Salaya
                                     MYSQL_ROOT_PASSWORD=$(kubectl get secret mysql-secret -n $K8S_NAMESPACE -o jsonpath="{.data.MYSQL_ROOT_PASSWORD}" | base64 --decode)
 
-                                    # รันคำสั่ง Replication บน Slave Pod
-                                    # 🛑 แก้ไข: เพิ่ม --container mysql-salaya เพื่อระบุชื่อคอนเทนเนอร์ที่ถูกต้อง
+                                    # รันคำสั่ง Replication บน Slave Pod (ใช้ --container mysql-salaya)
                                     kubectl exec deploy/mysql-salaya -n $K8S_NAMESPACE --container mysql-salaya -- \
                                         mysql -uroot -p$MYSQL_ROOT_PASSWORD -e "
                                             CHANGE MASTER TO
@@ -111,6 +115,7 @@ pipeline {
                                             START SLAVE;"
                                 '''
                             }
+                            } // End withEnv(Salaya)
                         }
                     }
                 }
