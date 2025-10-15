@@ -105,7 +105,7 @@ pipeline {
                                     MYSQL_ROOT_PASSWORD=$(kubectl get secret mysql-secret -n $K8S_NAMESPACE -o jsonpath="{.data.MYSQL_ROOT_PASSWORD}" | base64 --decode)
 
                                     # รันคำสั่ง Replication บน Slave Pod (ใช้ --container mysql-salaya)
-                                    kubectl exec deploy/mysql-salaya -n $K8S_NAMESPACE --container mysql-salaya -- \
+                                    kubectl exec deploy/mysql-salaya -n $K8S_NAMESPACE --container mysql -- \
                                         mysql -uroot -p$MYSQL_ROOT_PASSWORD -e "
                                             CHANGE MASTER TO
                                               MASTER_HOST='$MASTER_HOST',
