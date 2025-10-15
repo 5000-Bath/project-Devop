@@ -40,5 +40,3 @@ export async function getOrderById(id) {
     const data = await res.json();
     return data;
 }
-
-export const listOrders = () => api('/orders');
