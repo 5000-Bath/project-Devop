@@ -1,271 +1,247 @@
-import { recentOrders, topProducts, inventoryAlerts } from "./mockOrders";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, } from "recharts";
+import React, { useEffect, useMemo, useState } from "react";
+import axios from "axios";
+import { Link } from "react-router-dom";
+import {
+    Chart as ChartJS,
+    LineElement,
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    Tooltip,
+    Legend,
+    Filler,
+} from "chart.js";
+import { Line } from "react-chartjs-2";
+import "../styles/AdminDashboard.css";
 
-const stats = [
-  { label: "Today Orders", value: 276 },
-  { label: "Pending Orders", value: 30 },
-  { label: "Fulfilled Orders", value: 245 },
-  { label: "Cancelled Orders", value: 1 },
-  { label: "Total Products", value: 40 },
-  { label: "Out of Stock", value: 3 },
-];
+ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip, Legend, Filler);
 
-// Mock data: รายได้ (revenue) เทียบกับ จำนวนทั้งหมด (total)
-const mockRevenueData = [
-  { total: 1, revenue: 10 },
-  { total: 2, revenue: 15 },
-  { total: 3, revenue: 25 },
-  { total: 4, revenue: 40 },
-  { total: 5, revenue: 60 },
-  { total: 6, revenue: 90 },
-  { total: 7, revenue: 130 },
-  { total: 8, revenue: 180 },
-  { total: 9, revenue: 250 },
-  { total: 10, revenue: 350 },
-];
+const API_BASE = import.meta?.env?.VITE_API_BASE || "http://localhost:8080";
 
-export default function Home() {
-  return (
-    <div style={{ background: "#ececec", minHeight: "100%" }}>
-      {/* ✅ Header แบบ static (ไม่ fixed) */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          background: "#ececec",
-          padding: "8px 16px",
-          borderBottom: "4px solid #4b4444",
-          height: 56,
-          marginBottom: 24,
-        }}
-      >
-        <h2 style={{ margin: 0, fontWeight: 700, fontSize: 20 }}>Dashboard</h2>
-        <span style={{ fontWeight: 700, fontSize: 18 }}>Welcome&nbsp; Back!&nbsp; Mr. First</span>
-      </div>
+// helpers
+const fmtTH = (d) => new Date(d).toLocaleString("th-TH");
+const money = (n) => `฿${Number(n ?? 0).toLocaleString("th-TH", { maximumFractionDigits: 2 })}`;
+const norm = (s) => (s || "").toString().trim().toUpperCase();
+const isPending = (s) => ["PENDING","AWAITING_PAYMENT","PROCESSING"].includes(norm(s));
+const isDone    = (s) => ["FULFILLED","COMPLETED","DELIVERED","SUCCESS"].includes(norm(s));
+const isCancel  = (s) => ["CANCELLED","CANCELED","VOID"].includes(norm(s));
 
-      {/* Stat + Chart Grid */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3,1fr) 1.2fr",
-          gridTemplateRows: "repeat(2, 1fr)",
-          gap: 22,
-          margin: "24px"
-        }}
-      >
-        {/* 6 stat cards */}
-        {stats.map((s, i) => (
-          <div
-            key={s.label}
-            style={{
-              background: "#fff",
-              borderRadius: 18,
-              padding: "28px 18px",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              alignItems: "flex-start",
-              fontSize: 20,
-              fontWeight: 900,
-              boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-              gridColumn: ((i % 3) + 1),
-              gridRow: Math.floor(i / 3) + 1
-            }}
-          >
-            <span style={{ fontWeight: 700 }}>{s.label}</span>
-            <span style={{ fontSize: 24, fontWeight: 600, marginTop: 8 }}>{s.value}</span>
-          </div>
-        ))}
+export default function AdminDashboard() {
+    const [orders, setOrders] = useState([]);
+    const [products, setProducts] = useState([]);
 
-        {/* Chart (rowSpan 2) — แทนที่รูปเดิมด้วยกราฟจริง */}
-        <div
-          style={{
-            background: "#fff",
-            borderRadius: 18,
-            gridColumn: 4,
-            gridRow: "1 / span 2",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            minHeight: 230,
-            boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-            padding: "12px"
-          }}
-        >
-          <ResponsiveContainer width="100%" height={320}>
-            <LineChart data={mockRevenueData} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis
-                dataKey="total"
-                tickLine={false}
-                axisLine={{ stroke: "#e8e8e8" }}
-                label={{ value: "จำนวนทั้งหมด", position: "insideBottom", offset: -5 }}
-              />
-              <YAxis
-                tickLine={false}
-                axisLine={{ stroke: "#e8e8e8" }}
-                label={{ value: "รายได้", angle: -90, position: "insideLeft" }}
-              />
-              <Tooltip formatter={(v) => [`฿${v}`, "รายได้"]} labelFormatter={(l) => `จำนวน: ${l}`} />
-              <Area
-                type="monotone"
-                dataKey="revenue"
-                stroke="#1890ff"
-                fill="#1890ff22"
-                strokeWidth={0}
-                activeDot={false}
-              />
-              <Line
-                type="monotone"
-                dataKey="revenue"
-                stroke="#1890ff"
-                strokeWidth={3}
-                dot={{ fill: "#fff", stroke: "#1890ff", strokeWidth: 2, r: 5 }}
-                activeDot={{ r: 7 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+    const load = async () => {
+        try {
+            const [o, p] = await Promise.all([
+                axios.get(`${API_BASE}/api/orders`),
+                axios.get(`${API_BASE}/api/products`),
+            ]);
+            setOrders(o.data || []);
+            setProducts(p.data || []);
+        } catch (e) { console.error(e); }
+    };
 
-      {/* Recent Orders & Top Products/Inventory Alerts */}
-      <div style={{ display: "grid", gridTemplateColumns: "2.3fr 1fr", gap: 24, margin: "0 32px 32px 32px" }}>
-        {/* Recent Orders */}
-        <div style={{
-          background: "#fff",
-          borderRadius: 18,
-          padding: 18,
-          boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
-        }}>
-          <h3 style={{ marginBottom: 15 }}>Recent Orders</h3>
-          <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0 }}>
-            <tbody>
-              {recentOrders.map((o, idx) => (
-                <tr key={idx} style={{ height: 42 }}>
-                  <td>
-                    <img src={o.avatar} alt="avatar" style={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover" }} />
-                  </td>
-                  <td style={{ fontWeight: 600, paddingLeft: 10, whiteSpace: "nowrap" }}>{o.date}</td>
-                  <td style={{ fontWeight: 600, paddingLeft: 16 }}>{o.price}</td>
-                  <td style={{ fontWeight: 600, color: o.statusColor, paddingLeft: 16 }}>{o.status}</td>
-                  <td style={{ paddingLeft: 16 }}>
-                    <img src={o.productImg} alt="food" style={{ width: 34, height: 34, borderRadius: "50%", objectFit: "cover" }} />
-                  </td>
-                  <td>
-                    <button style={{
-                      background: "none",
-                      border: "none",
-                      color: "#111",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      textDecoration: "underline",
-                      padding: 0,
-                    }}>more</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+    useEffect(() => { load(); }, []);
 
-        {/* Top Products & Inventory Alerts */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-          {/* Top Products */}
-          <div style={{
-            background: "#fff",
-            borderRadius: 18,
-            padding: 18,
-            boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
-          }}>
-            <h3 style={{ marginBottom: 24 }}>Top Products</h3>
-            <ol style={{
-              margin: 0,
-              padding: 0,
-              listStyle: "none",
-              display: "flex",
-              flexDirection: "column",
-              gap: 24,
-            }}>
-              {topProducts.map((p, i) => (
-                <li
-                  key={i}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "left",
-                    fontWeight: 700,
-                    fontSize: 20,
-                  }}
+    // ===== summary cards =====
+    const summary = useMemo(() => {
+        const today = new Date();
+        const sameDay = (a,b) => a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
+        const todayOrders   = orders.reduce((acc,o)=> acc + (sameDay(new Date(o.createdAt||o.date), today)?1:0), 0);
+        const pendingOrders = orders.filter(o=>isPending(o.status)).length;
+        const fulfilled     = orders.filter(o=>isDone(o.status)).length;
+        const cancelled     = orders.filter(o=>isCancel(o.status)).length;
+        const totalProducts = products.length;
+        const outOfStock    = products.filter(p => Number(p.stock ?? 0) <= 0).length;
+        return { todayOrders, pendingOrders, fulfilled, cancelled, totalProducts, outOfStock };
+    }, [orders, products]);
+
+    // ===== recent 10 =====
+    const recent10 = useMemo(() => {
+        const sorted = [...orders].sort(
+            (a,b)=> new Date(b.createdAt||b.date) - new Date(a.createdAt||a.date)
+        );
+        return sorted.slice(0,10);
+    }, [orders]);
+
+    // ===== top 3 products by qty =====
+    const top3 = useMemo(() => {
+        const tally = new Map();
+        const nameById = new Map(products.map(p=>[p.id??p.productId, p.name]));
+        orders.forEach(o=>{
+            (o.orderItems || o.items || []).forEach(it=>{
+                const qty = Number(it.quantity ?? it.qty ?? 0) || 0;
+                const pid = it.productId ?? it.product?.id ?? it.product?.productId;
+                const name = it.product?.name ?? nameById.get(pid) ?? it.name ?? `#${pid??"unknown"}`;
+                const cur = tally.get(name) || 0;
+                tally.set(name, cur + qty);
+            });
+        });
+        return [...tally.entries()].sort((a,b)=>b[1]-a[1]).slice(0,3);
+    }, [orders, products]);
+
+    // ===== inventory alerts (<3) max 3 =====
+    const alerts = useMemo(() => {
+        return products
+            .map(p=>({ id:p.id??p.productId, name:p.name, stock:Number(p.stock ?? p.quantity ?? 0) || 0 }))
+            .filter(p=> p.stock < 3)
+            .sort((a,b)=> a.stock - b.stock)
+            .slice(0,3);
+    }, [products]);
+
+    // ===== chart: orders last 8 points (demo with counts) =====
+    const chartData = useMemo(()=>{
+        const days = [...Array(8)].map((_,i)=>{ const d=new Date(); d.setDate(d.getDate()-(7-i)); return d;});
+        const counts = days.map(d => orders.reduce((acc,o)=>{
+            const od = new Date(o.createdAt||o.date);
+            const same = od.getFullYear()===d.getFullYear() && od.getMonth()===d.getMonth() && od.getDate()===d.getDate();
+            return acc + (same?1:0);
+        },0));
+        return {
+            labels: days.map(d => d.toLocaleDateString("th-TH",{ day:"numeric"})),
+            datasets: [{
+                label: "จำนวนออเดอร์",
+                data: counts,
+                borderColor: "#2a68ff",
+                backgroundColor: "rgba(42,104,255,0.18)",
+                pointBorderWidth: 2,
+                tension: 0.35,
+                fill: true,
+            }],
+        };
+    },[orders]);
+
+    return (
+        <div className="dashboard">
+            <div className="dash-head">
+                <h2>Dashboard</h2>
+                <button className="btn" onClick={load}>Refresh</button>
+            </div>
+
+            {/* cards */}
+            <div className="cards">
+                <Card title="Today Orders" value={summary.todayOrders}/>
+                <Card title="Pending Orders" value={summary.pendingOrders}/>
+                <Card title="Fulfilled Orders" value={summary.fulfilled}/>
+                <Card title="Cancelled Orders" value={summary.cancelled}/>
+                <Card title="Total Products" value={summary.totalProducts}/>
+                <Card title="Out of Stock" value={summary.outOfStock}/>
+            </div>
+
+            {/* chart */}
+            <div className="card chart">
+                <Line data={chartData} options={{ responsive:true, maintainAspectRatio:false, scales:{y:{beginAtZero:true}} }}/>
+            </div>
+
+            {/* bottom layout */}
+            <div className="bottom">
+                {/* Recent Orders (ซ้าย) */}
+                <div className="card wide recent-block">
+                    <h4>🧾 Recent Orders</h4>
+                    <div className="table-wrap">
+                        <table className="table">
+                            <thead>
+                            <tr>
+                                <th>วันที่เวลา</th>
+                                <th className="right">ราคารวม</th>
+                                <th>สถานะ</th>
+                                <th className="center">More</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {recent10.map(o => (
+                                <tr key={o.id}>
+                                    <td>{fmtTH(o.createdAt || o.date)}</td>
+                                    <td className="right">{money(o.totalPrice ?? o.total ?? o.amount)}</td>
+                                    <td>
+                <span
+                    className={
+                        "badge " +
+                        (isPending(o.status)
+                            ? "warn"
+                            : isDone(o.status)
+                                ? "ok"
+                                : isCancel(o.status)
+                                    ? "bad"
+                                    : "muted")
+                    }
                 >
-                  <span style={{
-                    fontWeight: 700,
-                    fontSize: 22,
-                    minWidth: 32,
-                    display: "inline-block",
-                    textAlign: "right",
-                  }}>{i + 1}.</span>
-                  <span style={{
-                    marginLeft: 20,
-                    fontWeight: 700,
-                    fontSize: 20,
-                  }}>{p}</span>
-                </li>
-              ))}
-            </ol>
-          </div>
+                  {o.status || "UNKNOWN"}
+                </span>
+                                    </td>
+                                    <td className="center">
+                                        <Link
+                                            to={`/admin/orders/orders-detail/${o.id}`}
+                                            className="btn small"
+                                        >
+                                            More
+                                        </Link>
+                                    </td>
+                                </tr>
+                            ))}
+                            {!recent10.length && (
+                                <tr>
+                                    <td colSpan="4" className="center muted">
+                                        No recent orders
+                                    </td>
+                                </tr>
+                            )}
+                            </tbody>
+                        </table>
+                    </div>
+                    <p className="footnote">
+                        * แสดงเฉพาะ 10 ออเดอร์ล่าสุด — เมื่อมีออเดอร์ใหม่ ลำดับ 11 รายการที่เก่าสุดจะไม่แสดงบน
+                        Dashboard
+                    </p>
+                </div>
 
-          {/* Inventory Alerts */}
-          <div style={{
-            background: "#fff",
-            borderRadius: 18,
-            padding: 18,
-            boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
-          }}>
-            <h3 style={{ marginBottom: 10 }}>Inventory Alerts</h3>
-            <table style={{ width: "100%", fontWeight: 700, fontSize: 20, borderCollapse: "separate", borderSpacing: "0 16px" }}>
-              <thead>
-                <tr>
-                  <th style={{ textAlign: "left", fontWeight: 700, fontSize: 16, background: "none", border: "none" }}></th>
-                  <th style={{ textAlign: "left", fontWeight: 700, fontSize: 16, background: "none", border: "none" }}></th>
-                  <th style={{ textAlign: "right", fontWeight: 700, fontSize: 16, background: "none", border: "none" }}>
-                    Values
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {inventoryAlerts.map((item, i) => (
-                  <tr key={item.name} style={{ height: 40 }}>
-                    <td style={{
-                      fontWeight: 700,
-                      fontSize: 20,
-                      textAlign: "right",
-                      width: 30,
-                      paddingRight: 10
-                    }}>{i + 1}.</td>
-                    <td style={{
-                      fontWeight: 700,
-                      fontSize: 20,
-                      paddingLeft: 10,
-                      paddingRight: 10,
-                      whiteSpace: "nowrap"
-                    }}>{item.name}</td>
-                    <td style={{
-                      color: "#d80000",
-                      textAlign: "right",
-                      fontWeight: 700,
-                      fontSize: 20,
-                      width: 40,
-                      paddingLeft: 20
-                    }}>{item.value}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                {/* กลุ่มขวา: Top + Inventory Alerts ซ้อนใน column เดียวกัน */}
+                <div className="side-column">
+                    <div className="card">
+                        <h4>🍔 Top Products</h4>
+                        <ul className="list">
+                            {top3.map(([name, qty], i) => (
+                                <li key={name} className="row">
+            <span>
+              {i + 1}. {name}
+            </span>
+                                    <span className="muted">{qty} sold</span>
+                                </li>
+                            ))}
+                            {!top3.length && <li className="muted">No data</li>}
+                        </ul>
+                    </div>
+
+                    <div className="card">
+                        <h4>⚠️ Inventory Alerts</h4>
+                        <ul className="list">
+                            {alerts.map((p, i) => (
+                                <li key={p.id} className="row">
+            <span>
+              {i + 1}. {p.name}
+            </span>
+                                    <span
+                                        className={`stock ${p.stock < 1 ? "danger" : ""}`}
+                                    >{`${p.stock} left`}</span>
+                                </li>
+                            ))}
+                            {!alerts.length && (
+                                <li className="muted">All stocks are sufficient</li>
+                            )}
+                        </ul>
+                    </div>
+                </div>
+            </div>
 
         </div>
-      </div>
-    </div>
-  );
+    );
+}
+
+function Card({title,value}) {
+    return (
+        <div className="card mini">
+            <p className="title">{title}</p>
+            <div className="value">{Number(value ?? 0).toLocaleString("th-TH")}</div>
+        </div>
+    );
 }
