@@ -23,16 +23,11 @@ pipeline {
                                 sh """
                                     export KUBECONFIG=\$KUBECONFIG_PATH
                                     echo "Deploying to Rayong cluster (Master)..."
-                                    kubectl get ns \$K8S_NAMESPACE || kubectl create ns \$K8S_NAMESPACE
 
-                                    # Apply PV/PVC
+                                    kubectl get ns \$K8S_NAMESPACE || kubectl create ns \$K8S_NAMESPACE
                                     kubectl apply -f k8s/mysql-pv.yaml -n \$K8S_NAMESPACE
                                     kubectl apply -f k8s/mysql-pvc.yaml -n \$K8S_NAMESPACE
-
-                                    # Apply Master deployment
                                     kubectl apply -f k8s/mysql-master.yaml -n \$K8S_NAMESPACE
-
-                                    # Rollout check
                                     kubectl rollout status deployment/mysql-rayong -n \$K8S_NAMESPACE --timeout=180s
                                 """
                             }
@@ -47,16 +42,11 @@ pipeline {
                                 sh """
                                     export KUBECONFIG=\$KUBECONFIG_PATH
                                     echo "Deploying to Salaya cluster (Slave)..."
-                                    kubectl get ns \$K8S_NAMESPACE || kubectl create ns \$K8S_NAMESPACE
 
-                                    # Apply PV/PVC
+                                    kubectl get ns \$K8S_NAMESPACE || kubectl create ns \$K8S_NAMESPACE
                                     kubectl apply -f k8s/mysql-pv.yaml -n \$K8S_NAMESPACE
                                     kubectl apply -f k8s/mysql-pvc.yaml -n \$K8S_NAMESPACE
-
-                                    # Apply Slave deployment
                                     kubectl apply -f k8s/mysql-slave.yaml -n \$K8S_NAMESPACE
-
-                                    # Rollout check
                                     kubectl rollout status deployment/mysql-salaya -n \$K8S_NAMESPACE --timeout=180s
                                 """
                             }
