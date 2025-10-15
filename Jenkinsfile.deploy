@@ -45,7 +45,7 @@ pipeline {
                                         --from-file=Foodstore_User/nginx-rayong.conf=default.conf \
                                         -n $K8S_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
                                     kubectl create configmap nginx-conf-admin-rayong \
-                                        --from-file=Foodstore_Admin/nginx-rayong.conf=default.conf \
+                                        --from-file=Foodstore_admin_Frontend/nginx-rayong.conf=default.conf \
                                         -n $K8S_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
 
                                     # 🔥 ใช้ไฟล์ YAML ที่แยกแล้ว
@@ -95,7 +95,7 @@ pipeline {
                                         --from-file=Foodstore_User/nginx-salaya.conf=default.conf \
                                         -n $K8S_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
                                     kubectl create configmap nginx-conf-admin-salaya \
-                                        --from-file=Foodstore_Admin/nginx-salaya.conf=default.conf \
+                                        --from-file=Foodstore_admin_Frontend/nginx-salaya.conf=default.conf \
                                         -n $K8S_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
 
                                     # 🔥 ใช้ไฟล์ YAML ที่แยกแล้ว
