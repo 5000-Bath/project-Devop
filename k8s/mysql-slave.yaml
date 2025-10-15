@@ -29,18 +29,13 @@ spec:
           mountPath: /var/lib/mysql
         - name: mysql-config
           mountPath: /etc/mysql/conf.d
-        - name: init-sql
-          mountPath: /docker-entrypoint-initdb.d
       volumes:
       - name: mysql-storage
         persistentVolumeClaim:
           claimName: mysql-pvc
       - name: mysql-config
         configMap:
-          name: mysql-config
-      - name: init-sql
-        configMap:
-          name: mysql-init-slave
+          name: mysql-config-slave
 ---
 apiVersion: v1
 kind: Service
@@ -48,9 +43,9 @@ metadata:
   name: mysql-salaya
   namespace: production
 spec:
-  ports:
-  - port: 3306
-    targetPort: 3306
   selector:
     app: mysql-salaya
+  ports:
+    - port: 3306
+      targetPort: 3306
   type: ClusterIP
