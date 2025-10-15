@@ -1,10 +1,7 @@
--- Slave initialization
--- server_id จะตั้งผ่าน env ใน deployment
+-- ใช้ environment variable ของ Master service
 CHANGE MASTER TO
-    MASTER_HOST='mysql-rayong.production.svc.cluster.local',
-    MASTER_USER='repl',
-    MASTER_PASSWORD='replpassword',
-    MASTER_PORT=3306,
-    MASTER_CONNECT_RETRY=10;
-
+  MASTER_HOST='mysql-rayong',
+  MASTER_USER='repl',
+  MASTER_PASSWORD='replpassword',
+  MASTER_AUTO_POSITION=1;
 START SLAVE;
