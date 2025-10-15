@@ -1,9 +1,8 @@
-// src/pages/Home.jsx  (หรือไฟล์ที่เป็นหน้า Home ของคุณ)
 import React, { useContext, useEffect, useState } from 'react';
 import './Home.css';
-import placeholder from '../assets/menupic/khao-man-kai.jpg'; // รูปสำรองถ้าไม่มี imageUrl จาก API
+import placeholder from '../assets/menupic/khao-man-kai.jpg';
 import { CartContext } from '../context/CartContext';
-import { listProducts } from '../api/products'; // 👉 ใช้ API จริง
+import { listProducts } from '../api/products';
 
 const Home = () => {
     const { addToCart } = useContext(CartContext);
@@ -21,7 +20,6 @@ const Home = () => {
     }, []);
 
     const handleAdd = (p) => {
-        // ทำให้ข้อมูลที่ส่งเข้า Cart เป็นฟอร์แมตเดียวกันเสมอ
         const cartItem = {
             id: p.id ?? p.productId ?? p.menuId,
             name: p.name,
@@ -46,10 +44,42 @@ const Home = () => {
                     <div className="menu-grid">
                         {items.map((item) => (
                             <div className="menu-card" key={item.id ?? item.name}>
-                                <img src={item.imageUrl ?? placeholder} alt={item.name} />
+                                <div className="image-wrapper">
+                                    <img
+                                        src={item.imageUrl ?? placeholder}
+                                        alt={item.name}
+                                        className="product-image"
+                                    />
+
+                                    {item.stock <= 0 && (
+                                        <div className="sold-out-overlay">
+                                            <span
+                                                className="sold-out-text"
+                                                style={{
+                                                    color: "red",
+                                                    fontWeight: 800,
+                                                    fontSize: 20,
+                                                    border: "2px solid red",
+                                                    padding: "6px 12px",
+                                                    borderRadius: "8px",
+                                                    backgroundColor: "rgba(255,255,255,0.85)",
+                                                }}
+                                            >
+                                                SOLD OUT
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+
                                 <div className="menu-card-name">{item.name}</div>
                                 <div className="menu-card-price">{item.price} THB</div>
-                                <button className="add-to-cart-button" onClick={() => handleAdd(item)}>+1</button>
+                                <button
+                                    className="add-to-cart-button"
+                                    onClick={() => handleAdd(item)}
+                                    disabled={item.stock <= 0}
+                                >
+                                    +1
+                                </button>
                             </div>
                         ))}
                     </div>

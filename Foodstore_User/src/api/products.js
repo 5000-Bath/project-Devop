@@ -49,8 +49,8 @@ export async function checkStock(cartItems) {
       if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
       const data = await res.json();
 
-      if (data.stockQty < item.quantity) {
-        return { ok: false, name: data.name, available: data.stockQty };
+      if (data.stock < item.quantity) {
+        return { ok: false, name: data.name, available: data.stock };
       }
       return { ok: true };
     })
