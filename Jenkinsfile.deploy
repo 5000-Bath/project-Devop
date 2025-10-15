@@ -3,9 +3,7 @@ pipeline {
 
     environment {
         K8S_NAMESPACE = 'production'
-        // IP Master ของ Rayong
         MASTER_K8S_IP = '10.10.10.8'
-        // 🛑 PORT NodePort ที่ Master DB เปิดออก
         MASTER_K8S_PORT = '31006' 
     }
 
@@ -29,8 +27,6 @@ pipeline {
                                     export KUBECONFIG=$KUBECONFIG_PATH
                                     echo "Deploying Master to Rayong..."
 
-                                    # Namespace, PVCs, ConfigMap, Secret, Init SQL
-                                    # NOTE: ต้องมั่นใจว่าไฟล์ mysql-config-master.yaml มี bind-address=0.0.0.0
                                     kubectl get ns $K8S_NAMESPACE || kubectl create ns $K8S_NAMESPACE
                                     kubectl apply -f k8s/mysql-pvc.yaml -n $K8S_NAMESPACE
                                     kubectl apply -f k8s/backend-pvc.yaml -n $K8S_NAMESPACE
@@ -38,26 +34,30 @@ pipeline {
                                     kubectl apply -f k8s/mysql-secret.yaml -n $K8S_NAMESPACE
                                     kubectl apply -f k8s/mysql-init-master.yaml -n $K8S_NAMESPACE
                                     
-                                    # 🛑 Deployments (ใช้ NodePort)
                                     kubectl apply -f k8s/mysql-master.yaml -n $K8S_NAMESPACE
                                     
-                                    # Backend, phpMyAdmin, Frontend (Envsubst)
                                     export DB_HOST_NAME="mysql-rayong"
                                     cat k8s/backend.yaml | envsubst | kubectl apply -f - -n $K8S_NAMESPACE
                                     cat k8s/phpmyadmin.yaml | envsubst | kubectl apply -f - -n $K8S_NAMESPACE
-                                    kubectl apply -f k8s/frontend-admin.yaml -n $K8S_NAMESPACE
-                                    kubectl apply -f k8s/frontend-user.yaml -n $K8S_NAMESPACE
 
-                                    # Rollout check
+                                    # 🔥 สร้าง ConfigMap สำหรับระยอง
+                                    kubectl create configmap nginx-conf-user-rayong \
+                                        --from-file=Foodstore_User/nginx-rayong.conf=default.conf \
+                                        -n $K8S_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
+                                    kubectl create configmap nginx-conf-admin-rayong \
+                                        --from-file=Foodstore_Admin/nginx-rayong.conf=default.conf \
+                                        -n $K8S_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
+
+                                    # 🔥 ใช้ไฟล์ YAML ที่แยกแล้ว
+                                    kubectl apply -f k8s/frontend-user-rayong.yaml -n $K8S_NAMESPACE
+                                    kubectl apply -f k8s/frontend-admin-rayong.yaml -n $K8S_NAMESPACE
+
                                     kubectl rollout status deployment/mysql-rayong -n $K8S_NAMESPACE --timeout=180s
                                     kubectl rollout status deployment/backend -n $K8S_NAMESPACE --timeout=180s
                                     kubectl rollout status deployment/frontend-admin -n $K8S_NAMESPACE --timeout=180s
                                     kubectl rollout status deployment/frontend-user -n $K8S_NAMESPACE --timeout=180s
                                     kubectl rollout status deployment/phpmyadmin -n $K8S_NAMESPACE --timeout=180s
                                     
-                                    # 🛑 เพิ่มการแก้ไข User ใน Runtime: บังคับใช้ mysql_native_password
-                                    # NOTE: ทำซ้ำเพื่อยืนยันว่า User ถูกตั้งค่าถูกต้องแม้ Pod จะ restart
-                                    # NOTE: คำสั่งนี้จะแก้ไขปัญหา ERROR 2061 (Authentication requires secure connection)
                                     kubectl exec deploy/mysql-rayong -n $K8S_NAMESPACE --container mysql -- \
                                         mysql -h 127.0.0.1 -P 3306 -uroot -p$(kubectl get secret mysql-secret -n $K8S_NAMESPACE -o jsonpath="{.data.MYSQL_ROOT_PASSWORD}" | base64 --decode) -e "
                                             ALTER USER 'repl'@'%' 
@@ -78,42 +78,43 @@ pipeline {
                                     export KUBECONFIG=$KUBECONFIG_PATH
                                     echo "Deploying Slave to Salaya..."
 
-                                    # Namespace, PVCs, ConfigMap, Secret
                                     kubectl get ns $K8S_NAMESPACE || kubectl create ns $K8S_NAMESPACE
                                     kubectl apply -f k8s/mysql-pvc.yaml -n $K8S_NAMESPACE
                                     kubectl apply -f k8s/backend-pvc.yaml -n $K8S_NAMESPACE
                                     kubectl apply -f k8s/mysql-config-slave.yaml -n $K8S_NAMESPACE
                                     kubectl apply -f k8s/mysql-secret.yaml -n $K8S_NAMESPACE
 
-                                    # Deployments
                                     kubectl apply -f k8s/mysql-slave.yaml -n $K8S_NAMESPACE
 
-                                    # Backend, phpMyAdmin, Frontend (Envsubst)
                                     export DB_HOST_NAME="mysql-salaya"
                                     cat k8s/backend.yaml | envsubst | kubectl apply -f - -n $K8S_NAMESPACE
                                     cat k8s/phpmyadmin.yaml | envsubst | kubectl apply -f - -n $K8S_NAMESPACE
 
-                                    kubectl apply -f k8s/frontend-admin.yaml -n $K8S_NAMESPACE
-                                    kubectl apply -f k8s/frontend-user.yaml -n $K8S_NAMESPACE
+                                    # 🔥 สร้าง ConfigMap สำหรับศาลายา
+                                    kubectl create configmap nginx-conf-user-salaya \
+                                        --from-file=Foodstore_User/nginx-salaya.conf=default.conf \
+                                        -n $K8S_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
+                                    kubectl create configmap nginx-conf-admin-salaya \
+                                        --from-file=Foodstore_Admin/nginx-salaya.conf=default.conf \
+                                        -n $K8S_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
 
-                                    # Rollout check
+                                    # 🔥 ใช้ไฟล์ YAML ที่แยกแล้ว
+                                    kubectl apply -f k8s/frontend-user-salaya.yaml -n $K8S_NAMESPACE
+                                    kubectl apply -f k8s/frontend-admin-salaya.yaml -n $K8S_NAMESPACE
+
                                     kubectl rollout status deployment/mysql-salaya -n $K8S_NAMESPACE --timeout=180s
                                     kubectl rollout status deployment/backend -n $K8S_NAMESPACE --timeout=180s
                                     kubectl rollout status deployment/frontend-admin -n $K8S_NAMESPACE --timeout=180s
                                     kubectl rollout status deployment/frontend-user -n $K8S_NAMESPACE --timeout=180s
                                     kubectl rollout status deployment/phpmyadmin -n $K8S_NAMESPACE --timeout=180s
 
-                                    # Set up replication
                                     MASTER_HOST="$MASTER_K8S_IP" 
                                     MASTER_PORT="$MASTER_K8S_PORT"
                                     
                                     MYSQL_ROOT_PASSWORD=$(kubectl get secret mysql-secret -n $K8S_NAMESPACE -o jsonpath="{.data.MYSQL_ROOT_PASSWORD}" | base64 --decode)
-
-                                    # เพิ่ม Delay 30 วินาที เพื่อให้ MySQL Server เริ่มทำงาน
                                     echo "Waiting 30 seconds for MySQL Slave to fully initialize..."
                                     sleep 30 
 
-                                    # 🛑 Final Replication Command: ใช้ MASTER_PORT และ RESET REPLICA
                                     kubectl exec deploy/mysql-salaya -n $K8S_NAMESPACE --container mysql -- \
                                         mysql -h 127.0.0.1 -P 3306 -uroot -p$MYSQL_ROOT_PASSWORD -e "
                                             STOP REPLICA; 
