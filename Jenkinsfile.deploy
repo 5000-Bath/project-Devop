@@ -14,24 +14,45 @@ pipeline {
             }
         }
 
-        stage('Deploy Master/Slave') {
+        stage('Deploy to Clusters in Parallel') {
             parallel {
+
                 stage('Deploy Rayong (Master)') {
                     steps {
                         script {
                             withCredentials([file(credentialsId: 'kubeconfig-rayong', variable: 'KUBECONFIG_PATH')]) {
-                                sh """
-                                    export KUBECONFIG=\$KUBECONFIG_PATH
+                                sh '''
+                                    export KUBECONFIG=$KUBECONFIG_PATH
                                     echo "Deploying Master to Rayong..."
 
-                                    kubectl get ns \$K8S_NAMESPACE || kubectl create ns \$K8S_NAMESPACE
-                                    kubectl apply -f k8s/mysql-pv.yaml -n \$K8S_NAMESPACE
-                                    kubectl apply -f k8s/mysql-pvc.yaml -n \$K8S_NAMESPACE
-                                    kubectl apply -f k8s/mysql-config-master.yaml -n \$K8S_NAMESPACE
-                                    kubectl apply -f k8s/mysql-init-master.yaml -n \$K8S_NAMESPACE
-                                    kubectl apply -f k8s/mysql-master.yaml -n \$K8S_NAMESPACE
-                                    kubectl rollout status deployment/mysql-rayong -n \$K8S_NAMESPACE --timeout=180s
-                                """
+                                    # Namespace
+                                    kubectl get ns $K8S_NAMESPACE || kubectl create ns $K8S_NAMESPACE
+
+                                    # PVCs
+                                    kubectl apply -f k8s/mysql-pvc.yaml -n $K8S_NAMESPACE
+                                    kubectl apply -f k8s/backend-pvc.yaml -n $K8S_NAMESPACE
+
+                                    # ConfigMap + Secret
+                                    kubectl apply -f k8s/mysql-config-master.yaml -n $K8S_NAMESPACE
+                                    kubectl apply -f k8s/mysql-secret.yaml -n $K8S_NAMESPACE
+
+                                    # Init SQL
+                                    kubectl apply -f k8s/mysql-init-master.yaml -n $K8S_NAMESPACE
+
+                                    # Deployments
+                                    kubectl apply -f k8s/mysql-master.yaml -n $K8S_NAMESPACE
+                                    kubectl apply -f k8s/backend.yaml -n $K8S_NAMESPACE
+                                    kubectl apply -f k8s/frontend-admin.yaml -n $K8S_NAMESPACE
+                                    kubectl apply -f k8s/frontend-user.yaml -n $K8S_NAMESPACE
+                                    kubectl apply -f k8s/phpmyadmin.yaml -n $K8S_NAMESPACE
+
+                                    # Rollout check
+                                    kubectl rollout status deployment/mysql-rayong -n $K8S_NAMESPACE --timeout=180s
+                                    kubectl rollout status deployment/backend -n $K8S_NAMESPACE --timeout=180s
+                                    kubectl rollout status deployment/frontend-admin -n $K8S_NAMESPACE --timeout=180s
+                                    kubectl rollout status deployment/frontend-user -n $K8S_NAMESPACE --timeout=180s
+                                    kubectl rollout status deployment/phpmyadmin -n $K8S_NAMESPACE --timeout=180s
+                                '''
                             }
                         }
                     }
@@ -41,28 +62,48 @@ pipeline {
                     steps {
                         script {
                             withCredentials([file(credentialsId: 'kubeconfig-prod', variable: 'KUBECONFIG_PATH')]) {
-                                sh """
-                                    export KUBECONFIG=\$KUBECONFIG_PATH
+                                sh '''
+                                    export KUBECONFIG=$KUBECONFIG_PATH
                                     echo "Deploying Slave to Salaya..."
 
-                                    kubectl get ns \$K8S_NAMESPACE || kubectl create ns \$K8S_NAMESPACE
-                                    kubectl apply -f k8s/mysql-pv.yaml -n \$K8S_NAMESPACE
-                                    kubectl apply -f k8s/mysql-pvc.yaml -n \$K8S_NAMESPACE
-                                    kubectl apply -f k8s/mysql-config-slave.yaml -n \$K8S_NAMESPACE
-                                    kubectl apply -f k8s/mysql-slave.yaml -n \$K8S_NAMESPACE
-                                    kubectl rollout status deployment/mysql-salaya -n \$K8S_NAMESPACE --timeout=180s
+                                    # Namespace
+                                    kubectl get ns $K8S_NAMESPACE || kubectl create ns $K8S_NAMESPACE
 
-                                    # ตั้งค่า replication หลัง Slave พร้อม
-                                    MASTER_HOST=$(kubectl get svc mysql-rayong -n \$K8S_NAMESPACE -o jsonpath='{.spec.clusterIP}')
-                                    kubectl exec deploy/mysql-salaya -n \$K8S_NAMESPACE -- \
-                                        mysql -uroot -p\$MYSQL_ROOT_PASSWORD -e \"
+                                    # PVCs
+                                    kubectl apply -f k8s/mysql-pvc.yaml -n $K8S_NAMESPACE
+                                    kubectl apply -f k8s/backend-pvc.yaml -n $K8S_NAMESPACE
+
+                                    # ConfigMap + Secret
+                                    kubectl apply -f k8s/mysql-config-slave.yaml -n $K8S_NAMESPACE
+                                    kubectl apply -f k8s/mysql-secret.yaml -n $K8S_NAMESPACE
+
+                                    # Deployments
+                                    kubectl apply -f k8s/mysql-slave.yaml -n $K8S_NAMESPACE
+                                    kubectl apply -f k8s/backend.yaml -n $K8S_NAMESPACE
+                                    kubectl apply -f k8s/frontend-admin.yaml -n $K8S_NAMESPACE
+                                    kubectl apply -f k8s/frontend-user.yaml -n $K8S_NAMESPACE
+                                    kubectl apply -f k8s/phpmyadmin.yaml -n $K8S_NAMESPACE
+
+                                    # Rollout check
+                                    kubectl rollout status deployment/mysql-salaya -n $K8S_NAMESPACE --timeout=180s
+                                    kubectl rollout status deployment/backend -n $K8S_NAMESPACE --timeout=180s
+                                    kubectl rollout status deployment/frontend-admin -n $K8S_NAMESPACE --timeout=180s
+                                    kubectl rollout status deployment/frontend-user -n $K8S_NAMESPACE --timeout=180s
+                                    kubectl rollout status deployment/phpmyadmin -n $K8S_NAMESPACE --timeout=180s
+
+                                    # Set up replication
+                                    MASTER_HOST=$(kubectl get svc mysql-rayong -n $K8S_NAMESPACE -o jsonpath='{.spec.clusterIP}')
+                                    MYSQL_ROOT_PASSWORD=$(kubectl get secret mysql-secret -n $K8S_NAMESPACE -o jsonpath="{.data.MYSQL_ROOT_PASSWORD}" | base64 --decode)
+
+                                    kubectl exec deploy/mysql-salaya -n $K8S_NAMESPACE -- \
+                                        mysql -uroot -p$MYSQL_ROOT_PASSWORD -e "
                                         CHANGE MASTER TO
-                                          MASTER_HOST='\$MASTER_HOST',
+                                          MASTER_HOST='$MASTER_HOST',
                                           MASTER_USER='repl',
                                           MASTER_PASSWORD='replpassword',
                                           MASTER_AUTO_POSITION=1;
-                                        START SLAVE;\"
-                                """
+                                        START SLAVE;"
+                                '''
                             }
                         }
                     }
@@ -73,7 +114,7 @@ pipeline {
 
     post {
         always {
-            echo "✅ Deployment finished for both clusters"
+            echo "✅ Deployment finished for all clusters"
         }
     }
 }
