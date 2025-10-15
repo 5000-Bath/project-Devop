@@ -11,7 +11,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 deleteDir()
-                git branch: 'feature/prod',
+                git branch: 'recover_stash',
                     url: 'https://github.com/5000-Bath/project-Devop.git'
             }
         }
