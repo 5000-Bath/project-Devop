@@ -7,7 +7,6 @@ export async function listProducts() {
     if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
     const data = await res.json();
 
-    // ถ้า backend ส่ง path แบบ /uploads/... ให้เติมโดเมนให้ครบ
     return (Array.isArray(data) ? data : []).map((p) => ({
         ...p,
         imageUrl:
@@ -32,5 +31,36 @@ export async function cutStock(cartItems) {
       const text = await res.text().catch(() => '');
       throw new Error(`cutStock failed for id=${id}: ${res.status} ${text}`);
     }
+  }
+}
+
+
+export async function checkStock(cartItems) {
+      const orderItems = cartItems.map(it => ({
+        product: { id: it.id || it.productId || it.menuId },
+        quantity: Number(it.quantity ?? it.qty ?? 1)
+    }));
+
+     const results = await Promise.all(
+    orderItems.map(async item => {
+      const res = await fetch(`${API_BASE}/api/products/${item.product.id}`, {
+        headers: { Accept: "application/json" }
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+      const data = await res.json();
+
+      if (data.stockQty < item.quantity) {
+        return { ok: false, name: data.name, available: data.stockQty };
+      }
+      return { ok: true };
+    })
+  );
+
+  const failed = results.filter(r => !r.ok);
+  if (failed.length > 0) {
+    const msg = failed
+      .map(f => `${f.name} เหลือ ${f.available} ชิ้น`)
+      .join("\n");
+    throw new Error(`สินค้าบางรายการมีไม่พอ:\n${msg}`);
   }
 }
