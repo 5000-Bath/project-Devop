@@ -1,28 +1,41 @@
-import { defineConfig, loadEnv } from 'vite'
-import react from '@vitejs/plugin-react'
+// vite.config.js
+import { defineConfig, loadEnv } from 'vite';
+import react from '@vitejs/plugin-react';
 
 export default ({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '')
-  const apiUrl = env.VITE_API_URL || 'http://localhost:8080' // ใช้ backend IP/port
+  // โหลด .env ตาม mode (แต่ใช้แค่ใน dev)
+  const env = loadEnv(mode, process.cwd(), '');
 
   return defineConfig({
     plugins: [react()],
+
+    define: {
+      'process.env': {}, // ป้องกัน error จากไลบรารีเก่า
+    },
+
     server: {
       host: true,
-      port: 3000,
+      port: 3001,
+      strictPort: true,
+
+      // ✅ Proxy ใช้ได้เฉพาะในโหมด development เท่านั้น
       proxy: {
         '/api': {
-          target: apiUrl,       // ทุก request /api จะส่งไป backend
+          target: env.VITE_API_URL || 'http://localhost:8080',
           changeOrigin: true,
           secure: false,
+          // ไม่ต้อง rewrite เพราะ backend ของคุณรับ /api อยู่แล้ว
+          // หาก backend รับที่ root (/products) → ให้ใช้ rewrite: (path) => path.replace(/^\/api/, '')
         },
       },
     },
-    define: { 'process.env': {} },
+
     build: {
       outDir: 'dist',
       sourcemap: false,
     },
+
+    // ป้องกันการ expose env ที่ไม่ขึ้นต้นด้วย VITE_
     envPrefix: 'VITE_',
-  })
-}
+  });
+};
