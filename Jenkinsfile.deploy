@@ -103,6 +103,10 @@ pipeline {
                                     
                                     MYSQL_ROOT_PASSWORD=$(kubectl get secret mysql-secret -n $K8S_NAMESPACE -o jsonpath="{.data.MYSQL_ROOT_PASSWORD}" | base64 --decode)
 
+                                    # 🛑 เพิ่ม Delay 30 วินาที เพื่อให้ MySQL Server เริ่มทำงาน
+                                    echo "Waiting 30 seconds for MySQL Slave to fully initialize..."
+                                    sleep 30 
+
                                     # 🛑 แก้ไข: บังคับเชื่อมต่อผ่าน TCP/IP (127.0.0.1) แทน Socket
                                     kubectl exec deploy/mysql-salaya -n $K8S_NAMESPACE --container mysql -- \
                                         mysql -h 127.0.0.1 -P 3306 -uroot -p$MYSQL_ROOT_PASSWORD -e "
