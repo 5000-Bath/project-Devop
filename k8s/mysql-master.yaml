@@ -42,12 +42,17 @@ spec:
         volumeMounts:
         - name: mysql-storage
           mountPath: /var/lib/mysql
+        - name: mysql-config
+          mountPath: /etc/mysql/conf.d
         - name: init-sql
           mountPath: /docker-entrypoint-initdb.d
       volumes:
       - name: mysql-storage
         persistentVolumeClaim:
           claimName: mysql-pvc
+      - name: mysql-config
+        configMap:
+          name: mysql-config
       - name: init-sql
         configMap:
           name: mysql-init-master
@@ -58,9 +63,9 @@ metadata:
   name: mysql-rayong
   namespace: production
 spec:
+  ports:
+  - port: 3306
+    targetPort: 3306
   selector:
     app: mysql-rayong
-  ports:
-    - port: 3306
-      targetPort: 3306
   type: ClusterIP
