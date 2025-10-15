@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import Swal from "sweetalert2"; // ✅ Import Swal
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
@@ -31,41 +32,40 @@ export default function Ordersdetail() {
     }, [id]);
 
     // ✅ ฟังก์ชันอัปเดตสถานะ (แก้ path และ body ให้ตรงกับ backend)
-    // const updateOrderStatus = async (newStatus) => {
-    //     try {
-    //         const res = await fetch(`${API_BASE}/api/orders/${id}/status`, {
-    //             method: "PUT",
-    //             headers: {
-    //                 "Content-Type": "application/json",
-    //             },
-    //             body: JSON.stringify({ status: newStatus }), // ✅ ส่งเฉพาะ status
-    //         });
-    //
-    //         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    //
-    //         const updated = await res.json();
-    //         setOrder(updated);
-    //         alert(`อัปเดตสถานะเป็น "${newStatus}" สำเร็จ`);
-    //     } catch (err) {
-    //         console.error("Error updating status:", err);
-    //         alert("ไม่สามารถอัปเดตสถานะได้");
-    //     }
-    // };
     const updateOrderStatus = async (newStatus) => {
         if (!order) return;
 
-        // ✅ ถ้าเป็น Complete → ตรวจ stock ก่อน
+        // 1. ✅ ถ้าเป็น Complete → ตรวจ stock ก่อน (เปลี่ยน alert() เป็น Swal.fire())
         if (newStatus === "SUCCESS") {
             const insufficient = order.orderItems.find(
                 (item) => item.quantity > item.product.stock
             );
             if (insufficient) {
-                alert(`Insufficient stock for "${insufficient.product.name}"`);
+                Swal.fire({ // 🔴 เปลี่ยน alert เป็น Swal.fire
+                    icon: 'warning',
+                    title: 'สินค้าในสต็อกไม่เพียงพอ',
+                    text: `Stock สำหรับ "${insufficient.product.name}" มีไม่พอ`,
+                    confirmButtonText: 'ตกลง'
+                });
                 return; // ❌ หยุด ไม่ส่ง request
             }
         }
 
         try {
+            // 2. ✅ เพิ่ม SweetAlert2 Confirmation ก่อนส่ง request
+            const result = await Swal.fire({
+                title: `ยืนยันการเปลี่ยนสถานะเป็น ${newStatus}?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'ยืนยัน',
+                cancelButtonText: 'ยกเลิก',
+                reverseButtons: true
+            });
+
+            if (!result.isConfirmed) {
+                return; // ❌ ยกเลิกการอัปเดต
+            }
+
             const res = await fetch(`${API_BASE}/api/orders/${id}/status`, {
                 method: "PUT",
                 headers: {
@@ -76,16 +76,36 @@ export default function Ordersdetail() {
 
             if (!res.ok) {
                 const errMsg = await res.text();
-                alert(errMsg || `Failed to update status`);
+                Swal.fire({ // 🔴 เปลี่ยน alert เป็น Swal.fire (กรณี Error)
+                    icon: 'error',
+                    title: 'อัปเดตสถานะไม่สำเร็จ',
+                    text: errMsg || `ไม่สามารถอัปเดตสถานะได้ (HTTP ${res.status})`,
+                });
                 throw new Error(`HTTP ${res.status}`);
             }
 
             const updated = await res.json();
             setOrder(updated);
-            alert(`Order updated to "${newStatus}" successfully`);
+
+            // 3. ✅ เปลี่ยน alert เป็น Swal.fire (กรณี Success)
+            Swal.fire({
+                icon: 'success',
+                title: 'อัปเดตสำเร็จ',
+                text: `คำสั่งซื้อ #${order.id} ได้รับการอัปเดตเป็น "${newStatus}" เรียบร้อยแล้ว`,
+                timer: 2000,
+                showConfirmButton: false,
+            });
         } catch (err) {
             console.error("Error updating status:", err);
-            alert("Failed to update status");
+            // ถ้ามีการโยน Error จากด้านบน (กรณี !res.ok) มันจะถูกจัดการแล้ว
+            // แต่ถ้ามี error อื่นๆ (เช่น network error) ให้แสดง alert สำรอง
+            if (err.message.indexOf("HTTP") === -1) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    text: 'ไม่สามารถติดต่อเซิร์ฟเวอร์เพื่ออัปเดตสถานะได้',
+                });
+            }
         }
     };
 
@@ -134,7 +154,7 @@ export default function Ordersdetail() {
                             padding: "8px 12px",
                             border: "1px solid #ddd",
                             borderRadius: 6,
-                            width: "100%",
+                            width: "70%",
                             fontSize: 14,
                         }}
                     />
@@ -214,20 +234,20 @@ export default function Ordersdetail() {
                         <div style={{ display: "flex", justifyContent: "space-between" }}>
                             <span style={{ color: "#666", fontSize: 14 }}>User ID</span>
                             <span style={{ color: "#333", fontSize: 14 }}>
-                {order.userId}
-              </span>
+                                {order.userId}
+                            </span>
                         </div>
 
                         <div style={{ display: "flex", justifyContent: "space-between" }}>
                             <span style={{ color: "#666", fontSize: 14 }}>Created At</span>
                             <span style={{ color: "#333", fontSize: 14 }}>
-                {order.createdAt
-                    ? new Date(order.createdAt).toLocaleString("th-TH", {
-                        dateStyle: "medium",
-                        timeStyle: "short",
-                    })
-                    : "-"}
-              </span>
+                                {order.createdAt
+                                    ? new Date(order.createdAt).toLocaleString("th-TH", {
+                                        dateStyle: "medium",
+                                        timeStyle: "short",
+                                    })
+                                    : "-"}
+                            </span>
                         </div>
 
                         <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -244,15 +264,15 @@ export default function Ordersdetail() {
                                     fontWeight: 500,
                                 }}
                             >
-                {order.status || "PENDING"}
-              </span>
+                                {order.status || "PENDING"}
+                            </span>
                         </div>
 
                         <div style={{ display: "flex", justifyContent: "space-between" }}>
                             <span style={{ color: "#666", fontSize: 14 }}>Total</span>
                             <span style={{ color: "#333", fontSize: 14, fontWeight: 500 }}>
-                {totalPrice.toLocaleString()} บาท
-              </span>
+                                {totalPrice.toLocaleString()} บาท
+                            </span>
                         </div>
 
                         {/* Buttons */}

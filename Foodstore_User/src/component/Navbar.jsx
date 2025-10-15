@@ -1,14 +1,20 @@
+import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import "./Navbar.css";
 
-// ปรับชื่อแบรนด์/โลโก้ได้ผ่าน prop
-import logo from "../assets/shinchan.png"; // ถ้าไฟล์ชื่ออื่น ให้แก้พาธนี้
+import logo from "../assets/shinchan.png";
 
 export default function Navbar({ brand = "Crayon Shinchan" }) {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
   return (
     <header className="nav">
       <div className="nav__inner">
-        {/* Brand (logo + title) */}
+        {/* Brand */}
         <div className="nav__brand">
           <img className="nav__logo" src={logo} alt="Brand logo shinchan" />
           <h1 className="nav__title">
@@ -16,13 +22,58 @@ export default function Navbar({ brand = "Crayon Shinchan" }) {
           </h1>
         </div>
 
-        {/* Right links */}
-        <nav className="nav__links" aria-label="Main">
-          <NavLink to="/Home"   className={({isActive}) => "nav__link" + (isActive ? " is-active" : "")}>Menu</NavLink>
-          <NavLink to="/Order" className={({isActive}) => "nav__link" + (isActive ? " is-active" : "")}>Orders</NavLink>
-          <NavLink to="/Status" className={({isActive}) => "nav__link" + (isActive ? " is-active" : "")}>Status</NavLink>
-          <NavLink to="/contact" className={({isActive}) => "nav__link" + (isActive ? " is-active" : "")}>Contact</NavLink>
-          {/* ถ้า route จริงของคุณเป็น /status ให้เปลี่ยนเป็น to="/status" ได้เลย */}
+        {/* Hamburger button (มือถือเท่านั้น) */}
+        <button
+          className="nav__hamburger"
+          onClick={toggleMenu}
+          aria-label="Toggle navigation menu"
+        >
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+
+        {/* Navigation links */}
+        <nav
+          className={`nav__links ${isMenuOpen ? "nav__links--open" : ""}`}
+          aria-label="Main"
+        >
+          <NavLink
+            to="/Home"
+            className={({ isActive }) =>
+              "nav__link" + (isActive ? " is-active" : "")
+            }
+            onClick={() => setIsMenuOpen(false)}
+          >
+            Menu
+          </NavLink>
+          <NavLink
+            to="/Order"
+            className={({ isActive }) =>
+              "nav__link" + (isActive ? " is-active" : "")
+            }
+            onClick={() => setIsMenuOpen(false)}
+          >
+            Orders
+          </NavLink>
+          <NavLink
+            to="/Status"
+            className={({ isActive }) =>
+              "nav__link" + (isActive ? " is-active" : "")
+            }
+            onClick={() => setIsMenuOpen(false)}
+          >
+            Status
+          </NavLink>
+          <NavLink
+            to="/contact"
+            className={({ isActive }) =>
+              "nav__link" + (isActive ? " is-active" : "")
+            }
+            onClick={() => setIsMenuOpen(false)}
+          >
+            Contact
+          </NavLink>
         </nav>
       </div>
     </header>

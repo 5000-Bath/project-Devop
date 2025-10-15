@@ -1,599 +1,91 @@
-// import React, { useState } from "react";
-//
-// export default function setting() {
-//   const [user] = useState({
-//     name: "my bro Ake",
-//     email: "ake@gmail.com",
-//     avatar: "https://placehold.co/40x40/ff6b6b/ffffff?text=AK"
-//   });
-//
-//   const [editMode, setEditMode] = useState(false);
-//   const [formData, setFormData] = useState({
-//     fullName: "",
-//     nickName: "",
-//     email: user.email
-//   });
-//
-//   const handleInputChange = (e) => {
-//     const { name, value } = e.target;
-//     setFormData(prev => ({
-//       ...prev,
-//       [name]: value
-//     }));
-//   };
-//
-//   const handleEditClick = () => {
-//     setEditMode(true);
-//     setFormData({
-//       fullName: user.name,
-//       nickName: "",
-//       email: user.email
-//     });
-//   };
-//
-//   const handleSaveClick = () => {
-//     // In a real app, you would save the data to your backend
-//     console.log('Saving user data:', formData);
-//     setEditMode(false);
-//   };
-//
-//   const handleCancelClick = () => {
-//     setEditMode(false);
-//     setFormData({
-//       fullName: "",
-//       nickName: "",
-//       email: user.email
-//     });
-//   };
-//
-//   const handleAddEmail = () => {
-//     // Create a custom modal similar to Swal
-//     const modal = document.createElement('div');
-//     modal.style.cssText = `
-//       position: fixed;
-//       top: 0;
-//       left: 0;
-//       right: 0;
-//       bottom: 0;
-//       background-color: rgba(0,0,0,0.5);
-//       display: flex;
-//       align-items: center;
-//       justify-content: center;
-//       z-index: 1000;
-//       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-//     `;
-//
-//     const modalContent = document.createElement('div');
-//     modalContent.style.cssText = `
-//       background: white;
-//       border-radius: 8px;
-//       padding: 24px;
-//       width: 400px;
-//       max-width: 90vw;
-//       box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
-//     `;
-//
-//     modalContent.innerHTML = `
-//       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-//         <h3 style="font-size: 18px; font-weight: 600; color: #333;">Add Email Address</h3>
-//         <button id="closeModal" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #999;">×</button>
-//       </div>
-//       <div style="margin-bottom: 16px;">
-//         <label style="display: block; margin-bottom: 8px; font-size: 14px; color: #666;">Email Address</label>
-//         <input
-//           type="email"
-//           id="emailInput"
-//           style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; box-sizing: border-box;"
-//           placeholder="Enter email address"
-//         />
-//       </div>
-//       <div style="display: flex; gap: 12px; justify-content: flex-end;">
-//         <button id="cancelBtn" style="background: transparent; color: #666; border: 1px solid #ddd; border-radius: 6px; padding: 8px 16px; font-size: 14px; cursor: pointer;">Cancel</button>
-//         <button id="confirmBtn" style="background: #4CAF50; color: white; border: none; border-radius: 6px; padding: 8px 16px; font-size: 14px; cursor: pointer;">Add</button>
-//       </div>
-//     `;
-//
-//     modal.appendChild(modalContent);
-//     document.body.appendChild(modal);
-//
-//     // Close modal functions
-//     const closeModal = () => {
-//       document.body.removeChild(modal);
-//     };
-//
-//     // Event listeners
-//     document.getElementById('closeModal').addEventListener('click', closeModal);
-//     document.getElementById('cancelBtn').addEventListener('click', closeModal);
-//
-//     document.getElementById('confirmBtn').addEventListener('click', () => {
-//       const emailInput = document.getElementById('emailInput');
-//       const email = emailInput.value.trim();
-//
-//       if (email) {
-//         // In a real app, you would save the email
-//         console.log('Added email:', email);
-//
-//         // Show success message
-//         const successModal = document.createElement('div');
-//         successModal.style.cssText = `
-//           position: fixed;
-//           top: 0;
-//           left: 0;
-//           right: 0;
-//           bottom: 0;
-//           background-color: rgba(0,0,0,0.5);
-//           display: flex;
-//           align-items: center;
-//           justify-content: center;
-//           z-index: 1001;
-//           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-//         `;
-//
-//         const successContent = document.createElement('div');
-//         successContent.style.cssText = `
-//           background: white;
-//           border-radius: 8px;
-//           padding: 24px;
-//           width: 350px;
-//           text-align: center;
-//           box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
-//         `;
-//
-//         successContent.innerHTML = `
-//           <div style="color: #4CAF50; font-size: 48px; margin-bottom: 16px;">✓</div>
-//           <h3 style="font-size: 18px; font-weight: 600; color: #333; margin-bottom: 8px;">Success!</h3>
-//           <p style="color: #666; font-size: 14px; margin-bottom: 16px;">Email address added successfully</p>
-//           <button id="okBtn" style="background: #4CAF50; color: white; border: none; border-radius: 6px; padding: 8px 16px; font-size: 14px; cursor: pointer; width: 100%;">OK</button>
-//         `;
-//
-//         successModal.appendChild(successContent);
-//         document.body.appendChild(successModal);
-//
-//         document.getElementById('okBtn').addEventListener('click', () => {
-//           document.body.removeChild(successModal);
-//           document.body.removeChild(modal);
-//         });
-//
-//       } else {
-//         // Show error message
-//         const errorModal = document.createElement('div');
-//         errorModal.style.cssText = `
-//           position: fixed;
-//           top: 0;
-//           left: 0;
-//           right: 0;
-//           bottom: 0;
-//           background-color: rgba(0,0,0,0.5);
-//           display: flex;
-//           align-items: center;
-//           justify-content: center;
-//           z-index: 1001;
-//           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-//         `;
-//
-//         const errorContent = document.createElement('div');
-//         errorContent.style.cssText = `
-//           background: white;
-//           border-radius: 8px;
-//           padding: 24px;
-//           width: 350px;
-//           text-align: center;
-//           box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
-//         `;
-//
-//         errorContent.innerHTML = `
-//           <div style="color: #f44336; font-size: 48px; margin-bottom: 16px;">!</div>
-//           <h3 style="font-size: 18px; font-weight: 600; color: #333; margin-bottom: 8px;">Error!</h3>
-//           <p style="color: #666; font-size: 14px; margin-bottom: 16px;">Please enter a valid email address</p>
-//           <button id="errorOkBtn" style="background: #f44336; color: white; border: none; border-radius: 6px; padding: 8px 16px; font-size: 14px; cursor: pointer; width: 100%;">OK</button>
-//         `;
-//
-//         errorModal.appendChild(errorContent);
-//         document.body.appendChild(errorModal);
-//
-//         document.getElementById('errorOkBtn').addEventListener('click', () => {
-//           document.body.removeChild(errorModal);
-//         });
-//       }
-//     });
-//   };
-//
-//   return (
-//     <div style={{ padding: 24, background: "#f7f7f7", borderRadius: 12 }}>
-//       <div style={{
-//         display: 'flex',
-//         justifyContent: 'space-between',
-//         alignItems: 'center',
-//         marginBottom: 24,
-//         backgroundColor: 'white',
-//         padding: '12px 16px',
-//         borderRadius: 8,
-//         boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-//       }}>
-//         <div>
-//           <h1 style={{ fontSize: 20, fontWeight: 'bold', color: '#333' }}>Welcome, {user.name}</h1>
-//           <p style={{ color: '#666', fontSize: 14 }}>Tue, 07 June 2022</p>
-//         </div>
-//
-//         <div style={{
-//           position: 'relative',
-//           maxWidth: 250
-//         }}>
-//           <input
-//             type="text"
-//             placeholder="Search..."
-//             style={{
-//               paddingLeft: 35,
-//               padding: '8px 12px',
-//               border: '1px solid #ddd',
-//               borderRadius: 6,
-//               width: '70%',
-//               fontSize: 14
-//             }}
-//           />
-//         </div>
-//       </div>
-//
-//       <div style={{
-//         backgroundColor: 'white',
-//         borderRadius: 8,
-//         padding: 16,
-//         boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-//       }}>
-//         {/* User Profile Header */}
-//         <div style={{
-//           display: 'flex',
-//           justifyContent: 'space-between',
-//           alignItems: 'center',
-//           marginBottom: 24
-//         }}>
-//           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-//             <img
-//               src={user.avatar}
-//               alt="Profile"
-//               style={{
-//                 width: 40,
-//                 height: 40,
-//                 borderRadius: 50,
-//                 objectFit: 'cover'
-//               }}
-//             />
-//             <div>
-//               <h2 style={{ fontSize: 18, fontWeight: 'bold', color: '#333' }}>{user.name}</h2>
-//               <p style={{ color: '#666', fontSize: 14 }}>{user.email}</p>
-//             </div>
-//           </div>
-//
-//           <button
-//             onClick={handleEditClick}
-//             style={{
-//               backgroundColor: '#4CAF50',
-//               color: 'white',
-//               border: 'none',
-//               borderRadius: 6,
-//               padding: '6px 12px',
-//               fontSize: 14,
-//               cursor: 'pointer',
-//               transition: 'background-color 0.2s'
-//             }}
-//             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#45a049'}
-//             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#4CAF50'}
-//           >
-//             Edit
-//           </button>
-//         </div>
-//
-//         {/* Form Fields */}
-//         {editMode ? (
-//           <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-//             <div style={{ display: 'flex', gap: 24 }}>
-//               <div style={{ flex: 1 }}>
-//                 <label style={{
-//                   display: 'block',
-//                   marginBottom: 8,
-//                   fontSize: 14,
-//                   fontWeight: 500,
-//                   color: '#666'
-//                 }}>
-//                   Full Name
-//                 </label>
-//                 <input
-//                   type="text"
-//                   name="fullName"
-//                   value={formData.fullName}
-//                   onChange={handleInputChange}
-//                   style={{
-//                     width: '100%',
-//                     padding: '12px 16px',
-//                     border: '1px solid #ddd',
-//                     borderRadius: 6,
-//                     fontSize: 14,
-//                     boxSizing: 'border-box'
-//                   }}
-//                   placeholder="Your First Name"
-//                 />
-//               </div>
-//
-//               <div style={{ flex: 1 }}>
-//                 <label style={{
-//                   display: 'block',
-//                   marginBottom: 8,
-//                   fontSize: 14,
-//                   fontWeight: 500,
-//                   color: '#666'
-//                 }}>
-//                   Nick Name
-//                 </label>
-//                 <input
-//                   type="text"
-//                   name="nickName"
-//                   value={formData.nickName}
-//                   onChange={handleInputChange}
-//                   style={{
-//                     width: '100%',
-//                     padding: '12px 16px',
-//                     border: '1px solid #ddd',
-//                     borderRadius: 6,
-//                     fontSize: 14,
-//                     boxSizing: 'border-box'
-//                   }}
-//                   placeholder="Your First Name"
-//                 />
-//               </div>
-//             </div>
-//
-//             <div>
-//               <label style={{
-//                 display: 'block',
-//                 marginBottom: 8,
-//                 fontSize: 14,
-//                 fontWeight: 500,
-//                 color: '#666'
-//               }}>
-//                 My email Address
-//               </label>
-//               <div style={{
-//                 display: 'flex',
-//                 flexDirection: 'column',
-//                 gap: 8
-//               }}>
-//                 <div style={{
-//                   display: 'flex',
-//                   alignItems: 'center',
-//                   padding: '12px 16px',
-//                   backgroundColor: '#f9f9f9',
-//                   borderRadius: 6,
-//                   border: '1px solid #eee'
-//                 }}>
-//                   <svg xmlns="http://www.w3.org/2000/svg"
-//                        style={{ width: 16, height: 16, color: '#4CAF50', marginRight: 8 }}
-//                        fill="none"
-//                        viewBox="0 0 24 24"
-//                        stroke="currentColor">
-//                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-//                   </svg>
-//                   <span style={{ color: '#333', fontSize: 14 }}>{formData.email}</span>
-//                 </div>
-//                 <button
-//                   onClick={handleAddEmail}
-//                   style={{
-//                     backgroundColor: '#e3f2fd',
-//                     color: '#1976d2',
-//                     border: 'none',
-//                     borderRadius: 6,
-//                     padding: '6px 12px',
-//                     fontSize: 14,
-//                     cursor: 'pointer',
-//                     transition: 'background-color 0.2s'
-//                   }}
-//                   onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#bbdefb'}
-//                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#e3f2fd'}
-//                 >
-//                   + Add Email Address
-//                 </button>
-//               </div>
-//             </div>
-//
-//             <div style={{
-//               display: 'flex',
-//               gap: 12,
-//               marginTop: 24
-//             }}>
-//               <button
-//                 onClick={handleSaveClick}
-//                 style={{
-//                   backgroundColor: '#4CAF50',
-//                   color: 'white',
-//                   border: 'none',
-//                   borderRadius: 6,
-//                   padding: '10px 24px',
-//                   fontSize: 14,
-//                   cursor: 'pointer',
-//                   transition: 'background-color 0.2s'
-//                 }}
-//                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#45a049'}
-//                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#4CAF50'}
-//               >
-//                 Save
-//               </button>
-//               <button
-//                 onClick={handleCancelClick}
-//                 style={{
-//                   backgroundColor: 'transparent',
-//                   color: '#666',
-//                   border: '1px solid #ddd',
-//                   borderRadius: 6,
-//                   padding: '10px 24px',
-//                   fontSize: 14,
-//                   cursor: 'pointer',
-//                   transition: 'background-color 0.2s'
-//                 }}
-//                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
-//                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-//               >
-//                 Cancel
-//               </button>
-//             </div>
-//           </div>
-//         ) : (
-//           <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-//             <div style={{ display: 'flex', gap: 24 }}>
-//               <div style={{ flex: 1 }}>
-//                 <label style={{
-//                   display: 'block',
-//                   marginBottom: 8,
-//                   fontSize: 14,
-//                   fontWeight: 500,
-//                   color: '#666'
-//                 }}>
-//                   Full Name
-//                 </label>
-//                 <input
-//                   type="text"
-//                   value={user.name}
-//                   disabled
-//                   style={{
-//                     width: '100%',
-//                     padding: '12px 16px',
-//                     border: '1px solid #ddd',
-//                     borderRadius: 6,
-//                     fontSize: 14,
-//                     boxSizing: 'border-box',
-//                     backgroundColor: '#f9f9f9',
-//                     cursor: 'not-allowed'
-//                   }}
-//                   placeholder="Your First Name"
-//                 />
-//               </div>
-//
-//               <div style={{ flex: 1 }}>
-//                 <label style={{
-//                   display: 'block',
-//                   marginBottom: 8,
-//                   fontSize: 14,
-//                   fontWeight: 500,
-//                   color: '#666'
-//                 }}>
-//                   Nick Name
-//                 </label>
-//                 <input
-//                   type="text"
-//                   value=""
-//                   disabled
-//                   style={{
-//                     width: '100%',
-//                     padding: '12px 16px',
-//                     border: '1px solid #ddd',
-//                     borderRadius: 6,
-//                     fontSize: 14,
-//                     boxSizing: 'border-box',
-//                     backgroundColor: '#f9f9f9',
-//                     cursor: 'not-allowed'
-//                   }}
-//                   placeholder="Your First Name"
-//                 />
-//               </div>
-//             </div>
-//
-//             <div>
-//               <label style={{
-//                 display: 'block',
-//                 marginBottom: 8,
-//                 fontSize: 14,
-//                 fontWeight: 500,
-//                 color: '#666'
-//               }}>
-//                 My email Address
-//               </label>
-//               <div style={{
-//                 display: 'flex',
-//                 flexDirection: 'column',
-//                 gap: 8
-//               }}>
-//                 <div style={{
-//                   display: 'flex',
-//                   alignItems: 'center',
-//                   padding: '12px 16px',
-//                   backgroundColor: '#f9f9f9',
-//                   borderRadius: 6,
-//                   border: '1px solid #eee'
-//                 }}>
-//                   <svg xmlns="http://www.w3.org/2000/svg"
-//                        style={{ width: 16, height: 16, color: '#4CAF50', marginRight: 8 }}
-//                        fill="none"
-//                        viewBox="0 0 24 24"
-//                        stroke="currentColor">
-//                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-//                   </svg>
-//                   <span style={{ color: '#333', fontSize: 14 }}>{user.email}</span>
-//                 </div>
-//                 <button
-//                   onClick={handleAddEmail}
-//                   style={{
-//                     backgroundColor: '#e3f2fd',
-//                     color: '#1976d2',
-//                     border: 'none',
-//                     borderRadius: 6,
-//                     padding: '6px 12px',
-//                     fontSize: 14,
-//                     cursor: 'pointer',
-//                     transition: 'background-color 0.2s'
-//                   }}
-//                   onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#bbdefb'}
-//                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#e3f2fd'}
-//                 >
-//                   + Add Email Address
-//                 </button>
-//               </div>
-//             </div>
-//           </div>
-//         )}
-//       </div>
-//     </div>
-//   );
-// }
-
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
+import { Edit2, Save, X, Mail, Lock, User, Calendar } from "lucide-react";
+import Swal from "sweetalert2";
 
 const API_BASE = (import.meta.env.VITE_API_URL || "http://localhost:8080").replace(/\/+$/, "");
 
-/** หัวข้อย่อย: ปุ่ม / input / กล่อง modal เล็กๆ */
-function Button({ children, onClick, variant = "primary", ...rest }) {
-    const styles = {
-        base: {
-            border: "none",
-            borderRadius: 6,
-            padding: "8px 14px",
-            fontSize: 14,
-            cursor: "pointer",
-            transition: "background-color .2s",
-        },
-        primary: { backgroundColor: "#4CAF50", color: "#fff" },
-        ghost: { backgroundColor: "transparent", color: "#666", border: "1px solid #ddd" },
-        info: { backgroundColor: "#e3f2fd", color: "#1976d2" },
-        danger: { backgroundColor: "#f44336", color: "#fff" },
+function Button({ children, onClick, variant = "primary", disabled = false, ...rest }) {
+    const baseStyle = {
+        padding: "10px 16px",
+        borderRadius: "8px",
+        border: "none",
+        fontWeight: "500",
+        cursor: disabled ? "not-allowed" : "pointer",
+        transition: "all 0.2s ease",
+        display: "flex",
+        alignItems: "center",
+        gap: "8px",
+        justifyContent: "center",
+        fontSize: "14px",
+        opacity: disabled ? 0.5 : 1,
     };
-    const style = { ...styles.base, ...(styles[variant] || styles.primary) };
+    const variants = {
+        primary: {
+            background: "linear-gradient(135deg, #22c55e 0%, #059669 100%)",
+            color: "#fff",
+            boxShadow: "0 4px 15px rgba(34, 197, 94, 0.3)",
+        },
+        ghost: {
+            background: "#f3f4f6",
+            color: "#374151",
+            border: "1px solid #d1d5db",
+        },
+        danger: {
+            background: "#ef4444",
+            color: "#fff",
+            boxShadow: "0 4px 15px rgba(239, 68, 68, 0.3)",
+        },
+    };
+    const style = { ...baseStyle, ...(variants[variant] || variants.primary) };
+    const handleMouseOver = (e) => {
+        if (!disabled) {
+            e.currentTarget.style.boxShadow =
+                variant === "ghost" ? "0 2px 8px rgba(0,0,0,0.1)" : "0 6px 20px rgba(34, 197, 94, 0.4)";
+            e.currentTarget.style.transform = "translateY(-2px)";
+        }
+    };
+    const handleMouseOut = (e) => {
+        if (!disabled) {
+            e.currentTarget.style.boxShadow =
+                variant === "ghost" ? "none" : "0 4px 15px rgba(34, 197, 94, 0.3)";
+            e.currentTarget.style.transform = "translateY(0)";
+        }
+    };
     return (
-        <button onClick={onClick} style={style} {...rest}>
+        <button
+            onClick={onClick}
+            disabled={disabled}
+            style={style}
+            onMouseOver={handleMouseOver}
+            onMouseOut={handleMouseOut}
+            {...rest}
+        >
             {children}
         </button>
     );
 }
 
-function Field({ label, children }) {
+function Field({ label, error, children }) {
     return (
-        <div style={{ marginBottom: 16 }}>
-            <label style={{ display: "block", marginBottom: 8, fontSize: 14, color: "#666", fontWeight: 500 }}>
+        <div style={{ marginBottom: "24px" }}>
+            <label
+                style={{
+                    display: "block",
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    color: "#374151",
+                    marginBottom: "8px",
+                }}
+            >
                 {label}
             </label>
             {children}
+            {error && <p style={{ color: "#dc2626", fontSize: "12px", marginTop: "4px" }}>{error}</p>}
         </div>
     );
 }
 
-/** Modal แบบ React */
-function Modal({ title = "", open, onClose, children, footer }) {
+function Modal({ title, open, onClose, children, footer }) {
     if (!open) return null;
     return (
         <div
@@ -601,394 +93,329 @@ function Modal({ title = "", open, onClose, children, footer }) {
             style={{
                 position: "fixed",
                 inset: 0,
-                background: "rgba(0,0,0,.5)",
+                background: "rgba(0,0,0,0.5)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                zIndex: 1000,
+                zIndex: 50,
+                padding: "16px",
             }}
         >
             <div
                 onClick={(e) => e.stopPropagation()}
                 style={{
-                    width: 420,
-                    maxWidth: "90vw",
                     background: "#fff",
-                    borderRadius: 10,
-                    padding: 20,
-                    boxShadow: "0 10px 20px rgba(0,0,0,.2)",
+                    borderRadius: "16px",
+                    boxShadow: "0 20px 25px rgba(0,0,0,0.15)",
+                    maxWidth: "428px",
+                    width: "100%",
+                    padding: "24px",
                 }}
             >
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
-                    <h3 style={{ margin: 0, fontSize: 18 }}>{title}</h3>
-                    <button onClick={onClose} style={{ border: "none", background: "transparent", fontSize: 22, color: "#999" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                    <h3 style={{ fontSize: "20px", fontWeight: "bold", color: "#111827", margin: 0 }}>{title}</h3>
+                    <button
+                        onClick={onClose}
+                        style={{
+                            border: "none",
+                            background: "transparent",
+                            fontSize: "24px",
+                            color: "#9ca3af",
+                            cursor: "pointer",
+                            width: "32px",
+                            height: "32px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            transition: "color 0.2s",
+                        }}
+                        onMouseOver={(e) => (e.currentTarget.style.color = "#6b7280")}
+                        onMouseOut={(e) => (e.currentTarget.style.color = "#9ca3af")}
+                    >
                         ×
                     </button>
                 </div>
                 <div>{children}</div>
-                {footer && <div style={{ marginTop: 16, display: "flex", gap: 10, justifyContent: "flex-end" }}>{footer}</div>}
+                {footer && <div style={{ marginTop: "24px", display: "flex", gap: "12px", justifyContent: "flex-end" }}>{footer}</div>}
             </div>
         </div>
     );
 }
 
-/** helper: headers สำหรับ JWT + cookie */
-function useAuthHeaders() {
-    return useMemo(() => {
-        const token =
-            localStorage.getItem("token") ||
-            sessionStorage.getItem("token") ||
-            ""; // ถ้าเก็บใน cookie ฝั่ง server ก็ยังทำงานเพราะเราแนบ credentials
-        const h = { Accept: "application/json" };
-        if (token) h["Authorization"] = `Bearer ${token}`;
-        return h;
-    }, []);
-}
-
 export default function Setting() {
-    const authHeaders = useAuthHeaders();
-
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [error, setError] = useState(null);
-
-    // โปรไฟล์จริงจาก backend
     const [admin, setAdmin] = useState(null);
-
-    // โหมดแก้ไข + ฟอร์ม
     const [editMode, setEditMode] = useState(false);
-    const [form, setForm] = useState({
-        fullName: "",
-        nickName: "",
-        email: "",
-        avatarUrl: "",
-    });
-
-    // modal เพิ่มอีเมล
+    const [form, setForm] = useState({ fullName: "", email: "", password: "" });
     const [emailModalOpen, setEmailModalOpen] = useState(false);
     const [newEmail, setNewEmail] = useState("");
+    const [errors, setErrors] = useState({});
 
-    // โหลดโปรไฟล์ Admin
-    // โหลดโปรไฟล์ Admin
     useEffect(() => {
         const loadAdminData = async () => {
             try {
-                const token =
-                    localStorage.getItem("token") || sessionStorage.getItem("token") || "";
-
-                const res = await fetch(`${API_BASE}/api/admins/me`, {
-                    method: "GET",
-                    headers: {
-                        "Authorization": `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                    },
-                    credentials: "include",
-                });
-
-                if (!res.ok) {
-                    throw new Error(`HTTP ${res.status}`);
-                }
-
+                const res = await fetch(`${API_BASE}/api/admins/me`, { credentials: "include" });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const data = await res.json();
-                console.log("✅ Admin data:", data);
-
                 setAdmin(data);
-                setForm({
-                    fullName: data.username || data.name || "",
-                    nickName: data.nickName || "",
-                    email: data.email || "",
-                    avatarUrl: data.avatarUrl || data.avatar || "",
-                });
+                setForm({ fullName: data.username || "", email: data.email || "", password: "" });
             } catch (err) {
-                console.error("❌ Error loading admin:", err);
-                setError("โหลดข้อมูลผู้ใช้ไม่สำเร็จ");
+                console.error(err);
+                Swal.fire({ icon: "error", title: "เกิดข้อผิดพลาด", text: "โหลดข้อมูลผู้ใช้ไม่สำเร็จ" });
             } finally {
                 setLoading(false);
             }
         };
-
         loadAdminData();
-    }, []); // eslint-disable-line
+    }, []);
 
-    // eslint-disable-line
+    const onChange = (e) => {
+        const { name, value } = e.target;
+        setForm((f) => ({ ...f, [name]: value }));
+        if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
+    };
 
-    const onChange = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
-
-    const enterEdit = () => setEditMode(true);
-
-    const cancelEdit = () => {
-        if (admin) {
-            setForm({
-                fullName: admin.fullName ?? admin.name ?? "",
-                nickName: admin.nickName ?? "",
-                email: admin.email ?? "",
-                avatarUrl: admin.avatarUrl || admin.avatar || "",
-            });
-        }
-        setEditMode(false);
+    const validateForm = () => {
+        const newErrors = {};
+        if (!form.fullName.trim()) newErrors.fullName = "กรุณากรอกชื่อจริง";
+        if (!form.email.trim()) newErrors.email = "กรุณากรอกอีเมล";
+        if (form.email && !/^\S+@\S+\.\S+$/.test(form.email)) newErrors.email = "รูปแบบอีเมลไม่ถูกต้อง";
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
     };
 
     const save = async () => {
+        if (!validateForm()) return;
         if (!admin?.id) {
-            alert("ไม่พบรหัสผู้ใช้");
+            Swal.fire({ icon: "error", title: "เกิดข้อผิดพลาด", text: "ไม่พบรหัสผู้ใช้" });
             return;
         }
         setSaving(true);
         try {
             const res = await fetch(`${API_BASE}/api/admins/${admin.id}`, {
                 method: "PUT",
-                headers: { "Content-Type": "application/json", ...authHeaders },
+                headers: { "Content-Type": "application/json" },
                 credentials: "include",
-                body: JSON.stringify({
-                    id: admin.id,
-                    username: form.fullName, // 👈 ใช้แทน fullName
-                    nickName: form.nickName,
-                    email: form.email,
-                    avatarUrl: form.avatarUrl,
-                }),
+                body: JSON.stringify({ username: form.fullName, email: form.email, password: form.password || undefined }),
             });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.message || `HTTP ${res.status}`);
+            }
             const updated = await res.json();
             setAdmin(updated);
+            setForm({ fullName: updated.username, email: updated.email, password: "" });
             setEditMode(false);
-            alert("บันทึกข้อมูลเรียบร้อย");
+            setErrors({});
+            Swal.fire({ icon: "success", title: "บันทึกสำเร็จ", text: "ข้อมูลผู้ใช้ถูกอัปเดตเรียบร้อยแล้ว", timer: 2000, showConfirmButton: false });
         } catch (e) {
             console.error(e);
-            alert("บันทึกไม่สำเร็จ");
+            Swal.fire({ icon: "error", title: "เกิดข้อผิดพลาด", text: e.message || "ไม่สามารถบันทึกข้อมูลได้" });
         } finally {
             setSaving(false);
         }
     };
 
-    const addEmail = () => setEmailModalOpen(true);
-
     const confirmAddEmail = () => {
         const email = newEmail.trim();
         if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
-            alert("กรุณากรอกอีเมลให้ถูกต้อง");
+            setErrors({ email: "รูปแบบอีเมลไม่ถูกต้อง" });
+            Swal.fire({ icon: "error", title: "เกิดข้อผิดพลาด", text: "รูปแบบอีเมลไม่ถูกต้อง" });
             return;
         }
-        setForm((f) => ({ ...f, email })); // เดโม: ใช้แทนอีเมลหลักที่แสดง
-        setNewEmail("");
-        setEmailModalOpen(false);
-        // ถ้าต้องการให้เก็บหลายอีเมล แนะนำ admin.emails: string[] แล้ว PUT กลับเป็น array ได้
+        Swal.fire({
+            title: "ยืนยันการเพิ่มอีเมลใหม่",
+            text: `คุณต้องการเปลี่ยนอีเมลเป็น ${email} ใช่หรือไม่?`,
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonText: "ใช่",
+            cancelButtonText: "ยกเลิก",
+        }).then((result) => {
+            if (result.isConfirmed) {
+                setForm((f) => ({ ...f, email }));
+                setNewEmail("");
+                setEmailModalOpen(false);
+                setErrors({});
+                Swal.fire({ icon: "success", title: "เพิ่มอีเมลสำเร็จ", timer: 1500, showConfirmButton: false });
+            }
+        });
     };
 
-    if (loading) return <div style={{ padding: 24 }}>⏳ กำลังโหลดข้อมูล...</div>;
-    if (error) return <div style={{ padding: 24, color: "red" }}>{error}</div>;
-    if (!admin) return <div style={{ padding: 24 }}>ไม่พบข้อมูลผู้ดูแล</div>;
-
-    const displayName = admin.fullName ?? admin.name ?? "Admin";
-    const avatar = form.avatarUrl || "https://placehold.co/80x80/4caf50/ffffff?text=A";
-
-    return (
-        <div style={{ padding: 24, background: "#f7f7f7", borderRadius: 12 }}>
-            {/* header */}
-            <div
-                style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: 24,
-                    background: "#fff",
-                    padding: "12px 16px",
-                    borderRadius: 8,
-                    boxShadow: "0 1px 3px rgba(0,0,0,.1)",
-                }}
-            >
-                <div>
-                    <h1 style={{ fontSize: 20, fontWeight: "bold", color: "#333", margin: 0 }}>Welcome, {displayName}</h1>
-                    <p style={{ color: "#666", fontSize: 14, margin: 0 }}>
-                        {new Date().toLocaleDateString("th-TH", { dateStyle: "full" })}
-                    </p>
-                </div>
-
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <img
-                        src={avatar}
-                        alt="avatar"
-                        style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", border: "1px solid #eee" }}
-                    />
+    if (loading) {
+        return (
+            <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}>
+                <div style={{ textAlign: "center" }}>
+                    <div style={{ width: "48px", height: "48px", border: "4px solid #e5e7eb", borderTop: "4px solid #22c55e", borderRadius: "50%", margin: "0 auto 16px", animation: "spin 1s linear infinite" }} />
+                    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+                    <p style={{ color: "#4b5563", fontWeight: "500" }}>กำลังโหลดข้อมูล...</p>
                 </div>
             </div>
+        );
+    }
 
-            {/* content card */}
-            <div style={{ background: "#fff", borderRadius: 8, padding: 16, boxShadow: "0 1px 3px rgba(0,0,0,.1)" }}>
-                {/* header row */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                        <img
-                            src={avatar}
-                            alt="profile"
-                            style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", border: "1px solid #eee" }}
-                        />
-                        <div>
-                            <div style={{ fontWeight: 700, color: "#333" }}>{displayName}</div>
-                            <div style={{ color: "#666", fontSize: 14 }}>{form.email}</div>
+    const displayName = admin?.username || "Admin";
+    const today = new Date().toLocaleDateString("th-TH", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+
+    return (
+        <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #f9fafb 0%, #f0f9ff 100%)", padding: "16px" }}>
+            <div style={{ maxWidth: "1280px", margin: "0 auto" }}>
+                {/* Header */}
+                <div style={{ background: "#fff", borderRadius: "16px", boxShadow: "0 4px 6px rgba(0,0,0,0.07)", padding: "32px", marginBottom: "32px" }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                        <h1 style={{ fontSize: "32px", fontWeight: "bold", background: "linear-gradient(135deg, #16a34a 0%, #059669 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", margin: 0 }}>
+                            ยินดีต้อนรับ {displayName}
+                        </h1>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#6b7280", fontSize: "14px" }}>
+                            <Calendar size={16} />
+                            <span>{today}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Main Card */}
+                <div style={{ background: "#fff", borderRadius: "16px", boxShadow: "0 4px 6px rgba(0,0,0,0.07)", padding: "32px" }}>
+                    {/* Top Section */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "24px", marginBottom: "32px", paddingBottom: "32px", borderBottom: "1px solid #f3f4f6" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
+                            <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "linear-gradient(135deg, #22c55e 0%, #059669 100%)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                <User size={32} color="#fff" />
+                            </div>
+                            <div>
+                                <h2 style={{ fontSize: "24px", fontWeight: "bold", color: "#111827", margin: "0 0 8px 0" }}>{displayName}</h2>
+                                <p style={{ color: "#6b7280", fontSize: "14px", margin: 0, display: "flex", alignItems: "center", gap: "4px" }}>
+                                    <Mail size={16} />
+                                    {form.email}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+                            {!editMode ? (
+                                <Button onClick={() => setEditMode(true)}>
+                                    <Edit2 size={16} />
+                                    แก้ไข
+                                </Button>
+                            ) : (
+                                <>
+                                    <Button onClick={save} disabled={saving}>
+                                        <Save size={16} />
+                                        {saving ? "กำลังบันทึก..." : "บันทึก"}
+                                    </Button>
+                                    <Button onClick={() => setEditMode(false)} variant="ghost">
+                                        <X size={16} />
+                                        ยกเลิก
+                                    </Button>
+                                </>
+                            )}
                         </div>
                     </div>
 
+                    {/* Form Section */}
                     {!editMode ? (
-                        <Button onClick={enterEdit}>Edit</Button>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "24px" }}>
+                            <div>
+                                <Field label="ชื่อจริง">
+                                    <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 16px", background: "#f9fafb", borderRadius: "8px", border: "1px solid #e5e7eb" }}>
+                                        <User size={20} color="#9ca3af" />
+                                        <input disabled value={displayName} style={{ background: "transparent", color: "#6b7280", width: "100%", outline: "none", border: "none", fontSize: "14px" }} />
+                                    </div>
+                                </Field>
+                            </div>
+                            <div>
+                                <Field label="อีเมล">
+                                    <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 16px", background: "#f9fafb", borderRadius: "8px", border: "1px solid #e5e7eb" }}>
+                                        <Mail size={20} color="#9ca3af" />
+                                        <input disabled value={form.email} style={{ background: "transparent", color: "#6b7280", width: "100%", outline: "none", border: "none", fontSize: "14px" }} />
+                                    </div>
+                                </Field>
+                            </div>
+                        </div>
                     ) : (
-                        <div style={{ display: "flex", gap: 10 }}>
-                            <Button onClick={save} disabled={saving}>
-                                {saving ? "Saving..." : "Save"}
-                            </Button>
-                            <Button onClick={cancelEdit} variant="ghost">
-                                Cancel
-                            </Button>
+                        <div>
+                            {editMode && (
+  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "24px", marginTop: "24px" }}>
+    <Field label="ชื่อจริง" error={errors.fullName}>
+      <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 16px", border: "1px solid #e5e7eb", borderRadius: "8px" }}>
+        <User size={20} color="#9ca3af" />
+        <input
+          type="text"
+          name="fullName"
+          value={form.fullName}
+          onChange={onChange}
+          style={{ background: "transparent", width: "100%", outline: "none", border: "none", fontSize: "14px", color: "#111827" }}
+        />
+      </div>
+    </Field>
+
+    <Field label="อีเมล" error={errors.email}>
+      <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 16px", border: "1px solid #e5e7eb", borderRadius: "8px" }}>
+        <Mail size={20} color="#9ca3af" />
+        <input
+          type="email"
+          name="email"
+          value={form.email}
+          onChange={onChange}
+          style={{ background: "transparent", width: "100%", outline: "none", border: "none", fontSize: "14px", color: "#111827" }}
+        />
+      </div>
+    </Field>
+
+    <Field label="รหัสผ่าน (ไม่บังคับ)">
+      <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 16px", border: "1px solid #e5e7eb", borderRadius: "8px" }}>
+        <Lock size={20} color="#9ca3af" />
+        <input
+          type="password"
+          name="password"
+          value={form.password}
+          onChange={onChange}
+          placeholder="••••••••"
+          style={{ background: "transparent", width: "100%", outline: "none", border: "none", fontSize: "14px", color: "#111827" }}
+        />
+      </div>
+    </Field>
+  </div>
+)}
+
                         </div>
                     )}
                 </div>
-
-                {/* form */}
-                {!editMode ? (
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
-                        <Field label="Full Name">
-                            <input
-                                disabled
-                                value={displayName}
-                                style={{
-                                    width: "100%",
-                                    padding: "12px 16px",
-                                    border: "1px solid #ddd",
-                                    borderRadius: 6,
-                                    background: "#f9f9f9",
-                                }}
-                            />
-                        </Field>
-                        <Field label="Nick Name">
-                            <input
-                                disabled
-                                value={admin.nickName || ""}
-                                style={{
-                                    width: "100%",
-                                    padding: "12px 16px",
-                                    border: "1px solid #ddd",
-                                    borderRadius: 6,
-                                    background: "#f9f9f9",
-                                }}
-                            />
-                        </Field>
-                        <Field label="Avatar URL">
-                            <input
-                                disabled
-                                value={form.avatarUrl}
-                                style={{
-                                    width: "100%",
-                                    padding: "12px 16px",
-                                    border: "1px solid #ddd",
-                                    borderRadius: 6,
-                                    background: "#f9f9f9",
-                                }}
-                            />
-                        </Field>
-                        <Field label="Email">
-                            <div style={{ display: "flex", gap: 10 }}>
-                                <input
-                                    disabled
-                                    value={form.email}
-                                    style={{
-                                        width: "100%",
-                                        padding: "12px 16px",
-                                        border: "1px solid #ddd",
-                                        borderRadius: 6,
-                                        background: "#f9f9f9",
-                                    }}
-                                />
-                                <Button onClick={addEmail} variant="info">
-                                    + Add Email
-                                </Button>
-                            </div>
-                        </Field>
-                    </div>
-                ) : (
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
-                        <Field label="Full Name">
-                            <input
-                                name="fullName"
-                                value={form.fullName}
-                                onChange={onChange}
-                                placeholder="Your full name"
-                                style={{
-                                    width: "100%",
-                                    padding: "12px 16px",
-                                    border: "1px solid #ddd",
-                                    borderRadius: 6,
-                                }}
-                            />
-                        </Field>
-                        <Field label="Nick Name">
-                            <input
-                                name="nickName"
-                                value={form.nickName}
-                                onChange={onChange}
-                                placeholder="Nickname"
-                                style={{
-                                    width: "100%",
-                                    padding: "12px 16px",
-                                    border: "1px solid #ddd",
-                                    borderRadius: 6,
-                                }}
-                            />
-                        </Field>
-                        <Field label="Avatar URL">
-                            <input
-                                name="avatarUrl"
-                                value={form.avatarUrl}
-                                onChange={onChange}
-                                placeholder="https://..."
-                                style={{
-                                    width: "100%",
-                                    padding: "12px 16px",
-                                    border: "1px solid #ddd",
-                                    borderRadius: 6,
-                                }}
-                            />
-                        </Field>
-                        <Field label="Email">
-                            <div style={{ display: "flex", gap: 10 }}>
-                                <input
-                                    name="email"
-                                    value={form.email}
-                                    onChange={onChange}
-                                    type="email"
-                                    placeholder="you@example.com"
-                                    style={{ flex: 1, padding: "12px 16px", border: "1px solid #ddd", borderRadius: 6 }}
-                                />
-                                <Button onClick={addEmail} variant="info">
-                                    + Add Email
-                                </Button>
-                            </div>
-                        </Field>
-                    </div>
-                )}
             </div>
 
-            {/* Modal เพิ่มอีเมล */}
+            {/* Modal */}
             <Modal
-                title="Add Email Address"
+                title="เพิ่มอีเมลใหม่"
                 open={emailModalOpen}
-                onClose={() => setEmailModalOpen(false)}
+                onClose={() => {
+                    setEmailModalOpen(false);
+                    setErrors({});
+                }}
                 footer={
                     <>
                         <Button onClick={() => setEmailModalOpen(false)} variant="ghost">
-                            Cancel
+                            ยกเลิก
                         </Button>
-                        <Button onClick={confirmAddEmail}>Add</Button>
+                        <Button onClick={confirmAddEmail}>เพิ่ม</Button>
                     </>
                 }
             >
-                <Field label="Email Address">
-                    <input
-                        autoFocus
-                        type="email"
-                        value={newEmail}
-                        onChange={(e) => setNewEmail(e.target.value)}
-                        placeholder="you@example.com"
-                        style={{ width: "100%", padding: "12px 16px", border: "1px solid #ddd", borderRadius: 6 }}
-                    />
+                <Field label="ที่อยู่อีเมล" error={errors.email}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 16px", border: "2px solid #e5e7eb", borderRadius: "8px", transition: "all 0.2s" }}>
+                        <Mail size={20} color="#9ca3af" />
+                        <input
+                            autoFocus
+                            type="email"
+                            value={newEmail}
+                            onChange={(e) => {
+                                setNewEmail(e.target.value);
+                                if (errors.email) setErrors({});
+                            }}
+                            placeholder="you@example.com"
+                            style={{ background: "transparent", width: "100%", outline: "none", border: "none", fontSize: "14px", color: "#111827" }}
+                            onFocus={(e) => { e.currentTarget.parentElement.style.borderColor = "#22c55e"; }}
+                            onBlur={(e) => { e.currentTarget.parentElement.style.borderColor = "#e5e7eb"; }}
+                        />
+                    </div>
                 </Field>
             </Modal>
         </div>

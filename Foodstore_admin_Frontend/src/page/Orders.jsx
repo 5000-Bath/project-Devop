@@ -211,6 +211,21 @@ export default function Orders() {
     const [error, setError] = useState(null);
     const navigate = useNavigate();
 
+    // 🛑 ฟังก์ชันใหม่: กำหนด Style ตามสถานะ
+    const getStatusStyle = (status) => {
+        const statusKey = (status || 'PENDING').toUpperCase();
+        switch (statusKey) {
+            case 'PENDING':
+                return { backgroundColor: '#fffbe5', color: '#ffc107', fontWeight: 'bold', padding: '4px 8px', borderRadius: 4 }; // เหลืองอ่อน
+            case 'SUCCESS':
+                return { backgroundColor: '#e8f5e9', color: '#4caf50', fontWeight: 'bold', padding: '4px 8px', borderRadius: 4 }; // เขียวอ่อน
+            case 'CANCELLED':
+                return { backgroundColor: '#ffebee', color: '#f44336', fontWeight: 'bold', padding: '4px 8px', borderRadius: 4 }; // แดงอ่อน
+            default:
+                return {};
+        }
+    };
+
     // ✅ โหลดข้อมูลจาก backend
     useEffect(() => {
         const fetchOrders = async () => {
@@ -314,8 +329,12 @@ export default function Orders() {
                                 {/* ✅ User ID */}
                                 <td style={{ padding: '12px 8px' }}>{order.userId ?? '-'}</td>
 
-                                {/* ✅ Status */}
-                                <td style={{ padding: '12px 8px' }}>{order.status || 'PENDING'}</td>
+                                {/* 🛑 Status ที่ถูกแก้ไขให้มีสี */}
+                                <td style={{ padding: '12px 8px' }}>
+                                    <span style={getStatusStyle(order.status)}>
+                                        {order.status || 'PENDING'}
+                                    </span>
+                                </td>
 
                                 {/* ✅ CreatedAt */}
                                 <td style={{ padding: '12px 8px' }}>{formatDate(order.createdAt)}</td>
@@ -355,4 +374,3 @@ export default function Orders() {
         </div>
     );
 }
-

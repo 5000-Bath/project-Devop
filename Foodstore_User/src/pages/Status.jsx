@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import '../component/Status.css';
 import { getOrderById } from '../api/orders';
 import { useLocation } from 'react-router-dom';
+import Swal from 'sweetalert2';
 
 function useQuery() {
   const { search } = useLocation();
@@ -10,93 +11,180 @@ function useQuery() {
 
 export default function Status() {
   const q = useQuery();
-
   const [searchInput, setSearchInput] = useState(q.get('orderId') || '');
   const [order, setOrder] = useState(null);
-  const [error, setError] = useState('');
   const [isAnimating, setIsAnimating] = useState(false);
   const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
 
+  // 🔢 คำนวณ total อย่างปลอดภัยด้วย useMemo
+  const total = useMemo(() => {
+    if (!order) return 0;
+    const items = Array.isArray(order.orderItems) ? order.orderItems : [];
+    const itemsTotal = items.reduce(
+      (sum, item) =>
+        sum +
+        Number(item?.product?.price ?? 0) *
+        Number(item?.qty ?? item?.quantity ?? 1),
+      0
+    );
+    return itemsTotal + 40; // + ค่าส่ง 40 บาท
+  }, [order]);
+
+  // 🛠 ฟังก์ชันดึงข้อมูลออเดอร์ + จัดการ error
   const findOrder = async (id) => {
     const trimmed = String(id || '').trim();
     if (!trimmed) {
       setOrder(null);
-      setError('');
       return;
     }
 
-    const found = await getOrderById(trimmed)
-    const createdAtstring = found?.createdAt ?? ''
-    const updated = {
-      ...(found ?? {}),
-      createdAt: new Date(createdAtstring).toLocaleString(),
-      events: [...(found?.events ?? []), ...createInitialEvents(found)],
-    };
-    setOrder(updated);
+    try {
+      setIsAnimating(false);
+      const rawData = await getOrderById(trimmed);
+
+      // ✅ แปลงข้อมูลให้เป็นรูปแบบที่ใช้งานได้
+      const adapted = adaptOrder(rawData, API_BASE);
+      if (!adapted) throw new Error('Invalid order data');
+
+      setOrder(adapted);
+    } catch (err) {
+      console.error('Failed to fetch order:', err);
+      setOrder(null);
+      Swal.fire({
+        icon: 'error',
+        title: 'ไม่พบออเดอร์',
+        text: 'หมายเลขออเดอร์นี้ไม่ถูกต้องหรือไม่มีอยู่ในระบบ',
+        timer: 3000,
+        showConfirmButton: false,
+      });
+    } finally {
+      setTimeout(() => setIsAnimating(true), 50);
+    }
   };
 
+  // 📅 ฟอร์แมตวันที่เป็นไทย
   function formatThaiFromLocalInput(inputStr) {
-
     const iso = inputStr.replace(' ', 'T') + 'Z';
     const d = new Date(iso);
-
     const day = String(d.getDate()).padStart(2, '0');
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const yearBE = d.getFullYear() + 543;
-
     const hour = String(d.getHours()).padStart(2, '0');
     const minute = String(d.getMinutes()).padStart(2, '0');
-
-    const timee = day + '/' + month + '/' + yearBE + ' ' + hour + ':' + minute;
-    return timee;
+    return `${day}/${month}/${yearBE} ${hour}:${minute}`;
   }
 
+  // 🕒 เหตุการณ์เริ่มต้น
   const createInitialEvents = (order) => [
-    { icon: "https://api.iconify.design/ic/outline-restaurant.svg?color=%23000000", title: "Cooking Order", time: order?.createdAt ? formatThaiFromLocalInput(order.createdAt) : "", status: 'Pending' }
+    {
+      icon: 'https://api.iconify.design/ic/outline-restaurant.svg?color=%23000000',
+      title: 'Cooking Order',
+      time: order?.createdAt ? formatThaiFromLocalInput(order.createdAt) : '',
+      status: 'done',
+    },
   ];
 
-
+  // 🔍 ค้นหาเมื่อกดปุ่ม
   const handleSearch = () => {
-    setIsAnimating(false);
-    findOrder(searchInput);
-    setTimeout(() => setIsAnimating(true), 50);
+    const input = searchInput.trim();
+    if (!input) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'กรุณากรอกหมายเลขออเดอร์',
+        timer: 2000,
+        showConfirmButton: false,
+      });
+      return;
+    }
+    if (!/^\d+$/.test(input)) {
+      Swal.fire({
+        icon: 'error',
+        title: 'ไม่ถูกต้อง',
+        text: 'กรุณากรอกตัวเลขเท่านั้น',
+        timer: 2000,
+        showConfirmButton: false,
+      });
+      return;
+    }
+    findOrder(input);
   };
 
-  const handleKeyDown = (e) => { if (e.key === 'Enter') handleSearch(); };
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') handleSearch();
+  };
 
+  // 🔄 โหลดออเดอร์จาก URL (เมื่อเข้ามาครั้งแรก)
   useEffect(() => {
-    if (searchInput) handleSearch(); else setIsAnimating(true);
-  }, []);
+    const orderIdFromUrl = q.get('orderId');
+    if (orderIdFromUrl) {
+      const trimmed = orderIdFromUrl.trim();
+      if (/^\d+$/.test(trimmed)) {
+        setSearchInput(trimmed);
+        findOrder(trimmed);
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'ลิงก์ไม่ถูกต้อง',
+          text: 'หมายเลขออเดอร์ในลิงก์ไม่ถูกต้อง',
+          timer: 3000,
+          showConfirmButton: false,
+        });
+      }
+    } else {
+      setIsAnimating(true);
+    }
+  }, []); // รันแค่ตอน mount
 
-  const items = Array.isArray(order?.orderItems) ? order.orderItems : [];
-  const total =
-    items.reduce(
-      (s, it) =>
-        s + Number(it?.product?.price ?? 0) * Number(it?.qty ?? it?.quantity ?? 1),
-      0
-    ) + Number(40);
-
-  function adaptOrder(api) {
+  // 🧩 แปลงข้อมูลออเดอร์ให้ใช้งานง่าย
+  function adaptOrder(api, apiBase) {
     if (!api || typeof api !== 'object') return null;
 
     const items = Array.isArray(api.orderItems)
-      ? api.orderItems.map(it => ({
-        id: it.id ?? null,
-        name: it.product?.name ?? '',
-        price: Number(it.product?.price ?? 0),
-        qty: Number(it.quantity ?? it.qty ?? 1),
-        img: api.API_BASE && typeof it.product?.imageUrl === 'string'
-          ? it.product.imageUrl
-          : null,
-      }))
+      ? api.orderItems.map((it) => ({
+          id: it.id ?? null,
+          name: it.product?.name ?? '',
+          price: Number(it.product?.price ?? 0),
+          qty: Number(it.quantity ?? it.qty ?? 1),
+          img:
+            apiBase && typeof it.product?.imageUrl === 'string'
+              ? apiBase + it.product.imageUrl
+              : null,
+        }))
       : [];
 
+    // สร้างเหตุการณ์ตามสถานะ
+    const now = new Date().toLocaleString('th-TH');
     const defaultEvents = [
-      { title: 'Order Created', status: 'done', time: api.createdAt ?? '', icon: 'https://api.iconify.design/mdi:clipboard-text.svg' },
-      { title: 'Payment Pending', status: api.status === 'PAID' ? 'done' : 'pending', time: '', icon: 'https://api.iconify.design/mdi:credit-card-outline.svg' },
-      { title: 'Preparing', status: (api.status === 'PREPARING' || api.status === 'SHIPPED' || api.status === 'DELIVERED') ? 'inprogress' : 'pending', time: '', icon: 'https://api.iconify.design/mdi:chef-hat.svg' },
-      { title: 'Shipped', status: (api.status === 'SHIPPED' || api.status === 'DELIVERED') ? 'done' : 'pending', time: '', icon: 'https://api.iconify.design/mdi:truck-delivery.svg' },
-      { title: 'Delivered', status: api.status === 'DELIVERED' ? 'done' : 'pending', time: '', icon: 'https://api.iconify.design/mdi:home-check.svg' },
+      {
+        title: 'Order Created',
+        status: 'done',
+        time: api.createdAt ? formatThaiFromLocalInput(api.createdAt) : '',
+        icon: 'https://api.iconify.design/mdi/clipboard-text.svg',
+      },
+      {
+        title: 'Payment Confirmed',
+        status: api.status === 'PAID' || api.status === 'PREPARING' || api.status === 'SHIPPED' || api.status === 'DELIVERED' ? 'done' : 'pending',
+        time: api.status === 'PAID' ? now : '',
+        icon: 'https://api.iconify.design/mdi/credit-card-outline.svg',
+      },
+      {
+        title: 'Preparing',
+        status: api.status === 'PREPARING' || api.status === 'SHIPPED' || api.status === 'DELIVERED' ? 'inprogress' : 'pending',
+        time: '',
+        icon: 'https://api.iconify.design/mdi/chef-hat.svg',
+      },
+      {
+        title: 'Shipped',
+        status: api.status === 'SHIPPED' || api.status === 'DELIVERED' ? 'done' : 'pending',
+        time: '',
+        icon: 'https://api.iconify.design/mdi/truck-delivery.svg',
+      },
+      {
+        title: 'Delivered',
+        status: api.status === 'DELIVERED' ? 'done' : 'pending',
+        time: '',
+        icon: 'https://api.iconify.design/mdi/home-check.svg',
+      },
     ];
 
     return {
@@ -106,15 +194,13 @@ export default function Status() {
       createdAt: api.createdAt ?? null,
       currency: api.currency ?? 'THB',
       deliveryFee: Number(api.deliveryFee ?? 0),
-
-      orderItems: Array.isArray(api.orderItems) ? api.orderItems : [],
-
+      orderItems: items,
       items,
-
-      events: Array.isArray(api.events) ? api.events : defaultEvents,
+      events: defaultEvents,
     };
   }
 
+  // 🖼 Render UI
   return (
     <div className="status-page">
       <div className="status-header-bar">ORDER STATUS</div>
@@ -129,23 +215,32 @@ export default function Status() {
             placeholder="Check your Order with your Order ID here"
             className="search-input"
           />
-          <button onClick={handleSearch} className="search-button" title="Search order by ID">
-            <img src="https://api.iconify.design/ic/outline-search.svg" alt="Search" className="search-icon" />
+          <button
+            onClick={handleSearch}
+            className="search-button"
+            title="Search order by ID"
+          >
+            <img
+              src="https://api.iconify.design/ic/outline-search.svg"
+              alt="Search"
+              className="search-icon"
+            />
           </button>
         </div>
 
-        {error && (
+        {!order && (
           <div className={`message-container ${isAnimating ? 'animating' : ''}`}>
-            <img src="https://api.iconify.design/ic/outline-warning-amber.svg?color=%23fb923c" alt="Error" className="message-icon" />
-            <p className="message-text error">{error}</p>
-          </div>
-        )}
-
-        {!order && !error && (
-          <div className={`message-container ${isAnimating ? 'animating' : ''}`}>
-            <img src="https://api.iconify.design/ic/outline-receipt-long.svg?color=%239ca3af" alt="Search for order" className="message-icon" />
-            <p className="message-text">Please enter your Order ID to see the status.</p>
-            <p className="message-sub-text">(Try: 1, 2, 3, or 4 — หรือใช้ Order ID ล่าสุดที่เพิ่ง Checkout)</p>
+            <img
+              src="https://api.iconify.design/ic/outline-receipt-long.svg?color=%239ca3af"
+              alt="Search for order"
+              className="message-icon"
+            />
+            <p className="message-text">
+              Please enter your Order ID to see the status.
+            </p>
+            <p className="message-sub-text">
+              (Try: 1, 2, 3, or 4 — หรือใช้ Order ID ล่าสุดที่เพิ่ง Checkout)
+            </p>
           </div>
         )}
 
@@ -159,7 +254,7 @@ export default function Status() {
               <div className="order-id">#Your Order ID : {order.id}</div>
               <div style={{ marginTop: 18 }}>
                 {order.events.map((ev, idx) => {
-                  const cls = ev.status === 'inprogress' ? 'pending' : ev.status; // เผื่อ CSS ไม่มี inprogress
+                  const cls = ev.status === 'inprogress' ? 'pending' : ev.status;
                   return (
                     <div key={idx} className="event">
                       <img src={ev.icon} alt="" className="event-icon" />
@@ -178,11 +273,19 @@ export default function Status() {
               <div>
                 {order.orderItems.map((it, i) => (
                   <div key={i} className="item-row">
-                    {it.product.imageUrl ? <img src={API_BASE + it.product.imageUrl} alt={it.product.name} className="item-thumb" /> : <img src="/src/assets/menupic/khao-man-kai.jpg" alt={it.product.name} className="item-thumb" />}
+                    {it.img ? (
+                      <img src={it.img} alt={it.name} className="item-thumb" />
+                    ) : (
+                      <img
+                        src="/src/assets/menupic/khao-man-kai.jpg"
+                        alt={it.name}
+                        className="item-thumb"
+                      />
+                    )}
                     <div>
-                      <div className="item-name">{it.product.name}</div>
+                      <div className="item-name">{it.name}</div>
                       <div className="item-price">
-                        {Number(it.product.price)} {"THB"} × {Number(it.qty ?? it.quantity ?? 1)}
+                        {it.price} THB × {it.qty}
                       </div>
                     </div>
                   </div>
@@ -190,10 +293,13 @@ export default function Status() {
               </div>
               <div className="summary-meta">
                 <div className="summary-label">Delivery Fee</div>
-                <div>{40} {"THB"}</div>
-                <div className="summary-line" style={{ gridColumn: '1 / -1' }}></div>
+                <div>40 THB</div>
+                <div
+                  className="summary-line"
+                  style={{ gridColumn: '1 / -1' }}
+                ></div>
                 <div className="summary-total-label">Total Price</div>
-                <div className="summary-total-price">{total} {"THB"}</div>
+                <div className="summary-total-price">{total} THB</div>
               </div>
             </aside>
           </div>

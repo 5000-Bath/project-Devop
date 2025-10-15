@@ -1,24 +1,109 @@
 import React from 'react';
 import './Contact.css';
-import contactImage from '../assets/contactkong.jpg';
+
+// แทนที่ด้วย path จริงของรูปแต่ละคน
+import img1 from '../assets/team/member1.jpg';
+import img2 from '../assets/team/member2.png';
+import img3 from '../assets/team/member3.png';
+import img4 from '../assets/team/member4.jpg';
+import img5 from '../assets/team/member5.jpg';
+import img6 from '../assets/team/member6.jpg';
+
+// ข้อมูลสมาชิกทีม — แก้ไขตรงนี้ได้เลย!
+const teamMembers = [
+  {
+    id: 1,
+    name: "Weerapat Aphiphuwong",
+    nickname: "Film",
+    github: "https://github.com/FilmPNG",
+    linkedin: "https://www.linkedin.com/in/weerapat-aphiphuwong-a96406341/",
+    image: img1,
+  },
+  {
+    id: 2,
+    name: "Tas",
+    nickname: "Tas",
+    github: "https://github.com/TasSukastid",
+    linkedin: "https://www.linkedin.com/in/tas-sukastid-bcc/",
+    image: img2,
+  },
+  {
+    id: 3,
+    name: "First",
+    nickname: "First",
+    github: "https://github.com/maneerat",
+    linkedin: "https://linkedin.com/in/maneerat",
+    image: img3,
+  },
+  {
+    id: 4,
+    name: "Kong",
+    nickname: "Kong",
+    github: "https://github.com/Konggarage",
+    linkedin: "https://linkedin.com/in/tanawat",
+    image: img4,
+  },
+  {
+    id: 5,
+    name: "Ake",
+    nickname: "Ake",
+    github: "https://github.com/tanert48",
+    linkedin: "https://linkedin.com/in/pawee",
+    image: img5,
+  },
+  {
+    id: 6,
+    name: "Ohm",
+    nickname: "Ohm",
+    github: "https://github.com/ohmmyrisingstar",
+    linkedin: "https://linkedin.com/in/sirapat",
+    image: img6,
+  },
+];
 
 export default function Contact() {
   return (
     <div className="contact-page">
       <div className="contact-header">
-        <h1>Contact Us</h1>
+        <h1>Meet Our Team</h1>
       </div>
-      <div className="contact-body">
-        <div className="carousel">
-          <div className="carousel-arrow">&#8249;</div>
-          <img src={contactImage} alt="Kongphop" className="contact-image" />
-          <div className="carousel-arrow">&#8250;</div>
-        </div>
-        <div className="contact-info">
-          <p>KONGPHOP</p>
-          <p className="nickname">"THE PSYCHO"</p>
-          <p>KAOCHOT</p>
-        </div>
+
+      <div className="team-grid">
+        {teamMembers.map((member) => (
+          <div className="team-card" key={member.id}>
+            <div className="member-image-wrapper">
+              <img
+                src={member.image}
+                alt={member.nickname}
+                className="member-image"
+              />
+            </div>
+            <div className="member-info">
+              <h3 className="member-name">{member.name}</h3>
+              <p className="member-nickname">"{member.nickname}"</p>
+              <div className="member-links">
+                <a
+                  href={member.github}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="social-link github"
+                  aria-label={`GitHub of ${member.name}`}
+                >
+                  GitHub
+                </a>
+                <a
+                  href={member.linkedin}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="social-link linkedin"
+                  aria-label={`LinkedIn of ${member.name}`}
+                >
+                  LinkedIn
+                </a>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
