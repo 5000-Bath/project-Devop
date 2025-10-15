@@ -27,20 +27,18 @@ spec:
         - name: MYSQL_DATABASE
           valueFrom:
             secretKeyRef:
-              name: MYSQL_DATABASE
+              name: mysql-secret
               key: MYSQL_DATABASE
         - name: MYSQL_USER
           valueFrom:
             secretKeyRef:
-              name: MYSQL_USER
+              name: mysql-secret
               key: MYSQL_USER
         - name: MYSQL_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: MYSQL_PASSWORD
+              name: mysql-secret
               key: MYSQL_PASSWORD
-        - name: MYSQL_SERVER_ID
-          value: "2"
         volumeMounts:
         - name: mysql-storage
           mountPath: /var/lib/mysql
