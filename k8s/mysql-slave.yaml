@@ -24,30 +24,20 @@ spec:
             secretKeyRef:
               name: mysql-secret
               key: MYSQL_ROOT_PASSWORD
-        - name: MYSQL_DATABASE
-          valueFrom:
-            secretKeyRef:
-              name: mysql-secret
-              key: MYSQL_DATABASE
-        - name: MYSQL_USER
-          valueFrom:
-            secretKeyRef:
-              name: mysql-secret
-              key: MYSQL_USER
-        - name: MYSQL_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: mysql-secret
-              key: MYSQL_PASSWORD
         volumeMounts:
         - name: mysql-storage
           mountPath: /var/lib/mysql
+        - name: mysql-config
+          mountPath: /etc/mysql/conf.d
         - name: init-sql
           mountPath: /docker-entrypoint-initdb.d
       volumes:
       - name: mysql-storage
         persistentVolumeClaim:
           claimName: mysql-pvc
+      - name: mysql-config
+        configMap:
+          name: mysql-config
       - name: init-sql
         configMap:
           name: mysql-init-slave
@@ -58,9 +48,9 @@ metadata:
   name: mysql-salaya
   namespace: production
 spec:
+  ports:
+  - port: 3306
+    targetPort: 3306
   selector:
     app: mysql-salaya
-  ports:
-    - port: 3306
-      targetPort: 3306
   type: ClusterIP
