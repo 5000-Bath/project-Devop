@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2"; // ✅ Import Swal
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8080";
+const API_BASE = "";
 
 export default function Ordersdetail() {
     const { id } = useParams(); // ✅ รับ order id จาก URL
