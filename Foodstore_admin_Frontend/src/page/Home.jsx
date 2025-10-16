@@ -13,6 +13,7 @@ import {
 } from "chart.js";
 import { Line } from "react-chartjs-2";
 import "../styles/AdminDashboard.css";
+import { fmtTH, money, isPending, isDone, isCancel } from "../utils/formatters";
 
 function formatThaiDateTime(dateString) {
     if (!dateString) return "-";
@@ -45,17 +46,6 @@ ChartJS.register(
 );
 
 const API_BASE = import.meta?.env?.VITE_API_BASE || "http://localhost:8080";
-
-const fmtTH = (d) => new Date(d).toLocaleString("th-TH");
-const money = (n) =>
-    `฿${Number(n ?? 0).toLocaleString("th-TH", { maximumFractionDigits: 2 })}`;
-const norm = (s) => (s || "").toString().trim().toUpperCase();
-const isPending = (s) =>
-    ["PENDING", "AWAITING_PAYMENT", "PROCESSING"].includes(norm(s));
-const isDone = (s) =>
-    ["FULFILLED", "COMPLETED", "DELIVERED", "SUCCESS"].includes(norm(s));
-const isCancel = (s) =>
-    ["CANCELLED", "CANCELED", "VOID"].includes(norm(s));
 
 export default function AdminDashboard() {
     const [orders, setOrders] = useState([]);
@@ -189,7 +179,6 @@ export default function AdminDashboard() {
                 </button>
             </div>
 
-            {/* ✅ Responsive cards */}
             <div className="cards responsive-grid">
                 <Card title="Today Orders" value={summary.todayOrders} />
                 <Card title="Pending Orders" value={summary.pendingOrders} />
@@ -199,7 +188,6 @@ export default function AdminDashboard() {
                 <Card title="Out of Stock" value={summary.outOfStock} />
             </div>
 
-            {/* ✅ Chart section */}
             <div className="card chart responsive-chart">
                 <Line
                     data={chartData}
@@ -217,7 +205,6 @@ export default function AdminDashboard() {
 
                                         const orderCount = context.raw;
 
-                                        // ✅ รวมเฉพาะ order วันที่ตรงกัน + สถานะ SUCCESS เท่านั้น
                                         const dayOrders = orders.filter((o) => {
                                             const od = new Date(o.createdAt || o.date);
                                             const sameDate =
@@ -266,7 +253,6 @@ export default function AdminDashboard() {
                 />
             </div>
 
-            {/* ✅ Bottom layout */}
             <div className="bottom responsive-stack">
                 <div className="card wide recent-block">
                     <h4>🧾 Recent Orders</h4>
@@ -382,7 +368,7 @@ export default function AdminDashboard() {
     );
 }
 
-function Card({ title, value }) {
+export function Card({ title, value }) {
     return (
         <div className="card mini">
             <p className="title">{title}</p>
