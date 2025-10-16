@@ -16,7 +16,7 @@ import "../styles/AdminDashboard.css";
 
 ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip, Legend, Filler);
 
-const API_BASE = import.meta?.env?.VITE_API_BASE || "http://localhost:8080";
+const API_BASE = "";
 
 // helpers
 const fmtTH = (d) => new Date(d).toLocaleString("th-TH");
