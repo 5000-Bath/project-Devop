@@ -45,6 +45,9 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOriginPatterns(Arrays.asList(
+                "https://foodstore.weerapatserver.com",
+                "https://rayong.weerapatserver.com",
+                "https://salaya.weerapatserver.com",
                 "http://localhost:3000", "http://127.0.0.1:3000",
                 "http://localhost:3001", "http://127.0.0.1:3001",
                 "http://localhost:5173", "http://127.0.0.1:5173",
