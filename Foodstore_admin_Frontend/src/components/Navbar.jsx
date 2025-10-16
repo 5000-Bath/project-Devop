@@ -10,7 +10,7 @@ const menu = [
   { to: "/admin/setting", label: "Setting", icon: <FiSettings /> },
 ];
 
-const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
+const API_BASE = "";
 
 export default function Navbar({ isOpen, toggleSidebar }) {
   const navigate = useNavigate();
