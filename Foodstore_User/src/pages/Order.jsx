@@ -13,16 +13,13 @@ export default function Order() {
   const [lastOrderId, setLastOrderId] = useState(null);
   const [stockError, setStockError] = useState(null);
 
-  const deliveryFee = 40;
-  const discount = 0;
+    // ✅ คำนวณเฉพาะ Total Price รวมของทุกสินค้าในตะกร้า
+    const totalPrice = cartItems.reduce(
+        (sum, item) => sum + Number(item.price) * Number(item.quantity),
+        0
+    );
 
-  const subtotal = cartItems.reduce(
-    (sum, item) => sum + Number(item.price) * Number(item.quantity),
-    0
-  );
-  const totalPrice = subtotal + deliveryFee - discount;
-
-  const clearCart = () => {
+    const clearCart = () => {
     const copy = [...cartItems];
     copy.forEach(it => removeFromCart(it));
   };
@@ -112,32 +109,31 @@ export default function Order() {
           )}
         </div>
 
-        <div className="checkout-summary">
-          <div className="summary-line">
-            <span>Subtotal</span>
-            <span>{subtotal} THB</span>
-          </div>
-          <div className="summary-line">
-            <span>Delivery Fee</span>
-            <span>{deliveryFee} THB</span>
-          </div>
-          <div className="summary-line">
-            <span>Discount</span>
-            <span>{discount} THB</span>
-          </div>
-          <div className="summary-line total">
-            <span>Total Price</span>
-            <span>{totalPrice} THB</span>
-          </div>
+          <div className="checkout-summary" style={{
+              borderTop: '1px solid #eee',
+              paddingTop: 16,
+              marginTop: 16
+          }}>
+              <div className="summary-line total" style={{
+                  fontWeight: "bold",
+                  fontSize: "1.1em",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "8px 0"
+              }}>
+                  <span>Total Price</span>
+                  <span>{totalPrice} THB</span>
+              </div>
 
-          <button
-            className="checkout-button"
-            onClick={handleCheckout}
-            disabled={cartItems.length === 0}
-          >
-            Checkout
-          </button>
-        </div>
+              <button
+                  className="checkout-button"
+                  onClick={handleCheckout}
+                  disabled={cartItems.length === 0}
+              >
+                  Checkout
+              </button>
+          </div>
       </div>
 
       {/* Success Popup */}

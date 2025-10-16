@@ -37,7 +37,7 @@ const teamMembers = [
   },
   {
     id: 4,
-    name: "Kong",
+    name: "Kongphop Kaochot",
     nickname: "Kong",
     github: "https://github.com/Konggarage",
     linkedin: "https://www.linkedin.com/in/kongphop-kaochot-14408a339/",
@@ -45,7 +45,7 @@ const teamMembers = [
   },
   {
     id: 5,
-    name: "Ake",
+    name: "Taned Somchervieng",
     nickname: "Ake",
     github: "https://github.com/tanert48",
     linkedin: "https://www.linkedin.com/in/taned-somchirvieng-788918373",
@@ -53,7 +53,7 @@ const teamMembers = [
   },
   {
     id: 6,
-    name: "Ohm",
+    name: "Peeranut Machaivech",
     nickname: "Ohm",
     github: "https://github.com/ohmmyrisingstar",
     linkedin: "https://linkedin.com/in/sirapat",

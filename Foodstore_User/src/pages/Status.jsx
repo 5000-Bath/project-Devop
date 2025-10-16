@@ -16,21 +16,17 @@ export default function Status() {
   const [isAnimating, setIsAnimating] = useState(false);
   const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
 
-  // 🔢 คำนวณ total อย่างปลอดภัยด้วย useMemo
-  const total = useMemo(() => {
-    if (!order) return 0;
-    const items = Array.isArray(order.orderItems) ? order.orderItems : [];
-    const itemsTotal = items.reduce(
-      (sum, item) =>
-        sum +
-        Number(item?.product?.price ?? 0) *
-        Number(item?.qty ?? item?.quantity ?? 1),
-      0
-    );
-    return itemsTotal + 40; // + ค่าส่ง 40 บาท
-  }, [order]);
+    //  คำนวณยอดรวมทั้งหมดจาก orderItems (ไม่รวมค่าส่ง)
+    const total = useMemo(() => {
+        if (!order) return 0;
+        const items = Array.isArray(order.orderItems) ? order.orderItems : [];
+        return items.reduce(
+            (sum, item) => sum + Number(item?.price ?? 0) * Number(item?.qty ?? 0),
+            0
+        );
+    }, [order]);
 
-  // 🛠 ฟังก์ชันดึงข้อมูลออเดอร์ + จัดการ error
+    // 🛠 ฟังก์ชันดึงข้อมูลออเดอร์ + จัดการ error
   const findOrder = async (id) => {
     const trimmed = String(id || '').trim();
     if (!trimmed) {
@@ -160,31 +156,7 @@ export default function Status() {
         status: 'done',
         time: api.createdAt ? formatThaiFromLocalInput(api.createdAt) : '',
         icon: 'https://api.iconify.design/mdi/clipboard-text.svg',
-      },
-      {
-        title: 'Payment Confirmed',
-        status: api.status === 'PAID' || api.status === 'PREPARING' || api.status === 'SHIPPED' || api.status === 'DELIVERED' ? 'done' : 'pending',
-        time: api.status === 'PAID' ? now : '',
-        icon: 'https://api.iconify.design/mdi/credit-card-outline.svg',
-      },
-      {
-        title: 'Preparing',
-        status: api.status === 'PREPARING' || api.status === 'SHIPPED' || api.status === 'DELIVERED' ? 'inprogress' : 'pending',
-        time: '',
-        icon: 'https://api.iconify.design/mdi/chef-hat.svg',
-      },
-      {
-        title: 'Shipped',
-        status: api.status === 'SHIPPED' || api.status === 'DELIVERED' ? 'done' : 'pending',
-        time: '',
-        icon: 'https://api.iconify.design/mdi/truck-delivery.svg',
-      },
-      {
-        title: 'Delivered',
-        status: api.status === 'DELIVERED' ? 'done' : 'pending',
-        time: '',
-        icon: 'https://api.iconify.design/mdi/home-check.svg',
-      },
+      }
     ];
 
     return {
@@ -291,16 +263,10 @@ export default function Status() {
                   </div>
                 ))}
               </div>
-              <div className="summary-meta">
-                <div className="summary-label">Delivery Fee</div>
-                <div>40 THB</div>
-                <div
-                  className="summary-line"
-                  style={{ gridColumn: '1 / -1' }}
-                ></div>
-                <div className="summary-total-label">Total Price</div>
-                <div className="summary-total-price">{total} THB</div>
-              </div>
+                <div className="summary-meta" style={{ borderTop: "1px solid #eee", paddingTop: 12 }}>
+                    <div className="summary-total-label">Total Price</div>
+                    <div className="summary-total-price">{total} THB</div>
+                </div>
             </aside>
           </div>
         )}
