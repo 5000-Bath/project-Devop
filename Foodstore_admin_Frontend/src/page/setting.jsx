@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Edit2, Save, X, Mail, Lock, User, Calendar } from "lucide-react";
 import Swal from "sweetalert2";
 
-const API_BASE = (import.meta.env.VITE_API_URL || "http://localhost:8080").replace(/\/+$/, "");
+const API_BASE = "";
 
 function Button({ children, onClick, variant = "primary", disabled = false, ...rest }) {
     const baseStyle = {
