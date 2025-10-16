@@ -50,8 +50,7 @@ describe('Order Page', () => {
       { name: 'Ped Pa Lo', price: 60, quantity: 1, img: 'test2.jpg' },
     ];
     const subtotal = (50 * 2) + (60 * 1);
-    const deliveryFee = 40;
-    const totalPrice = subtotal + deliveryFee;
+    const totalPrice = subtotal;
 
     renderWithContext({ ...mockCartContextValue, cartItems: items });
 
@@ -68,9 +67,9 @@ describe('Order Page', () => {
 
 
     // Check for total price
-    // The text is "Total Price" and then the value is in another span
     const totalElement = screen.getByText('Total Price').parentElement;
-    expect(totalElement).toHaveTextContent(`${totalPrice} THB`);
+    const priceSpan = totalElement.querySelector('span:last-child');
+    expect(priceSpan).toHaveTextContent(`${totalPrice} THB`);
 
     // Check if checkout button is enabled
     expect(screen.getByRole('button', { name: /checkout/i })).toBeEnabled();

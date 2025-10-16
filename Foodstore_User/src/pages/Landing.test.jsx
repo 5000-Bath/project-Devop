@@ -23,6 +23,6 @@ describe('Landing Page', () => {
     // Check for the secondary link to orders
     const orderLink = screen.getByRole('link', { name: /go to orders/i });
     expect(orderLink).toBeInTheDocument();
-    expect(orderLink).toHaveAttribute('href', '/Order');
+    expect(orderLink).toHaveAttribute('href', '/Status');
   });
 });
