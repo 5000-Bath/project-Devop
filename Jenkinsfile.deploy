@@ -29,12 +29,12 @@ pipeline {
 
                                     kubectl get ns $K8S_NAMESPACE || kubectl create ns $K8S_NAMESPACE
 
-                                    kubectl apply -f k8s/mysql-pv.yaml
+                                    # kubectl apply -f k8s/mysql-pv.yaml
 
                                     # 🔥 PVC อาจ immutable ถ้าแก้ spec หลัก
                                     # ถ้าเกิด error ลองลบ PVC เก่าก่อน apply
                                     # kubectl delete pvc mysql-pvc -n $K8S_NAMESPACE
-                                    kubectl apply -f k8s/mysql-pvc.yaml -n $K8S_NAMESPACE
+                                    # kubectl apply -f k8s/mysql-pvc.yaml -n $K8S_NAMESPACE
                                     
                                     kubectl apply -f k8s/mysql-config-master.yaml -n $K8S_NAMESPACE
                                     kubectl apply -f k8s/mysql-secret.yaml -n $K8S_NAMESPACE
