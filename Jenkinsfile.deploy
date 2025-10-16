@@ -32,11 +32,6 @@ pipeline {
                                     kubectl apply -f k8s/mysql-pv.yaml
                                     kubectl apply -f k8s/mysql-pvc.yaml -n $K8S_NAMESPACE
                                     
-                                    # 🔥 แก้ไข: เปลี่ยนชื่อไฟล์ PV จาก backend-pv.yaml เป็น backend-pvc.yaml
-                                    kubectl apply -f k8s/backend-pvc.yaml -n $K8S_NAMESPACE 
-
-                                    # 🔥🔥 เพิ่ม: สร้าง Persistent Volume Claim (PVC) จากไฟล์ backend-pvc-claim.yaml
-                                    kubectl apply -f k8s/backend-pvc-claim.yaml -n $K8S_NAMESPACE
                                     
                                     kubectl apply -f k8s/mysql-config-master.yaml -n $K8S_NAMESPACE
                                     kubectl apply -f k8s/mysql-secret.yaml -n $K8S_NAMESPACE
