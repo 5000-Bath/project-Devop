@@ -12,7 +12,7 @@ import Orders from "./page/Orders.jsx";
 import Ordersdetail from "./page/Ordersdetail.jsx";
 import Login from "./page/Login.jsx";
 
-const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
+const API_BASE = "";
 
 // 🔹 PrivateRoute wrapper
 function PrivateRoute({ children }) {
