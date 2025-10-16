@@ -28,6 +28,8 @@ pipeline {
                                     echo "Deploying Master to Rayong..."
 
                                     kubectl get ns $K8S_NAMESPACE || kubectl create ns $K8S_NAMESPACE
+
+                                    kubectl apply -f k8s/mysql-pv.yaml
                                     kubectl apply -f k8s/mysql-pvc.yaml -n $K8S_NAMESPACE
                                     
                                     # 🔥 แก้ไข: เปลี่ยนชื่อไฟล์ PV จาก backend-pv.yaml เป็น backend-pvc.yaml
