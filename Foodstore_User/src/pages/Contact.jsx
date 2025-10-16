@@ -21,7 +21,7 @@ const teamMembers = [
   },
   {
     id: 2,
-    name: "Tas",
+    name: "Tas Sukastid",
     nickname: "Tas",
     github: "https://github.com/TasSukastid",
     linkedin: "https://www.linkedin.com/in/tas-sukastid-bcc/",
@@ -29,7 +29,7 @@ const teamMembers = [
   },
   {
     id: 3,
-    name: "First",
+    name: "Yanaphat Jumpaburee",
     nickname: "First",
     github: "https://github.com/First97",
     linkedin: "https://www.linkedin.com/in/yanaphat-jum-51905938b/",
