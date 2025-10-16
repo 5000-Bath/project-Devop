@@ -3,6 +3,26 @@ import { useParams, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2"; // ✅ Import Swal
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8080";
+//  Convert UTC time → Thai time (with Buddhist year)
+function formatThaiDateTime(dateStr) {
+    if (!dateStr) return "-";
+
+    const date = new Date(dateStr);
+
+    // ➕ Add 7 hours for Thailand timezone
+    const local = new Date(date.getTime() + 7 * 60 * 60 * 1000);
+
+    const day = String(local.getDate()).padStart(2, "0");
+    const month = String(local.getMonth() + 1).padStart(2, "0");
+    const yearBE = local.getFullYear() + 543;
+
+    const hour = String(local.getHours()).padStart(2, "0");
+    const minute = String(local.getMinutes()).padStart(2, "0");
+    const second = String(local.getSeconds()).padStart(2, "0");
+
+    return `${day}/${month}/${yearBE} ${hour}:${minute}:${second}`;
+}
+
 
 export default function Ordersdetail() {
     const { id } = useParams(); // ✅ รับ order id จาก URL
@@ -241,13 +261,9 @@ export default function Ordersdetail() {
                         <div style={{ display: "flex", justifyContent: "space-between" }}>
                             <span style={{ color: "#666", fontSize: 14 }}>Created At</span>
                             <span style={{ color: "#333", fontSize: 14 }}>
-                                {order.createdAt
-                                    ? new Date(order.createdAt).toLocaleString("th-TH", {
-                                        dateStyle: "medium",
-                                        timeStyle: "short",
-                                    })
-                                    : "-"}
+                                {formatThaiDateTime(order.createdAt)}
                             </span>
+
                         </div>
 
                         <div style={{ display: "flex", justifyContent: "space-between" }}>

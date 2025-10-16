@@ -14,6 +14,26 @@ import {
 import { Line } from "react-chartjs-2";
 import "../styles/AdminDashboard.css";
 
+function formatThaiDateTime(dateString) {
+    if (!dateString) return "-";
+
+    const date = new Date(dateString);
+
+    // บวกเวลาไทย (+7 ชั่วโมง)
+    const local = new Date(date.getTime() + 7 * 60 * 60 * 1000);
+
+    const day = String(local.getDate()).padStart(2, "0");
+    const month = String(local.getMonth() + 1).padStart(2, "0");
+    const yearBE = local.getFullYear() + 543;
+
+    const hour = String(local.getHours()).padStart(2, "0");
+    const minute = String(local.getMinutes()).padStart(2, "0");
+    const second = String(local.getSeconds()).padStart(2, "0");
+
+    return `${day}/${month}/${yearBE} ${hour}:${minute}:${second}`;
+}
+
+
 ChartJS.register(
     LineElement,
     CategoryScale,
@@ -263,7 +283,7 @@ export default function AdminDashboard() {
                             <tbody>
                             {recent10.map((o) => (
                                 <tr key={o.id}>
-                                    <td>{fmtTH(o.createdAt || o.date)}</td>
+                                    <td>{formatThaiDateTime(o.createdAt || o.date)}</td>
                                     <td className="right">
                                         {money(
                                             o.totalPrice ??
