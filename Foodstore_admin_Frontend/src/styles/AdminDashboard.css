@@ -68,3 +68,39 @@ h4{ margin:0 0 8px; font-size:15px; font-weight:700; }
     overflow-x: auto;
 }
 
+/* ✅ Responsive layout */
+.responsive-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+}
+
+.responsive-stack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.responsive-stack > .card,
+.side-column {
+    flex: 1 1 100%;
+}
+
+@media (min-width: 900px) {
+    .responsive-stack {
+        flex-wrap: nowrap;
+    }
+    .responsive-stack > .card.wide {
+        flex: 2;
+    }
+    .side-column {
+        flex: 1;
+    }
+}
+
+.responsive-chart {
+    height: 300px;
+    max-height: 50vh;
+}
+
+

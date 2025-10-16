@@ -5,9 +5,9 @@ import './Contact.css';
 import img1 from '../assets/team/member1.jpg';
 import img2 from '../assets/team/member2.png';
 import img3 from '../assets/team/member3.png';
-import img4 from '../assets/team/member4.jpg';
-import img5 from '../assets/team/member5.jpg';
-import img6 from '../assets/team/member6.jpg';
+import img4 from '../assets/team/member4.jpeg';
+import img5 from '../assets/team/member5.jpeg';
+import img6 from '../assets/team/member6.JPG';
 
 // ข้อมูลสมาชิกทีม — แก้ไขตรงนี้ได้เลย!
 const teamMembers = [
@@ -40,7 +40,7 @@ const teamMembers = [
     name: "Kong",
     nickname: "Kong",
     github: "https://github.com/Konggarage",
-    linkedin: "https://linkedin.com/in/tanawat",
+    linkedin: "https://www.linkedin.com/in/kongphop-kaochot-14408a339/",
     image: img4,
   },
   {
@@ -48,7 +48,7 @@ const teamMembers = [
     name: "Ake",
     nickname: "Ake",
     github: "https://github.com/tanert48",
-    linkedin: "https://linkedin.com/in/pawee",
+    linkedin: "https://www.linkedin.com/in/taned-somchirvieng-788918373",
     image: img5,
   },
   {
