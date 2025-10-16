@@ -95,7 +95,7 @@ export default function About() {
     };
 
     if (loading)
-        return <div style={{ padding: 24, textAlign: "center" }}>⏳ กำลังโหลด...</div>;
+        return <div style={{ padding: 24, textAlign: "center" }}>กำลังโหลด...</div>;
     if (error)
         return (
             <div style={{ padding: 24, color: "red", textAlign: "center" }}>{error}</div>
@@ -201,7 +201,7 @@ export default function About() {
                                     <img
                                         src={
                                             resolveImageUrl(item.imageUrl) ||
-                                            "/src/menupic/khao-man-kai.jpg"
+                                            "/khao-man-kai.jpg"
                                         }
                                         alt={item.name}
                                         style={{
@@ -211,7 +211,7 @@ export default function About() {
                                             borderRadius: 6,
                                         }}
                                         onError={(e) => {
-                                            e.target.src = "/src/menupic/khao-man-kai.jpg"; // fallback เผื่อไฟล์หาย
+                                            e.target.src = "/khao-man-kai.jpg"; // fallback เผื่อไฟล์หาย
                                         }}
                                     />
                                 </td>
