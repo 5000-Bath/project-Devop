@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import { useIsMobile } from "./useIsMobile";
 
-const API_BASE = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
+const API_BASE = "";
 const resolveImageUrl = (u) => {
     if (!u) return null;
     if (/^https?:\/\//i.test(u)) return u;
