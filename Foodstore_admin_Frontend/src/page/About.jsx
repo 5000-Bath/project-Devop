@@ -198,22 +198,24 @@ export default function About() {
                                 }}
                             >
                                 <td style={{ padding: "12px 8px" }}>
-                                    <img
-                                        src={
-                                            resolveImageUrl(item.imageUrl) ||
-                                            "/khao-man-kai.jpg"
-                                        }
-                                        alt={item.name}
-                                        style={{
-                                            width: 50,
-                                            height: 50,
-                                            objectFit: "cover",
-                                            borderRadius: 6,
-                                        }}
-                                        onError={(e) => {
-                                            e.target.src = "/khao-man-kai.jpg"; // fallback เผื่อไฟล์หาย
-                                        }}
-                                    />
+                                  <img
+                                    src={resolveImageUrl(item.imageUrl) || "/khao-man-kai.jpg"}
+                                    alt={item.name}
+                                    style={{
+                                      width: 50,
+                                      height: 50,
+                                      objectFit: "cover",
+                                      borderRadius: 6,
+                                    }}
+                                    loading="lazy" // ✅ lazy load
+                                    onError={(e) => {
+                                      // ป้องกัน loop ถ้า fallback ก็ยัง error
+                                      if (!e.target.dataset.fallback) {
+                                        e.target.src = "/khao-man-kai.jpg";
+                                        e.target.dataset.fallback = "true";
+                                      }
+                                    }}
+                                  />
                                 </td>
 
 
