@@ -29,7 +29,13 @@ pipeline {
 
                                     kubectl get ns $K8S_NAMESPACE || kubectl create ns $K8S_NAMESPACE
                                     kubectl apply -f k8s/mysql-pvc.yaml -n $K8S_NAMESPACE
-                                    kubectl apply -f k8s/backend-pvc.yaml -n $K8S_NAMESPACE
+                                    
+                                    # 🔥 แก้ไข: สร้าง Persistent Volume (PV)
+                                    kubectl apply -f k8s/backend-pv.yaml -n $K8S_NAMESPACE 
+
+                                    # 🔥🔥 เพิ่ม: สร้าง Persistent Volume Claim (PVC) เพื่อให้ Pod ใช้เมาท์ Volume
+                                    kubectl apply -f k8s/backend-pvc-claim.yaml -n $K8S_NAMESPACE
+                                    
                                     kubectl apply -f k8s/mysql-config-master.yaml -n $K8S_NAMESPACE
                                     kubectl apply -f k8s/mysql-secret.yaml -n $K8S_NAMESPACE
                                     kubectl apply -f k8s/mysql-init-master.yaml -n $K8S_NAMESPACE
@@ -40,7 +46,7 @@ pipeline {
                                     cat k8s/backend.yaml | envsubst | kubectl apply -f - -n $K8S_NAMESPACE
                                     cat k8s/phpmyadmin.yaml | envsubst | kubectl apply -f - -n $K8S_NAMESPACE
 
-                                    # 🔥 สร้าง ConfigMap สำหรับระยอง
+                                    # สร้าง ConfigMap สำหรับระยอง
                                     kubectl create configmap nginx-conf-user-rayong \
                                         --from-file=default.conf=Foodstore_User/nginx-rayong.conf \
                                         -n $K8S_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
@@ -49,12 +55,13 @@ pipeline {
                                         --from-file=default.conf=Foodstore_admin_Frontend/nginx-rayong.conf \
                                         -n $K8S_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
 
-                                    # 🔥 ใช้ไฟล์ YAML ที่แยกแล้ว
+                                    # ใช้ไฟล์ YAML ที่แยกแล้ว
                                     kubectl apply -f k8s/frontend-user-rayong.yaml -n $K8S_NAMESPACE
                                     kubectl apply -f k8s/frontend-admin-rayong.yaml -n $K8S_NAMESPACE
 
                                     kubectl rollout status deployment/mysql-rayong -n $K8S_NAMESPACE --timeout=180s
-                                    kubectl rollout status deployment/backend -n $K8S_NAMESPACE --timeout=180s
+                                    # การรอ Backend ต้องทำหลังสร้าง PVC/PV
+                                    kubectl rollout status deployment/backend -n $K8S_NAMESPACE --timeout=180s 
                                     kubectl rollout status deployment/frontend-admin -n $K8S_NAMESPACE --timeout=180s
                                     kubectl rollout status deployment/frontend-user -n $K8S_NAMESPACE --timeout=180s
                                     kubectl rollout status deployment/phpmyadmin -n $K8S_NAMESPACE --timeout=180s
@@ -81,7 +88,13 @@ pipeline {
 
                                     kubectl get ns $K8S_NAMESPACE || kubectl create ns $K8S_NAMESPACE
                                     kubectl apply -f k8s/mysql-pvc.yaml -n $K8S_NAMESPACE
-                                    kubectl apply -f k8s/backend-pvc.yaml -n $K8S_NAMESPACE
+                                    
+                                    # 🔥 แก้ไข: สร้าง Persistent Volume (PV)
+                                    kubectl apply -f k8s/backend-pv.yaml -n $K8S_NAMESPACE 
+
+                                    # 🔥🔥 เพิ่ม: สร้าง Persistent Volume Claim (PVC) เพื่อให้ Pod ใช้เมาท์ Volume
+                                    kubectl apply -f k8s/backend-pvc-claim.yaml -n $K8S_NAMESPACE
+
                                     kubectl apply -f k8s/mysql-config-slave.yaml -n $K8S_NAMESPACE
                                     kubectl apply -f k8s/mysql-secret.yaml -n $K8S_NAMESPACE
 
@@ -91,7 +104,7 @@ pipeline {
                                     cat k8s/backend.yaml | envsubst | kubectl apply -f - -n $K8S_NAMESPACE
                                     cat k8s/phpmyadmin.yaml | envsubst | kubectl apply -f - -n $K8S_NAMESPACE
 
-                                    # 🔥 สร้าง ConfigMap สำหรับศาลายา
+                                    # สร้าง ConfigMap สำหรับศาลายา
                                     kubectl create configmap nginx-conf-user-salaya \
                                         --from-file=default.conf=Foodstore_User/nginx-salaya.conf \
                                         -n $K8S_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
@@ -100,11 +113,12 @@ pipeline {
                                         --from-file=default.conf=Foodstore_admin_Frontend/nginx-salaya.conf \
                                         -n $K8S_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
 
-                                    # 🔥 ใช้ไฟล์ YAML ที่แยกแล้ว
+                                    # ใช้ไฟล์ YAML ที่แยกแล้ว
                                     kubectl apply -f k8s/frontend-user-salaya.yaml -n $K8S_NAMESPACE
                                     kubectl apply -f k8s/frontend-admin-salaya.yaml -n $K8S_NAMESPACE
 
                                     kubectl rollout status deployment/mysql-salaya -n $K8S_NAMESPACE --timeout=180s
+                                    # การรอ Backend ต้องทำหลังสร้าง PVC/PV
                                     kubectl rollout status deployment/backend -n $K8S_NAMESPACE --timeout=180s
                                     kubectl rollout status deployment/frontend-admin -n $K8S_NAMESPACE --timeout=180s
                                     kubectl rollout status deployment/frontend-user -n $K8S_NAMESPACE --timeout=180s
