@@ -7,7 +7,7 @@ import img2 from '../assets/team/member2.png';
 import img3 from '../assets/team/member3.png';
 import img4 from '../assets/team/member4.jpeg';
 import img5 from '../assets/team/member5.jpeg';
-import img6 from '../assets/team/member6.JPG';
+import img6 from '../assets/team/member6.jpg';
 
 // ข้อมูลสมาชิกทีม — แก้ไขตรงนี้ได้เลย!
 const teamMembers = [
@@ -31,8 +31,8 @@ const teamMembers = [
     id: 3,
     name: "First",
     nickname: "First",
-    github: "https://github.com/maneerat",
-    linkedin: "https://linkedin.com/in/maneerat",
+    github: "https://github.com/First97",
+    linkedin: "https://www.linkedin.com/in/yanaphat-jum-51905938b/",
     image: img3,
   },
   {
