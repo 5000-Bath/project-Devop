@@ -11,5 +11,5 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   # แก้ไข: ลบ hostPath แล้วใช้ NFS แทน
   nfs: 
-    path: /mnt/k8s_backend_uploads # Path ที่คุณ Export บน NFS Server
-    server: 192.168.1.100       # IP ของ NFS Server ของคุณ
+    path: /mnt/k8s_backend_uploads # Path Export บน NFS Server
+    server: 10.10.10.9       # IP ของ NFS Server
