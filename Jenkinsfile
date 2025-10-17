@@ -24,18 +24,17 @@ pipeline {
         stage('Start Test Environment') {
             steps {
                 echo "1. Starting DB and Backend API on host ports (localhost:${BACKEND_PORT})..."
-                // 1. Start DB, Backend
-                sh "docker compose -f ${COMPOSE_FILE} up -d db backend" 
+                // *** แก้ไข: ใช้ docker-compose (มีขีด) ***
+                sh "docker-compose -f ${COMPOSE_FILE} up -d db backend" 
                 sh 'sleep 45' // รอ Backend พร้อม
                 
                 echo "2. Installing Frontend Dependencies and starting Vite Dev Servers..."
                 
-                // --- User Frontend Setup ---
+                // *** User Frontend Setup (npm install และ รัน Dev Server ในพื้นหลัง) ***
                 sh 'cd Foodstore_User && npm install'
-                // รัน Vite Dev Server ในพื้นหลัง (VITE_API_URL จะชี้ไปที่ localhost:8080)
                 sh "cd Foodstore_User && VITE_API_URL=http://localhost:${BACKEND_PORT} npm run dev &" 
                 
-                // --- Admin Frontend Setup ---
+                // *** Admin Frontend Setup (npm install และ รัน Dev Server ในพื้นหลัง) ***
                 sh 'cd Foodstore_admin_Frontend && npm install'
                 sh "cd Foodstore_admin_Frontend && VITE_API_URL=http://localhost:${BACKEND_PORT} npm run dev &" 
                 
@@ -47,8 +46,7 @@ pipeline {
             steps {
                 echo "Running Frontend Unit Tests on Host..."
                 
-                // Unit Test ไม่ได้ต้องการ Server แต่การรัน npm test/vitest จะทำงานกับ Source Code ที่มี Dependencies แล้ว
-                // Server รันอยู่แล้ว แต่ Unit Test จะรันเร็วและไม่กระทบการทำงานของ Server
+                // Unit Test
                 sh 'cd Foodstore_User && npm test' 
                 sh 'cd Foodstore_admin_Frontend && npm test'
             }
@@ -56,7 +54,7 @@ pipeline {
 
         stage('E2E Test') {
             steps {
-                echo "Running Cypress E2E Tests (Targeting Dev Servers)..."
+                echo "Running Cypress E2E Tests (Targeting localhost:port)..."
                 
                 // *** 1. User E2E Test ***
                 sh 'cd Foodstore_User && npx cypress install' 
@@ -76,15 +74,16 @@ pipeline {
                 sh "kill \$(lsof -t -i:${ADMIN_PORT}) || true"
 
                 echo "Stopping Docker Compose services..."
-                // ปิด Services ที่รันอยู่
-                sh "docker compose -f ${COMPOSE_FILE} down"
+                // *** แก้ไข: ใช้ docker-compose (มีขีด) ***
+                sh "docker-compose -f ${COMPOSE_FILE} down"
             }
         }
 
         stage('Build and Push Docker Images') {
-            // ... (ส่วน Build Production Image เหมือนเดิม) ...
             steps {
                 echo "Building FINAL Production Images..."
+                
+                // Build Production Images (ใช้ Dockerfile ปกติ)
                 sh "docker build -t ${IMAGE_NAME_ADMIN}:latest ./Foodstore_admin_Frontend"
                 sh "docker build -t ${IMAGE_NAME_USER}:latest ./Foodstore_User"
                 sh "docker build -t ${IMAGE_NAME_BACKEND}:latest ./firstapp"
@@ -106,7 +105,6 @@ pipeline {
         stage('unDeploy') {
             steps {
                 echo "Skipping unDeploy for safety"
-                // sh 'docker-compose down || true'
             }
         }
     }
