@@ -78,6 +78,7 @@ export default function Additem() {
         <div className="field">
           <label>Menu Name</label>
           <input
+            name="name"
             placeholder="Enter menu name"
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -87,6 +88,7 @@ export default function Additem() {
         <div className="field">
           <label>Description</label>
           <textarea
+            name="description"
             placeholder="Enter menu description"
             value={desc}
             onChange={(e) => setDesc(e.target.value)}
@@ -96,6 +98,7 @@ export default function Additem() {
         <div className="field">
           <label>Price</label>
           <input
+            name="price"
             placeholder="Enter price"
             value={price}
             onChange={(e) => setPrice(e.target.value)}
@@ -106,6 +109,7 @@ export default function Additem() {
         <div className="field">
           <label>Stock</label>
           <input
+            name="stock"
             placeholder="Enter stock quantity"
             value={stock}
             onChange={(e) => setStock(e.target.value)}
