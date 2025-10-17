@@ -1,3 +1,4 @@
+# k8s/frontend-user-salaya.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -34,9 +35,10 @@ metadata:
   name: frontend-user
   namespace: production
 spec:
-  type: ClusterIP   # <-- เปลี่ยนจาก NodePort
+  type: NodePort
   selector:
     app: frontend-user
   ports:
     - port: 80
       targetPort: 80
+      nodePort: 31000
