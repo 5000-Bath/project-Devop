@@ -14,7 +14,7 @@ export default function Status() {
   const [searchInput, setSearchInput] = useState(q.get('orderId') || '');
   const [order, setOrder] = useState(null);
   const [isAnimating, setIsAnimating] = useState(false);
-  const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
+  const API_BASE = "";
 
     //  คำนวณยอดรวมทั้งหมดจาก orderItems (ไม่รวมค่าส่ง)
     const total = useMemo(() => {
