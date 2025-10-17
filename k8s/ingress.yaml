@@ -8,33 +8,43 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - http:
-      paths:
-      - path: /()
-        pathType: Prefix
-        backend:
-          service:
-            name: frontend-user
-            port:
-              number: 3000
-      - path: /admin(/|$)(.*)
-        pathType: Prefix
-        backend:
-          service:
-            name: frontend-admin
-            port:
-              number: 3001
-      - path: /api(/|$)(.*)
-        pathType: Prefix
-        backend:
-          service:
-            name: backend
-            port:
-              number: 8080
-      - path: /phpmyadmin(/|$)(.*)
-        pathType: Prefix
-        backend:
-          service:
-            name: phpmyadmin
-            port:
-              number: 80
+    # 🌐 User site
+    - host: foodstore.weerapatserver.com
+      http:
+        paths:
+          - path: /?(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend-user
+                port:
+                  number: 80
+
+          - path: /api(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 8080
+
+    # 👨‍💼 Admin site
+    - host: adminfoodstore.weerapatserver.com
+      http:
+        paths:
+          - path: /?(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend-admin
+                port:
+                  number: 80
+
+          - path: /api(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 8080
+
