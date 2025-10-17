@@ -1,31 +1,47 @@
-// vite.config.js
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
+import path from 'path'; // *** ต้อง import path ***
 
 export default ({ mode }) => {
-  // โหลด .env ตาม mode (แต่ใช้แค่ใน dev)
   const env = loadEnv(mode, process.cwd(), '');
+  const apiUrl = env.VITE_API_URL || 'http://localhost:8080';
+
+  const nodeModulesDir = path.resolve(__dirname, 'node_modules');
 
   return defineConfig({
     plugins: [react()],
 
     define: {
-      'process.env': {}, // ป้องกัน error จากไลบรารีเก่า
+      'process.env': {},
     },
+    
+    // *** เพิ่มส่วน RESOLVE สำหรับ Alias ***
+    resolve: {
+      alias: [
+        {
+          // MSW Fix
+          find: 'msw/node',
+          replacement: path.resolve(nodeModulesDir, 'msw/lib/node/index.js'),
+        },
+        {
+          // Alias สำหรับ Source Code (ถ้าใช้ @/ ในโค้ด)
+          find: '@',
+          replacement: path.resolve(__dirname, './src'), 
+        },
+      ],
+    },
+    // **********************************
 
     server: {
       host: true,
-      port: 3001,
+      port: 3001, // Admin Port
       strictPort: true,
 
-      // ✅ Proxy ใช้ได้เฉพาะในโหมด development เท่านั้น
       proxy: {
         '/api': {
-          target: env.VITE_API_URL || 'http://localhost:8080',
+          target: apiUrl,
           changeOrigin: true,
           secure: false,
-          // ไม่ต้อง rewrite เพราะ backend ของคุณรับ /api อยู่แล้ว
-          // หาก backend รับที่ root (/products) → ให้ใช้ rewrite: (path) => path.replace(/^\/api/, '')
         },
       },
     },
@@ -35,7 +51,6 @@ export default ({ mode }) => {
       sourcemap: false,
     },
 
-    // ป้องกันการ expose env ที่ไม่ขึ้นต้นด้วย VITE_
     envPrefix: 'VITE_',
   });
 };

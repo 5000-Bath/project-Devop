@@ -40,8 +40,8 @@ CREATE TABLE `admins` (
 --
 
 INSERT INTO `admins` (`id`, `username`, `email`, `password`, `created_at`) VALUES
-(1, 'admin', 'tasbcc@gmail.com', '$2a$10$VzKQ4NQgfqCEFmSBgnewTO4iPO5tY5T6MnxQSv//t6BQPj17I735e', '2025-09-24 14:35:44'),
-(2, 'admin1', 'admin1@example.com', '$2a$10$VzKQ4NQgfqCEFmSBgnewTO4iPO5tY5T6MnxQSv//t6BQPj17I735e', '2025-09-24 14:47:12');
+(1, 'admin', 'tasbcc@gmail.com', '$2a$10$2.peQ2.Hsjf40Tkm0aG2COX0y1oRIoWOe9cOn4NST98JhzP26BaL6', '2025-09-24 14:35:44'),
+(2, 'admin1', 'admin1@example.com', '$2a$10$2.peQ2.Hsjf40Tkm0aG2COX0y1oRIoWOe9cOn4NST98JhzP26BaL6', '2025-09-24 14:47:12');
 
 -- --------------------------------------------------------
 

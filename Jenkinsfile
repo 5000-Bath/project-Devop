@@ -31,11 +31,11 @@ pipeline {
                 echo "2. Installing Frontend Dependencies and starting Vite Dev Servers..."
                 
                 // *** User Frontend Setup (npm install และ รัน Dev Server ในพื้นหลัง) ***
-                sh 'cd Foodstore_User && npm install'
+                sh 'cd Foodstore_User && npm install && npm install path && npm install --save-dev msw && npm install @testing-library/user-event --save-dev'
                 sh "cd Foodstore_User && VITE_API_URL=http://localhost:${BACKEND_PORT} npm run dev &" 
                 
                 // *** Admin Frontend Setup (npm install และ รัน Dev Server ในพื้นหลัง) ***
-                sh 'cd Foodstore_admin_Frontend && npm install'
+                sh 'cd Foodstore_admin_Frontend && npm install && npm install path && npm install --save-dev msw && npm install @testing-library/user-event --save-dev'
                 sh "cd Foodstore_admin_Frontend && VITE_API_URL=http://localhost:${BACKEND_PORT} npm run dev &" 
                 
                 sh 'sleep 15' // รอ Vite Dev Servers พร้อม
