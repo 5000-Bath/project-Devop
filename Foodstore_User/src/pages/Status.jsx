@@ -16,17 +16,17 @@ export default function Status() {
   const [isAnimating, setIsAnimating] = useState(false);
   const API_BASE = "";
 
-    //  คำนวณยอดรวมทั้งหมดจาก orderItems (ไม่รวมค่าส่ง)
-    const total = useMemo(() => {
-        if (!order) return 0;
-        const items = Array.isArray(order.orderItems) ? order.orderItems : [];
-        return items.reduce(
-            (sum, item) => sum + Number(item?.price ?? 0) * Number(item?.qty ?? 0),
-            0
-        );
-    }, [order]);
+  //  คำนวณยอดรวมทั้งหมดจาก orderItems (ไม่รวมค่าส่ง)
+  const total = useMemo(() => {
+    if (!order) return 0;
+    const items = Array.isArray(order.orderItems) ? order.orderItems : [];
+    return items.reduce(
+      (sum, item) => sum + Number(item?.price ?? 0) * Number(item?.qty ?? 0),
+      0
+    );
+  }, [order]);
 
-    // 🛠 ฟังก์ชันดึงข้อมูลออเดอร์ + จัดการ error
+  // 🛠 ฟังก์ชันดึงข้อมูลออเดอร์ + จัดการ error
   const findOrder = async (id) => {
     const trimmed = String(id || '').trim();
     if (!trimmed) {
@@ -132,39 +132,36 @@ export default function Status() {
   }, []); // รันแค่ตอน mount
 
   // 🧩 แปลงข้อมูลออเดอร์ให้ใช้งานง่าย
-  function adaptOrder(api, apiBase) {
+  function adaptOrder(api) {
     if (!api || typeof api !== 'object') return null;
 
     const items = Array.isArray(api.orderItems)
-      ? api.orderItems.map((it) => ({
+      ? api.orderItems.map((it) => {
+        const imagePath = it.product?.imageUrl || it.product?.img || '';
+        const fullImage = imagePath ? `/api/products/${imagePath}` : '/khao-man-kai.jpg';
+        return {
           id: it.id ?? null,
           name: it.product?.name ?? '',
           price: Number(it.product?.price ?? 0),
           qty: Number(it.quantity ?? it.qty ?? 1),
-          img:
-            apiBase && typeof it.product?.imageUrl === 'string'
-              ? apiBase + it.product.imageUrl
-              : null,
-        }))
+          img: fullImage,
+        };
+      })
       : [];
 
-    // สร้างเหตุการณ์ตามสถานะ
-    const now = new Date().toLocaleString('th-TH');
     const defaultEvents = [
       {
         title: 'Order Created',
         status: 'done',
         time: api.createdAt ? formatThaiFromLocalInput(api.createdAt) : '',
         icon: 'https://api.iconify.design/mdi/clipboard-text.svg',
-      }
+      },
     ];
 
     return {
       id: api.id ?? null,
-      userId: api.userId ?? null,
       status: api.status ?? 'PENDING',
       createdAt: api.createdAt ?? null,
-      currency: api.currency ?? 'THB',
       deliveryFee: Number(api.deliveryFee ?? 0),
       orderItems: items,
       items,
@@ -249,7 +246,7 @@ export default function Status() {
                       <img src={it.img} alt={it.name} className="item-thumb" />
                     ) : (
                       <img
-                        src="/src/assets/menupic/khao-man-kai.jpg"
+                        src="/khao-man-kai.jpg"
                         alt={it.name}
                         className="item-thumb"
                       />
@@ -263,10 +260,10 @@ export default function Status() {
                   </div>
                 ))}
               </div>
-                <div className="summary-meta" style={{ borderTop: "1px solid #eee", paddingTop: 12 }}>
-                    <div className="summary-total-label">Total Price</div>
-                    <div className="summary-total-price">{total} THB</div>
-                </div>
+              <div className="summary-meta" style={{ borderTop: "1px solid #eee", paddingTop: 12 }}>
+                <div className="summary-total-label">Total Price</div>
+                <div className="summary-total-price">{total} THB</div>
+              </div>
             </aside>
           </div>
         )}
