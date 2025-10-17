@@ -137,14 +137,12 @@ export default function Status() {
 
     const items = Array.isArray(api.orderItems)
       ? api.orderItems.map((it) => {
-        const imagePath = it.product?.imageUrl || it.product?.img || '';
-        const fullImage = imagePath ? `/api/products/${imagePath}` : '/khao-man-kai.jpg';
         return {
           id: it.id ?? null,
           name: it.product?.name ?? '',
           price: Number(it.product?.price ?? 0),
           qty: Number(it.quantity ?? it.qty ?? 1),
-          img: fullImage,
+          img: it.product?.imageUrl ?? '/khao-man-kai.jpg', // <-- ใช้ตรงๆ เหมือน Home
         };
       })
       : [];
@@ -168,6 +166,7 @@ export default function Status() {
       events: defaultEvents,
     };
   }
+
 
   // 🖼 Render UI
   return (
