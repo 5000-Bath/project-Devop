@@ -1,6 +1,10 @@
 pipeline {
     agent { label 'docker-host' }
 
+    parameters {
+        string(name: 'IMAGE_VERSION', defaultValue: '1.0.0', description: 'Version of Docker images to deploy')
+    }
+
     environment {
         K8S_NAMESPACE = 'production'
         MASTER_K8S_IP = '10.10.10.8'
@@ -23,56 +27,46 @@ pipeline {
                     steps {
                         script {
                             withCredentials([file(credentialsId: 'kubeconfig-rayong', variable: 'KUBECONFIG_PATH')]) {
-                                sh '''
-                                    export KUBECONFIG=$KUBECONFIG_PATH
+                                sh """
+                                    export KUBECONFIG=\$KUBECONFIG_PATH
                                     echo "🚀 Deploying Master to Rayong..."
 
-                                    kubectl get ns $K8S_NAMESPACE || kubectl create ns $K8S_NAMESPACE
-                                    
+                                    kubectl get ns \$K8S_NAMESPACE || kubectl create ns \$K8S_NAMESPACE
+
                                     # --- MySQL Master ---
-                                    kubectl apply -f k8s/mysql-config-master.yaml -n $K8S_NAMESPACE
-                                    kubectl apply -f k8s/mysql-secret.yaml -n $K8S_NAMESPACE
-                                    kubectl apply -f k8s/mysql-init-master.yaml -n $K8S_NAMESPACE
-                                    kubectl apply -f k8s/mysql-master.yaml -n $K8S_NAMESPACE
-                                    
+                                    kubectl apply -f k8s/mysql-config-master.yaml -n \$K8S_NAMESPACE
+                                    kubectl apply -f k8s/mysql-secret.yaml -n \$K8S_NAMESPACE
+                                    kubectl apply -f k8s/mysql-init-master.yaml -n \$K8S_NAMESPACE
+                                    kubectl apply -f k8s/mysql-master.yaml -n \$K8S_NAMESPACE
+
                                     # --- Backend ---
                                     export DB_HOST_NAME="mysql-rayong"
-                                    cat k8s/backend.yaml | envsubst | kubectl apply -f - -n $K8S_NAMESPACE
-
-                                    # --- PhpMyAdmin ---
-                                    cat k8s/phpmyadmin.yaml | envsubst | kubectl apply -f - -n $K8S_NAMESPACE
+                                    cat k8s/backend.yaml | sed "s|\${IMAGE_VERSION}|${params.IMAGE_VERSION}|g" | envsubst | kubectl apply -f - -n \$K8S_NAMESPACE
 
                                     # --- Frontend ConfigMap ---
                                     kubectl create configmap nginx-conf-user-rayong \
                                         --from-file=default.conf=Foodstore_User/nginx-rayong.conf \
-                                        -n $K8S_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
+                                        -n \$K8S_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
                                     
                                     kubectl create configmap nginx-conf-admin-rayong \
                                         --from-file=default.conf=Foodstore_admin_Frontend/nginx-rayong.conf \
-                                        -n $K8S_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
-                                    
+                                        -n \$K8S_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
+
                                     # --- Frontend Deploy ---
-                                    kubectl apply -f k8s/frontend-user-rayong.yaml -n $K8S_NAMESPACE
-                                    kubectl apply -f k8s/frontend-admin-rayong.yaml -n $K8S_NAMESPACE
-
-
+                                    cat k8s/frontend-user-rayong.yaml | sed "s|\${IMAGE_VERSION}|${params.IMAGE_VERSION}|g" | kubectl apply -f - -n \$K8S_NAMESPACE
+                                    cat k8s/frontend-admin-rayong.yaml | sed "s|\${IMAGE_VERSION}|${params.IMAGE_VERSION}|g" | kubectl apply -f - -n \$K8S_NAMESPACE
 
                                     # --- Rollout check ---
-                                    kubectl rollout status deployment/mysql-rayong -n $K8S_NAMESPACE --timeout=180s
-                                    kubectl rollout status deployment/backend -n $K8S_NAMESPACE --timeout=180s
-                                    kubectl rollout status deployment/frontend-admin -n $K8S_NAMESPACE --timeout=180s
-                                    kubectl rollout status deployment/frontend-user -n $K8S_NAMESPACE --timeout=180s
-                                    kubectl rollout status deployment/phpmyadmin -n $K8S_NAMESPACE --timeout=180s
-                                    
-                                    kubectl wait --for=condition=ready pod -l app=mysql-rayong -n $K8S_NAMESPACE --timeout=120s
+                                    kubectl rollout status deployment/mysql-rayong -n \$K8S_NAMESPACE --timeout=180s
+                                    kubectl rollout status deployment/backend -n \$K8S_NAMESPACE --timeout=180s
+                                    kubectl rollout status deployment/frontend-admin -n \$K8S_NAMESPACE --timeout=180s
+                                    kubectl rollout status deployment/frontend-user -n \$K8S_NAMESPACE --timeout=180s
 
-                                    # --- MySQL config ---
-                                    kubectl exec deploy/mysql-rayong -n $K8S_NAMESPACE --container mysql -- \
-                                        mysql -h 127.0.0.1 -P 3306 -uroot -p$(kubectl get secret mysql-secret -n $K8S_NAMESPACE -o jsonpath="{.data.MYSQL_ROOT_PASSWORD}" | base64 --decode) -e "
-                                            ALTER USER 'repl'@'%' IDENTIFIED WITH mysql_native_password BY 'replpassword';
-                                            FLUSH PRIVILEGES;
-                                        " || true
-                                '''
+                                    # --- Restart deployments to pick up new images ---
+                                    kubectl rollout restart deployment/backend -n \$K8S_NAMESPACE
+                                    kubectl rollout restart deployment/frontend-admin -n \$K8S_NAMESPACE
+                                    kubectl rollout restart deployment/frontend-user -n \$K8S_NAMESPACE
+                                """
                             }
                         }
                     }
@@ -82,72 +76,49 @@ pipeline {
                     steps {
                         script {
                             withCredentials([file(credentialsId: 'kubeconfig-prod', variable: 'KUBECONFIG_PATH')]) {
-                                sh '''
-                                    export KUBECONFIG=$KUBECONFIG_PATH
+                                sh """
+                                    export KUBECONFIG=\$KUBECONFIG_PATH
                                     echo "🚀 Deploying Slave to Salaya..."
 
-                                    kubectl get ns $K8S_NAMESPACE || kubectl create ns $K8S_NAMESPACE
+                                    kubectl get ns \$K8S_NAMESPACE || kubectl create ns \$K8S_NAMESPACE
 
                                     # --- PVC ---
-                                    kubectl apply -f k8s/mysql-pvc.yaml -n $K8S_NAMESPACE
-                                    kubectl apply -f k8s/backend-pvc.yaml -n $K8S_NAMESPACE
-                                    kubectl apply -f k8s/backend-pvc-claim.yaml -n $K8S_NAMESPACE
+                                    kubectl apply -f k8s/mysql-pvc.yaml -n \$K8S_NAMESPACE
+                                    kubectl apply -f k8s/backend-pvc.yaml -n \$K8S_NAMESPACE
+                                    kubectl apply -f k8s/backend-pvc-claim.yaml -n \$K8S_NAMESPACE
 
                                     # --- MySQL Slave ---
-                                    kubectl apply -f k8s/mysql-config-slave.yaml -n $K8S_NAMESPACE
-                                    kubectl apply -f k8s/mysql-secret.yaml -n $K8S_NAMESPACE
-                                    kubectl apply -f k8s/mysql-slave.yaml -n $K8S_NAMESPACE
+                                    kubectl apply -f k8s/mysql-config-slave.yaml -n \$K8S_NAMESPACE
+                                    kubectl apply -f k8s/mysql-secret.yaml -n \$K8S_NAMESPACE
+                                    kubectl apply -f k8s/mysql-slave.yaml -n \$K8S_NAMESPACE
 
                                     # --- Backend ---
                                     export DB_HOST_NAME="mysql-salaya"
-                                    cat k8s/backend.yaml | envsubst | kubectl apply -f - -n $K8S_NAMESPACE
-
-                                    # --- PhpMyAdmin ---
-                                    cat k8s/phpmyadmin.yaml | envsubst | kubectl apply -f - -n $K8S_NAMESPACE
+                                    cat k8s/backend.yaml | sed "s|\${IMAGE_VERSION}|${params.IMAGE_VERSION}|g" | envsubst | kubectl apply -f - -n \$K8S_NAMESPACE
 
                                     # --- Frontend ConfigMap ---
                                     kubectl create configmap nginx-conf-user-salaya \
                                         --from-file=default.conf=Foodstore_User/nginx-salaya.conf \
-                                        -n $K8S_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
+                                        -n \$K8S_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
                                     
                                     kubectl create configmap nginx-conf-admin-salaya \
                                         --from-file=default.conf=Foodstore_admin_Frontend/nginx-salaya.conf \
-                                        -n $K8S_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
-                                    
+                                        -n \$K8S_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
+
                                     # --- Frontend Deploy ---
-                                    kubectl apply -f k8s/frontend-user-salaya.yaml -n $K8S_NAMESPACE
-                                    kubectl apply -f k8s/frontend-admin-salaya.yaml -n $K8S_NAMESPACE
-
-
+                                    cat k8s/frontend-user-salaya.yaml | sed "s|\${IMAGE_VERSION}|${params.IMAGE_VERSION}|g" | kubectl apply -f - -n \$K8S_NAMESPACE
+                                    cat k8s/frontend-admin-salaya.yaml | sed "s|\${IMAGE_VERSION}|${params.IMAGE_VERSION}|g" | kubectl apply -f - -n \$K8S_NAMESPACE
 
                                     # --- Rollout check ---
-                                    kubectl rollout status deployment/mysql-salaya -n $K8S_NAMESPACE --timeout=180s
-                                    kubectl rollout status deployment/backend -n $K8S_NAMESPACE --timeout=180s
-                                    kubectl rollout status deployment/frontend-admin -n $K8S_NAMESPACE --timeout=180s
-                                    kubectl rollout status deployment/frontend-user -n $K8S_NAMESPACE --timeout=180s
-                                    kubectl rollout status deployment/phpmyadmin -n $K8S_NAMESPACE --timeout=180s
+                                    kubectl rollout status deployment/backend -n \$K8S_NAMESPACE --timeout=180s
+                                    kubectl rollout status deployment/frontend-admin -n \$K8S_NAMESPACE --timeout=180s
+                                    kubectl rollout status deployment/frontend-user -n \$K8S_NAMESPACE --timeout=180s
 
-                                    # --- MySQL replication ---
-                                    MASTER_HOST="$MASTER_K8S_IP" 
-                                    MASTER_PORT="$MASTER_K8S_PORT"
-                                    MYSQL_ROOT_PASSWORD=$(kubectl get secret mysql-secret -n $K8S_NAMESPACE -o jsonpath="{.data.MYSQL_ROOT_PASSWORD}" | base64 --decode)
-
-                                    echo "Waiting 30 seconds for MySQL Slave to fully initialize..."
-                                    sleep 30
-                                    kubectl wait --for=condition=ready pod -l app=mysql-salaya -n $K8S_NAMESPACE --timeout=120s
-
-                                    kubectl exec deploy/mysql-salaya -n $K8S_NAMESPACE --container mysql -- \
-                                        mysql -h 127.0.0.1 -P 3306 -uroot -p$MYSQL_ROOT_PASSWORD -e "
-                                            STOP REPLICA;
-                                            RESET REPLICA;
-                                            CHANGE MASTER TO
-                                                MASTER_HOST='$MASTER_HOST',
-                                                MASTER_PORT=$MASTER_PORT,
-                                                MASTER_USER='repl',
-                                                MASTER_PASSWORD='replpassword',
-                                                MASTER_AUTO_POSITION=1;
-                                            START REPLICA;" || true
-                                '''
+                                    # --- Restart deployments to pick up new images ---
+                                    kubectl rollout restart deployment/backend -n \$K8S_NAMESPACE
+                                    kubectl rollout restart deployment/frontend-admin -n \$K8S_NAMESPACE
+                                    kubectl rollout restart deployment/frontend-user -n \$K8S_NAMESPACE
+                                """
                             }
                         }
                     }

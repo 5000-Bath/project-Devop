@@ -1,5 +1,10 @@
 pipeline {
     agent { label 'docker-host' }
+
+    parameters {
+        string(name: 'IMAGE_VERSION', defaultValue: '1.0.0', description: 'Version for Docker images')
+    }
+
     environment {
         DOCKER_HUB_USERNAME = 'filmfilm'
         IMAGE_NAME_ADMIN = "${DOCKER_HUB_USERNAME}/foodstore-admin-frontend"
@@ -12,6 +17,7 @@ pipeline {
         
         COMPOSE_FILE = 'docker-compose.yml' 
     }
+
     stages {
         stage('Checkout') {
             steps {
@@ -35,7 +41,6 @@ pipeline {
                 sh 'sleep 45'
                 
                 echo "2. Installing Frontend Dependencies and starting Vite Dev Servers..."
-                
                 sh 'cd Foodstore_User && npm install && npm install path && npm install --save-dev msw && npm install @testing-library/user-event --save-dev'
                 sh "cd Foodstore_User && VITE_API_URL=http://localhost:${BACKEND_PORT} npm run dev > /tmp/user-dev.log 2>&1 &" 
                 
@@ -49,7 +54,6 @@ pipeline {
         stage('Unit Test') {
             steps {
                 echo "Running Frontend Unit Tests on Host..."
-                
                 sh 'cd Foodstore_User && npm test' 
                 sh 'cd Foodstore_admin_Frontend && npm test'
             }
@@ -59,11 +63,9 @@ pipeline {
             steps {
                 echo "Running Cypress E2E Tests with Xvfb..."
                 
-                // *** User E2E Test ***
                 sh 'cd Foodstore_User && npx cypress install' 
                 sh "cd Foodstore_User && DISPLAY=:99 xvfb-run -a npx cypress run --config baseUrl=http://localhost:${USER_PORT} --headless || true"
                 
-                // *** Admin E2E Test ***
                 sh 'cd Foodstore_admin_Frontend && npx cypress install' 
                 sh "cd Foodstore_admin_Frontend && DISPLAY=:99 xvfb-run -a npx cypress run --config baseUrl=http://localhost:${ADMIN_PORT} --headless || true"
             }
@@ -82,11 +84,11 @@ pipeline {
 
         stage('Build and Push Docker Images') {
             steps {
-                echo "Building FINAL Production Images..."
-                
-                sh "docker build -t ${IMAGE_NAME_ADMIN}:latest ./Foodstore_admin_Frontend"
-                sh "docker build -t ${IMAGE_NAME_USER}:latest ./Foodstore_User"
-                sh "docker build -t ${IMAGE_NAME_BACKEND}:latest ./firstapp"
+                echo "Building FINAL Production Images with version ${params.IMAGE_VERSION}..."
+
+                sh "docker build -t ${IMAGE_NAME_ADMIN}:${params.IMAGE_VERSION} ./Foodstore_admin_Frontend"
+                sh "docker build -t ${IMAGE_NAME_USER}:${params.IMAGE_VERSION} ./Foodstore_User"
+                sh "docker build -t ${IMAGE_NAME_BACKEND}:${params.IMAGE_VERSION} ./firstapp"
 
                 withCredentials([usernamePassword(
                     credentialsId: 'docker-hub-creds',
@@ -94,18 +96,15 @@ pipeline {
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
                     sh 'echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin'
-                    sh "docker push ${IMAGE_NAME_ADMIN}:latest"
-                    sh "docker push ${IMAGE_NAME_USER}:latest"
-                    sh "docker push ${IMAGE_NAME_BACKEND}:latest"
+
+                    sh "docker push ${IMAGE_NAME_ADMIN}:${params.IMAGE_VERSION}"
+                    sh "docker push ${IMAGE_NAME_USER}:${params.IMAGE_VERSION}"
+                    sh "docker push ${IMAGE_NAME_BACKEND}:${params.IMAGE_VERSION}"
                 }
             }
         }
 
-        stage('unDeploy') {
-            steps {
-                echo "Skipping unDeploy for safety"
-            }
-        }
+        
     }
 
     post {
