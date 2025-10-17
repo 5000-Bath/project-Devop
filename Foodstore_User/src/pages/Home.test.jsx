@@ -4,6 +4,8 @@ import Home from './Home';
 import { CartContext } from '../context/CartContext';
 import * as productApi from '../api/products'; // Import to mock
 
+import { MemoryRouter } from 'react-router-dom';
+
 // Mock the API module
 vi.mock('../api/products');
 
@@ -11,9 +13,11 @@ const mockAddToCart = vi.fn();
 
 const renderWithContext = (component) => {
   return render(
-    <CartContext.Provider value={{ addToCart: mockAddToCart, cart: [] }}>
-      {component}
-    </CartContext.Provider>
+    <MemoryRouter>
+      <CartContext.Provider value={{ addToCart: mockAddToCart, cartItems: [] }}>
+        {component}
+      </CartContext.Provider>
+    </MemoryRouter>
   );
 };
 

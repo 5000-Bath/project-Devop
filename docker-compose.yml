@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+  # Environment Services (Required for Test on Host)
   db:
     image: mysql:8.0
     container_name: foodstore-db
@@ -13,7 +14,8 @@ services:
       - mysql_data:/var/lib/mysql
       - ./shop_db.sql:/docker-entrypoint-initdb.d/shop_db.sql
     ports:
-      - "3306:3306"
+      # เปิด Port 3306 เพื่อให้ Host (Jenkins Agent) เข้าถึงได้
+      - "3306:3306" 
     restart: unless-stopped
 
   phpmyadmin:
@@ -37,8 +39,9 @@ services:
     container_name: firstapp-backend
     depends_on:
       - db
+    # Port 8080 เปิดเพื่อให้ Host (Jenkins Agent) เข้าถึง API ได้ผ่าน localhost:8080
     ports:
-      - "8080:8080"
+      - "8080:8080" 
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/shopdb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: shopuser
@@ -47,26 +50,3 @@ services:
     volumes:
       - ./uploads/images:/app/uploads/images
     restart: unless-stopped
-
-  frontend-user:
-    build: ./Foodstore_User
-    image: filmfilm/foodstore-user-frontend:latest
-    container_name: foodstore-user-frontend
-    depends_on:
-      - backend
-    ports:
-      - "3000:3000"
-    restart: unless-stopped
-
-  frontend-admin:
-    build: ./Foodstore_admin_Frontend
-    image: filmfilm/foodstore-admin-frontend:latest
-    container_name: foodstore-admin-frontend
-    depends_on:
-      - backend
-    ports:
-      - "3001:3001"
-    restart: unless-stopped
-
-volumes:
-  mysql_data:
