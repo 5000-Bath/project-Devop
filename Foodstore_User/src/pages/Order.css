@@ -189,13 +189,17 @@
 
 /* Checkout Summary */
 .checkout-summary {
-  background-color: #ffffff;
-  padding: 1.4rem;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  border: 1px solid #eee;
-  width: 100%;
+    background: #fff;
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
+
+.checkout-summary .total {
+    color: #222;
+    font-weight: 600;
+}
+
 
 .summary-line {
   display: flex;
@@ -205,14 +209,14 @@
   color: #495057;
 }
 
-.summary-line.total {
-  font-weight: bold;
-  font-size: 1.25rem;
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid #e9ecef;
-  color: #212529;
+.summary-line.total,
+.checkout-summary .total {
+    background-color: transparent !important;
+
+    padding-top: 12px;
+    font-size: 1.2rem;
 }
+
 
 .checkout-button {
   width: 100%;

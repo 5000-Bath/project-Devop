@@ -5,8 +5,8 @@ import './Contact.css';
 import img1 from '../assets/team/member1.jpg';
 import img2 from '../assets/team/member2.png';
 import img3 from '../assets/team/member3.png';
-import img4 from '../assets/team/member4.jpg';
-import img5 from '../assets/team/member5.jpg';
+import img4 from '../assets/team/member4.jpeg';
+import img5 from '../assets/team/member5.jpeg';
 import img6 from '../assets/team/member6.jpg';
 
 // ข้อมูลสมาชิกทีม — แก้ไขตรงนี้ได้เลย!
@@ -21,7 +21,7 @@ const teamMembers = [
   },
   {
     id: 2,
-    name: "Tas",
+    name: "Tas Sukastid",
     nickname: "Tas",
     github: "https://github.com/TasSukastid",
     linkedin: "https://www.linkedin.com/in/tas-sukastid-bcc/",
@@ -29,31 +29,31 @@ const teamMembers = [
   },
   {
     id: 3,
-    name: "First",
+    name: "Yanaphat Jumpaburee",
     nickname: "First",
-    github: "https://github.com/maneerat",
-    linkedin: "https://linkedin.com/in/maneerat",
+    github: "https://github.com/First97",
+    linkedin: "https://www.linkedin.com/in/yanaphat-jum-51905938b/",
     image: img3,
   },
   {
     id: 4,
-    name: "Kong",
+    name: "Kongphop Kaochot",
     nickname: "Kong",
     github: "https://github.com/Konggarage",
-    linkedin: "https://linkedin.com/in/tanawat",
+    linkedin: "https://www.linkedin.com/in/kongphop-kaochot-14408a339/",
     image: img4,
   },
   {
     id: 5,
-    name: "Ake",
+    name: "Taned Somchervieng",
     nickname: "Ake",
     github: "https://github.com/tanert48",
-    linkedin: "https://linkedin.com/in/pawee",
+    linkedin: "https://www.linkedin.com/in/taned-somchirvieng-788918373",
     image: img5,
   },
   {
     id: 6,
-    name: "Ohm",
+    name: "Peeranut Machaivech",
     nickname: "Ohm",
     github: "https://github.com/ohmmyrisingstar",
     linkedin: "https://linkedin.com/in/sirapat",
