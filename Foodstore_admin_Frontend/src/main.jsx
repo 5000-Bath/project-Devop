@@ -2,6 +2,9 @@ import React, { useEffect, useState } from "react";
 import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
 import ReactDOM from "react-dom/client"; // ✅ สำคัญ
 
+import { Buffer } from 'buffer';
+window.Buffer = Buffer;
+
 import App from "./App.jsx";
 import Home from "./page/Home.jsx";
 import About from "./page/About.jsx";

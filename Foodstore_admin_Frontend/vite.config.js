@@ -14,7 +14,7 @@ export default ({ mode }) => {
     define: {
       'process.env': {},
     },
-    
+
     // *** เพิ่มส่วน RESOLVE สำหรับ Alias ***
     resolve: {
       alias: [
@@ -26,7 +26,7 @@ export default ({ mode }) => {
         {
           // Alias สำหรับ Source Code (ถ้าใช้ @/ ในโค้ด)
           find: '@',
-          replacement: path.resolve(__dirname, './src'), 
+          replacement: path.resolve(__dirname, './src'),
         },
       ],
     },
@@ -43,8 +43,34 @@ export default ({ mode }) => {
           changeOrigin: true,
           secure: false,
         },
+        '/auth': {
+          target: apiUrl,
+          changeOrigin: true,
+          secure: false,
+        },
+        '/login': {
+          target: apiUrl,
+          changeOrigin: true,
+          secure: false,
+        },
+        '/check': {
+          target: apiUrl,
+          changeOrigin: true,
+          secure: false,
+        },
+        '/logout': {
+          target: apiUrl,
+          changeOrigin: true,
+          secure: false,
+        },
+        '/uploads': {
+          target: apiUrl,
+          changeOrigin: true,
+          secure: false,
+        },
       },
     },
+
 
     build: {
       outDir: 'dist',

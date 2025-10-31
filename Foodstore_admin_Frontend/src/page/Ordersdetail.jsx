@@ -35,26 +35,31 @@ export default function Ordersdetail() {
     const updateOrderStatus = async (newStatus) => {
         if (!order) return;
 
-        // 1. ✅ ถ้าเป็น Complete → ตรวจ stock ก่อน (เปลี่ยน alert() เป็น Swal.fire())
+        // ----------------------------------------------------------------------
+        // ❌ ส่วนที่ถูกลบออก: การตรวจสอบสต็อกสินค้า (ตามคำขอ)
+        // ----------------------------------------------------------------------
+        /*
         if (newStatus === "SUCCESS") {
             const insufficient = order.orderItems.find(
                 (item) => item.quantity > item.product.stock
             );
             if (insufficient) {
-                Swal.fire({ // 🔴 เปลี่ยน alert เป็น Swal.fire
+                Swal.fire({
                     icon: 'warning',
                     title: 'สินค้าในสต็อกไม่เพียงพอ',
                     text: `Stock สำหรับ "${insufficient.product.name}" มีไม่พอ`,
                     confirmButtonText: 'ตกลง'
                 });
-                return; // ❌ หยุด ไม่ส่ง request
+                return; 
             }
         }
+        */
+        // ----------------------------------------------------------------------
 
         try {
-            // 2. ✅ เพิ่ม SweetAlert2 Confirmation ก่อนส่ง request
+            // 1. ✅ SweetAlert2 Confirmation ก่อนส่ง request
             const result = await Swal.fire({
-                title: `ยืนยันการเปลี่ยนสถานะเป็น ${newStatus}?`,
+                title: `ยืนยันการเปลี่ยนสถานะเป็น **${newStatus}**?`,
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonText: 'ยืนยัน',
@@ -76,7 +81,7 @@ export default function Ordersdetail() {
 
             if (!res.ok) {
                 const errMsg = await res.text();
-                Swal.fire({ // 🔴 เปลี่ยน alert เป็น Swal.fire (กรณี Error)
+                Swal.fire({
                     icon: 'error',
                     title: 'อัปเดตสถานะไม่สำเร็จ',
                     text: errMsg || `ไม่สามารถอัปเดตสถานะได้ (HTTP ${res.status})`,
@@ -87,7 +92,7 @@ export default function Ordersdetail() {
             const updated = await res.json();
             setOrder(updated);
 
-            // 3. ✅ เปลี่ยน alert เป็น Swal.fire (กรณี Success)
+            // 2. ✅ SweetAlert2 Success
             Swal.fire({
                 icon: 'success',
                 title: 'อัปเดตสำเร็จ',
@@ -97,8 +102,7 @@ export default function Ordersdetail() {
             });
         } catch (err) {
             console.error("Error updating status:", err);
-            // ถ้ามีการโยน Error จากด้านบน (กรณี !res.ok) มันจะถูกจัดการแล้ว
-            // แต่ถ้ามี error อื่นๆ (เช่น network error) ให้แสดง alert สำรอง
+            // แสดง SweetAlert2 สำหรับ Network Error หรือ Error ที่ไม่ได้มาจาก HTTP response (res.ok)
             if (err.message.indexOf("HTTP") === -1) {
                 Swal.fire({
                     icon: 'error',
@@ -108,7 +112,6 @@ export default function Ordersdetail() {
             }
         }
     };
-
 
     if (loading) return <div style={{ padding: 24 }}>⏳ กำลังโหลดข้อมูล...</div>;
     if (error) return <div style={{ padding: 24, color: "red" }}>{error}</div>;
@@ -172,51 +175,51 @@ export default function Ordersdetail() {
             >
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                     <thead>
-                    <tr style={{ borderBottom: "1px solid #eee" }}>
-                        <th style={{ textAlign: "left", padding: "12px 8px" }}>Product</th>
-                        <th style={{ textAlign: "left", padding: "12px 8px" }}>Quantity</th>
-                        <th style={{ textAlign: "left", padding: "12px 8px" }}>Price</th>
-                        <th style={{ textAlign: "left", padding: "12px 8px" }}>Total</th>
-                    </tr>
+                        <tr style={{ borderBottom: "1px solid #eee" }}>
+                            <th style={{ textAlign: "left", padding: "12px 8px" }}>Product</th>
+                            <th style={{ textAlign: "left", padding: "12px 8px" }}>Quantity</th>
+                            <th style={{ textAlign: "left", padding: "12px 8px" }}>Price</th>
+                            <th style={{ textAlign: "left", padding: "12px 8px" }}>Total</th>
+                        </tr>
                     </thead>
                     <tbody>
-                    {filteredItems.length > 0 ? (
-                        filteredItems.map((item) => (
-                            <tr
-                                key={item.id}
-                                style={{
-                                    borderBottom: "1px solid #f0f0f0",
-                                    cursor: "pointer",
-                                    transition: "background-color 0.2s",
-                                }}
-                                onMouseEnter={(e) =>
-                                    (e.currentTarget.style.backgroundColor = "#f8f9fa")
-                                }
-                                onMouseLeave={(e) =>
-                                    (e.currentTarget.style.backgroundColor = "white")
-                                }
-                            >
-                                <td style={{ padding: "12px 8px", fontSize: 14 }}>
-                                    {item.product?.name || "-"}
-                                </td>
-                                <td style={{ padding: "12px 8px", fontSize: 14 }}>
-                                    {item.quantity}
-                                </td>
-                                <td style={{ padding: "12px 8px", fontSize: 14 }}>
-                                    {item.product?.price?.toLocaleString()} บาท
-                                </td>
-                                <td style={{ padding: "12px 8px", fontSize: 14 }}>
-                                    {(item.product?.price * item.quantity).toLocaleString()} บาท
+                        {filteredItems.length > 0 ? (
+                            filteredItems.map((item) => (
+                                <tr
+                                    key={item.id}
+                                    style={{
+                                        borderBottom: "1px solid #f0f0f0",
+                                        cursor: "pointer",
+                                        transition: "background-color 0.2s",
+                                    }}
+                                    onMouseEnter={(e) =>
+                                        (e.currentTarget.style.backgroundColor = "#f8f9fa")
+                                    }
+                                    onMouseLeave={(e) =>
+                                        (e.currentTarget.style.backgroundColor = "white")
+                                    }
+                                >
+                                    <td style={{ padding: "12px 8px", fontSize: 14 }}>
+                                        {item.product?.name || "-"}
+                                    </td>
+                                    <td style={{ padding: "12px 8px", fontSize: 14 }}>
+                                        {item.quantity}
+                                    </td>
+                                    <td style={{ padding: "12px 8px", fontSize: 14 }}>
+                                        {item.product?.price?.toLocaleString()} บาท
+                                    </td>
+                                    <td style={{ padding: "12px 8px", fontSize: 14 }}>
+                                        {(item.product?.price * item.quantity).toLocaleString()} บาท
+                                    </td>
+                                </tr>
+                            ))
+                        ) : (
+                            <tr>
+                                <td colSpan="4" style={{ textAlign: "center", padding: 16 }}>
+                                    ไม่มีสินค้าในคำสั่งซื้อนี้
                                 </td>
                             </tr>
-                        ))
-                    ) : (
-                        <tr>
-                            <td colSpan="4" style={{ textAlign: "center", padding: 16 }}>
-                                ไม่มีสินค้าในคำสั่งซื้อนี้
-                            </td>
-                        </tr>
-                    )}
+                        )}
                     </tbody>
                 </table>
 

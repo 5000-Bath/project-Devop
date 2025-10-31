@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
 import {
@@ -13,6 +13,11 @@ import {
 } from "chart.js";
 import { Line } from "react-chartjs-2";
 import "../styles/AdminDashboard.css";
+// ต้องนำเข้าไลบรารีสำหรับสร้าง PDF และแปลง HTML/Canvas เป็นรูปภาพ
+import html2canvas from "html2canvas";
+import { PDFDownloadLink } from "@react-pdf/renderer";
+import { ReportDocument } from "./ReportDocument"; // **ต้องสร้างไฟล์นี้เอง**
+
 import { fmtTH, money, isPending, isDone, isCancel } from "../utils/formatters";
 
 function formatThaiDateTime(dateString) {
@@ -50,6 +55,11 @@ const API_BASE = "";
 export default function AdminDashboard() {
     const [orders, setOrders] = useState([]);
     const [products, setProducts] = useState([]);
+    
+    // **เพิ่ม** useRef สำหรับอ้างอิงองค์ประกอบ Chart
+    const chartRef = useRef(null);
+    // **เพิ่ม** State สำหรับเก็บรูปภาพ Chart ในรูปแบบ Base64 string
+    const [chartImage, setChartImage] = useState(null);
 
     const load = async () => {
         try {
@@ -63,10 +73,39 @@ export default function AdminDashboard() {
             console.error(e);
         }
     };
+    
+    // **ฟังก์ชันใหม่** สำหรับจับภาพ Chart.js และแปลงเป็น Base64
+    const captureChart = async () => {
+        if (chartRef.current) {
+            // Chart.js component มี property 'canvas' ที่เก็บ element canvas จริง
+            const canvas = chartRef.current.canvas; 
+            if (canvas) {
+                try {
+                    // ใช้ html2canvas แปลง canvas เป็นรูปภาพ
+                    const canvasResult = await html2canvas(canvas, {
+                        backgroundColor: '#fff', // กำหนดพื้นหลังสีขาวให้รูปภาพ
+                        scale: 2, // เพิ่ม scale เพื่อให้ได้ภาพที่มีความคมชัดสูงขึ้น
+                    });
+                    const imgData = canvasResult.toDataURL("image/png");
+                    setChartImage(imgData);
+                } catch (error) {
+                    console.error("Error capturing chart for PDF:", error);
+                    setChartImage(null);
+                }
+            }
+        }
+    };
 
     useEffect(() => {
         load();
     }, []);
+    
+    // **เรียก captureChart** ทุกครั้งที่ข้อมูล Orders เปลี่ยน (เพื่อให้ chart update)
+    useEffect(() => {
+        // หน่วงเวลาเล็กน้อยเพื่อให้ Chart.js เรนเดอร์เสร็จสมบูรณ์ก่อนจับภาพ
+        const timeout = setTimeout(captureChart, 500); 
+        return () => clearTimeout(timeout);
+    }, [orders]);
 
     const summary = useMemo(() => {
         const today = new Date();
@@ -170,13 +209,45 @@ export default function AdminDashboard() {
         };
     }, [orders]);
 
+    // ----------------------------------------------------
+    // 📌 ย้ายส่วนปุ่ม PDF มาเป็น Component ย่อย
+    // ----------------------------------------------------
+    const PdfButton = () => (
+        <PDFDownloadLink
+            document={
+                <ReportDocument
+                    summary={summary}
+                    recent10={recent10}
+                    top3={top3}
+                    alerts={alerts}
+                    chartImage={chartImage} // ส่งรูปภาพ Chart.js เข้าไป
+                />
+            }
+            fileName={`Dashboard_Report_${new Date().toISOString().slice(0, 10)}.pdf`}
+        >
+            {({ loading }) => (
+                <button 
+                    className="btn primary" 
+                    disabled={loading || !chartImage}
+                    style={{ minWidth: '220px', marginTop: '15px' }} // เพิ่ม Style สำหรับจัดวาง
+                >
+                    {loading ? "Generating PDF..." : "Download Report PDF"}
+                </button>
+            )}
+        </PDFDownloadLink>
+    );
+
     return (
         <div className="dashboard">
             <div className="dash-head">
                 <h2>Dashboard</h2>
-                <button className="btn" onClick={load}>
-                    Refresh
-                </button>
+                {/* ปุ่ม Refresh อยู่ที่เดิม */}
+                <div className="buttons-group">
+                    <button className="btn" onClick={load}>
+                        Refresh
+                    </button>
+                    {/* **ลบ** ปุ่ม PDF ออกจากตรงนี้ */}
+                </div>
             </div>
 
             <div className="cards responsive-grid">
@@ -189,7 +260,9 @@ export default function AdminDashboard() {
             </div>
 
             <div className="card chart responsive-chart">
+                {/* **เพิ่ม** ref ให้กับ Line Component เพื่อให้ html2canvas อ้างอิงได้ */}
                 <Line
+                    ref={chartRef} 
                     data={chartData}
                     options={{
                         responsive: true,
@@ -229,12 +302,12 @@ export default function AdminDashboard() {
                                                 o.amount ??
                                                 (o.orderItems
                                                     ? o.orderItems.reduce(
-                                                        (s, it) =>
-                                                            s +
-                                                            (it.product?.price ?? 0) *
-                                                            (it.quantity ?? 0),
-                                                        0
-                                                    )
+                                                          (s, it) =>
+                                                              s +
+                                                              (it.product?.price ?? 0) *
+                                                              (it.quantity ?? 0),
+                                                          0
+                                                      )
                                                     : 0);
                                             return sum + subtotal;
                                         }, 0);
@@ -252,6 +325,12 @@ export default function AdminDashboard() {
                     }}
                 />
             </div>
+            
+            {/* 📌 ตำแหน่งใหม่: วางปุ่ม PDF ต่อจาก div.card.chart */}
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
+                <PdfButton />
+            </div>
+            {/* ---------------------------------------------------- */}
 
             <div className="bottom responsive-stack">
                 <div className="card wide recent-block">
@@ -277,30 +356,30 @@ export default function AdminDashboard() {
                                             o.amount ??
                                             (o.orderItems
                                                 ? o.orderItems.reduce(
-                                                    (sum, item) =>
-                                                        sum +
-                                                        (item.product?.price ?? 0) *
-                                                        (item.quantity ?? 0),
-                                                    0
-                                                )
+                                                      (sum, item) =>
+                                                          sum +
+                                                          (item.product?.price ?? 0) *
+                                                          (item.quantity ?? 0),
+                                                      0
+                                                  )
                                                 : 0)
                                         )}
                                     </td>
                                     <td>
-                      <span
-                          className={
-                              "badge " +
-                              (isPending(o.status)
-                                  ? "warn"
-                                  : isDone(o.status)
-                                      ? "ok"
-                                      : isCancel(o.status)
-                                          ? "bad"
-                                          : "muted")
-                          }
-                      >
-                        {o.status || "UNKNOWN"}
-                      </span>
+                                        <span
+                                            className={
+                                                "badge " +
+                                                (isPending(o.status)
+                                                    ? "warn"
+                                                    : isDone(o.status)
+                                                        ? "ok"
+                                                        : isCancel(o.status)
+                                                            ? "bad"
+                                                            : "muted")
+                                            }
+                                        >
+                                            {o.status || "UNKNOWN"}
+                                        </span>
                                     </td>
                                     <td className="center">
                                         <Link
@@ -334,9 +413,9 @@ export default function AdminDashboard() {
                         <ul className="list">
                             {top3.map(([name, qty], i) => (
                                 <li key={name} className="row">
-                  <span>
-                    {i + 1}. {name}
-                  </span>
+                                    <span>
+                                        {i + 1}. {name}
+                                    </span>
                                     <span className="muted">{qty} sold</span>
                                 </li>
                             ))}
@@ -349,9 +428,9 @@ export default function AdminDashboard() {
                         <ul className="list">
                             {alerts.map((p, i) => (
                                 <li key={p.id} className="row">
-                  <span>
-                    {i + 1}. {p.name}
-                  </span>
+                                    <span>
+                                        {i + 1}. {p.name}
+                                    </span>
                                     <span
                                         className={`stock ${p.stock < 1 ? "danger" : ""}`}
                                     >{`${p.stock} left`}</span>

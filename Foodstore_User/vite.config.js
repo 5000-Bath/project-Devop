@@ -12,7 +12,7 @@ export default ({ mode }) => {
 
   return defineConfig({
     plugins: [react()],
-    
+
     resolve: {
       alias: [
         {
@@ -34,6 +34,11 @@ export default ({ mode }) => {
       port: 3000,
       proxy: {
         '/api': {
+          target: apiUrl,
+          changeOrigin: true,
+          secure: false,
+        },
+        '/uploads': {
           target: apiUrl,
           changeOrigin: true,
           secure: false,

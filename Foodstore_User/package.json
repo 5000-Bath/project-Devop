@@ -13,6 +13,8 @@
     "cypress:open": "cypress open"
   },
   "dependencies": {
+    "fuse.js": "^7.1.0",
+    "fuzzysort": "^3.1.0",
     "lucide-react": "^0.542.0",
     "path": "^0.12.7",
     "react": "^19.1.1",
