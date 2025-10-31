@@ -1,7 +1,7 @@
-// src/page/AddItem.jsx
 import React, { useState } from 'react';
 import Swal from 'sweetalert2';
 import { useNavigate } from 'react-router-dom';
+import './AddItem.css';
 
 export default function Additem() {
   const navigate = useNavigate();
@@ -12,6 +12,9 @@ export default function Additem() {
   const [stock, setStock] = useState('');
   const [image, setImage] = useState(null);
   const [previewUrl, setPreviewUrl] = useState('');
+  const [category, setCategory] = useState('');
+
+  const CATEGORY_OPTIONS = ['อาหารคาว', 'ของหวาน', 'เครื่องดื่ม', 'เมนูพิเศษ'];
 
   const onFileChange = (e) => {
     const file = e.target.files?.[0] || null;
@@ -22,7 +25,6 @@ export default function Additem() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // ===== Manual validation (ตรงกับ test) =====
     if (!name.trim() || !price.trim()) {
       await Swal.fire({
         icon: 'warning',
@@ -30,7 +32,7 @@ export default function Additem() {
         text: 'กรุณากรอกชื่อเมนูและราคา',
         confirmButtonText: 'ตกลง'
       });
-      return; // สำคัญ: ไม่เรียก fetch ถ้าไม่ผ่าน
+      return;
     }
 
     const formData = new FormData();
@@ -38,18 +40,16 @@ export default function Additem() {
     formData.append('description', desc.trim());
     formData.append('price', price.trim());
     formData.append('stock', stock.trim());
+    if (category) formData.append('category', category);
     if (image) formData.append('image', image);
 
     try {
-      // ===== สำคัญ: URL ต้องเป็นสตริง '/api/menu' ตรงตัว =====
-      const res = await fetch('/api/menu', {
+      const res = await fetch('http://localhost:8080/api/products', {
         method: 'POST',
         body: formData,
       });
 
-      if (!res.ok) {
-        throw new Error('Request failed');
-      }
+      if (!res.ok) throw new Error('Request failed');
 
       await Swal.fire({
         icon: 'success',
@@ -71,73 +71,112 @@ export default function Additem() {
 
   return (
     <div className="add-item-page">
-      <h1>Add New Menu</h1>
+      <div className="wrapper">
+        <h1 className="page-title">Add New Menu</h1>
 
-      {/* ปิด HTML5 validation เพื่อให้ onSubmit ทำงานตามที่ test คาด */}
-      <form onSubmit={handleSubmit} noValidate>
-        <div className="field">
-          <label>Menu Name</label>
-          <input
-            name="name"
-            placeholder="Enter menu name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-        </div>
+        <div className="header-cover">Menu Cover</div>
 
-        <div className="field">
-          <label>Description</label>
-          <textarea
-            name="description"
-            placeholder="Enter menu description"
-            value={desc}
-            onChange={(e) => setDesc(e.target.value)}
-          />
-        </div>
+        <form className="add-item-form" onSubmit={handleSubmit} noValidate>
+          <div className="form-grid">
+            <div className="left-col">
+              <div className="field">
+                <label>Menu Name</label>
+                <input
+                  className="form-input"
+                  name="name"
+                  placeholder="Enter menu name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </div>
 
-        <div className="field">
-          <label>Price</label>
-          <input
-            name="price"
-            placeholder="Enter price"
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
-            inputMode="decimal"
-          />
-        </div>
+              <div className="field">
+                <label>Description</label>
+                <textarea
+                  className="form-textarea"
+                  name="description"
+                  placeholder="Enter menu description"
+                  value={desc}
+                  onChange={(e) => setDesc(e.target.value)}
+                />
+              </div>
 
-        <div className="field">
-          <label>Stock</label>
-          <input
-            name="stock"
-            placeholder="Enter stock quantity"
-            value={stock}
-            onChange={(e) => setStock(e.target.value)}
-            inputMode="numeric"
-          />
-        </div>
+              <div className="field">
+                <label>Price (THB)</label>
+                <input
+                  className="form-input"
+                  name="price"
+                  placeholder="Enter price"
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  inputMode="decimal"
+                />
+              </div>
 
-        <div className="field">
-          <label htmlFor="img">Upload Image</label>
-          <input
-            id="img"
-            type="file"
-            accept="image/*"
-            style={{ display: 'none' }}
-            onChange={onFileChange}
-          />
-          <label htmlFor="img" role="button">Upload Image</label>
-          {previewUrl && (
-            <img
-              src={previewUrl}
-              alt="preview"
-              style={{ maxWidth: 200, display: 'block', marginTop: 8 }}
-            />
-          )}
-        </div>
+              <div className="field">
+                <label>Stock Quantity</label>
+                <input
+                  className="form-input"
+                  name="stock"
+                  placeholder="Enter stock quantity"
+                  value={stock}
+                  onChange={(e) => setStock(e.target.value)}
+                  inputMode="numeric"
+                />
+              </div>
 
-        <button type="submit">Apply</button>
-      </form>
+              <div className="field">
+                <label>Category</label>
+                <select
+                  className="form-select"
+                  name="category"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  aria-label="Category"
+                >
+                  <option value="">เลือกหมวดหมู่</option>
+                  {CATEGORY_OPTIONS.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="right-col">
+              <div className="upload-box">
+                <div className="upload-inner">
+                  <div className="upload-label">Menu Cover Image</div>
+
+                  <input
+                    id="img"
+                    type="file"
+                    accept="image/*"
+                    className="file-input"
+                    onChange={onFileChange}
+                  />
+                  <label htmlFor="img" className="btn btn-primary">
+                    Upload Image
+                  </label>
+
+                  {previewUrl && (
+                    <div className="preview">
+                      <img src={previewUrl} alt="preview" />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="apply-wrap">
+            <button type="submit" className="btn btn-success">
+              Apply
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

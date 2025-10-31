@@ -1,0 +1,157 @@
+/* AddItem.css - styles for AddItem component */
+
+/* page / wrapper */
+.add-item-page {
+  padding: 28px 40px;
+  min-height: 80vh;
+  background: #fff;
+}
+.add-item-page .wrapper {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+.page-title {
+  margin-bottom: 18px;
+  font-size: 28px;
+}
+
+/* header cover */
+.header-cover {
+  background: #111;
+  color: #fff;
+  border-radius: 8px;
+  padding: 18px 20px;
+  text-align: center;
+  font-size: 34px;
+  font-weight: 600;
+  margin-bottom: 18px;
+}
+
+/* grid */
+.form-grid {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.left-col {
+  flex: 1;
+  min-width: 420px;
+}
+.right-col {
+  width: 360px;
+  min-width: 260px;
+}
+
+/* fields */
+.field {
+  margin-bottom: 16px;
+}
+.field label {
+  display: block;
+  margin-bottom: 6px;
+  color: #333;
+  font-size: 14px;
+}
+
+/* inputs / textarea */
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #e6e6e6;
+  font-size: 14px;
+  box-sizing: border-box;
+  color: #222;
+  background: #fff;
+  transition: box-shadow 0.12s ease, border-color 0.12s ease;
+}
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: #cbd5e1;
+  box-shadow: 0 6px 14px rgba(18, 38, 63, 0.04);
+}
+
+/* textarea specifics */
+.form-textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+/* select arrow and appearance */
+.form-select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  padding-right: 38px; /* room for arrow */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23454d55' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 12px;
+}
+
+/* upload box */
+.upload-box {
+  min-height: 220px;
+  border: 2px dashed #e0e0e0;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fafafa;
+  padding: 16px;
+  text-align: center;
+}
+.upload-inner .upload-label {
+  margin-bottom: 12px;
+  color: #666;
+}
+.file-input {
+  display: none;
+}
+.preview img {
+  max-width: 100%;
+  border-radius: 8px;
+  margin-top: 12px;
+}
+
+/* buttons */
+.btn {
+  display: inline-block;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  text-decoration: none;
+}
+.btn-primary {
+  background: #1e90ff;
+  color: #fff;
+}
+.btn-success {
+  background: #28a745;
+  color: #fff;
+}
+
+/* apply wrap */
+.apply-wrap {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 22px;
+}
+
+/* responsive */
+@media (max-width: 940px) {
+  .left-col {
+    min-width: 100%;
+  }
+  .right-col {
+    min-width: 100%;
+    width: 100%;
+  }
+}
