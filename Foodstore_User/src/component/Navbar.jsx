@@ -14,7 +14,6 @@ export default function Navbar({ brand = "Crayon Shinchan" }) {
   return (
     <header className="nav">
       <div className="nav__inner">
-        {/* Brand */}
         <div className="nav__brand">
           <img className="nav__logo" src={logo} alt="Brand logo shinchan" />
           <h1 className="nav__title">
@@ -22,7 +21,6 @@ export default function Navbar({ brand = "Crayon Shinchan" }) {
           </h1>
         </div>
 
-        {/* Hamburger button (มือถือเท่านั้น) */}
         <button
           className="nav__hamburger"
           onClick={toggleMenu}
@@ -33,7 +31,6 @@ export default function Navbar({ brand = "Crayon Shinchan" }) {
           <span></span>
         </button>
 
-        {/* Navigation links */}
         <nav
           className={`nav__links ${isMenuOpen ? "nav__links--open" : ""}`}
           aria-label="Main"
@@ -65,6 +62,17 @@ export default function Navbar({ brand = "Crayon Shinchan" }) {
           >
             Status
           </NavLink>
+          
+          <NavLink
+            to="/History"
+            className={({ isActive }) =>
+              "nav__link" + (isActive ? " is-active" : "")
+            }
+            onClick={() => setIsMenuOpen(false)}
+          >
+            History
+          </NavLink>
+
           <NavLink
             to="/contact"
             className={({ isActive }) =>
