@@ -25,7 +25,6 @@ public class Product {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
-    // ✅ ใช้ชื่อเดียว map ตรงกับ column stock_qty ใน database
     @Column(name = "stock_qty", nullable = false)
     private int stock = 0;
 
@@ -35,10 +34,12 @@ public class Product {
     @Column(length = 400)
     private String imageUrl;
 
+    @Column(length = 100)
+    private String category;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 
-    // --- Getter / Setter ---
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -59,6 +60,9 @@ public class Product {
 
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
