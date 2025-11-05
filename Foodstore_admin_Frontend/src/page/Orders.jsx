@@ -201,8 +201,13 @@
 
 import React, { useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
+import Swal from "sweetalert2";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const API_BASE = "";
+
+
 
 export default function Orders() {
     const [orders, setOrders] = useState([]);
@@ -211,6 +216,25 @@ export default function Orders() {
     const [error, setError] = useState(null);
     const navigate = useNavigate();
 
+    // รายการสินค้าทั้งหมดในร้าน
+    const [products, setProducts] = useState([]);
+
+// โหลด product catalog ครั้งเดียว
+    useEffect(() => {
+        const fetchProducts = async () => {
+            try {
+                const res = await fetch(`${API_BASE}/api/products`);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                // คาดว่า data เป็น array [{id,name,price,...}, ...]
+                setProducts(Array.isArray(data) ? data : []);
+            } catch (e) {
+                console.error("Load products failed", e);
+                setProducts([]); // fallback
+            }
+        };
+        fetchProducts();
+    }, []);
     // 🛑 ฟังก์ชันใหม่: กำหนด Style ตามสถานะ
     const getStatusStyle = (status) => {
         const statusKey = (status || 'PENDING').toUpperCase();
@@ -225,6 +249,8 @@ export default function Orders() {
                 return {};
         }
     };
+
+
 
     // ✅ โหลดข้อมูลจาก backend
     useEffect(() => {
@@ -245,6 +271,186 @@ export default function Orders() {
         };
         fetchOrders();
     }, []);
+
+    const [selectedMonth, setSelectedMonth] = useState("");
+
+    const handleDownloadReport = () => {
+        if (!selectedMonth) {
+            Swal.fire({
+                icon: "warning",
+                title: "Select month first",
+                text: "Please select a month before downloading the report.",
+            });
+            return;
+        }
+
+        // ต้องมี product catalog เพื่อทำรายงานครบทุกสินค้า
+        if (!products || products.length === 0) {
+            Swal.fire({
+                icon: "info",
+                title: "No product catalog",
+                text: "Cannot load product list. Please check /api/products endpoint.",
+            });
+            return;
+        }
+
+        // Helper
+        const getMonthStr = (date) => {
+            const d = new Date(date);
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        };
+
+        const [year, month] = selectedMonth.split("-").map(Number);
+        const prevMonth =
+            month === 1 ? `${year - 1}-12` : `${year}-${String(month - 1).padStart(2, "0")}`;
+
+        // เฉพาะ SUCCESS (Complete)
+        const currentOrders = orders.filter(
+            (o) => o.status?.toUpperCase() === "SUCCESS" && getMonthStr(o.createdAt) === selectedMonth
+        );
+        const prevOrders = orders.filter(
+            (o) => o.status?.toUpperCase() === "SUCCESS" && getMonthStr(o.createdAt) === prevMonth
+        );
+
+        if (currentOrders.length === 0 && prevOrders.length === 0) {
+            Swal.fire({
+                icon: "info",
+                title: "No data",
+                text: "No completed orders in this or the previous month.",
+            });
+            return;
+        }
+
+        // รวมยอดขายต่อสินค้า
+        const summarizeProducts = (orderList) => {
+            const summary = {};
+            orderList.forEach((o) => {
+                o.orderItems?.forEach((it) => {
+                    const name = it.product?.name || "Unknown";
+                    const qty = Number(it.quantity) || 0;
+                    const total = (it.product?.price || 0) * qty;
+                    if (!summary[name]) summary[name] = { qty, total };
+                    else {
+                        summary[name].qty += qty;
+                        summary[name].total += total;
+                    }
+                });
+            });
+            return summary;
+        };
+
+        const currentSummary = summarizeProducts(currentOrders);
+        const prevSummary = summarizeProducts(prevOrders);
+
+        // ✅ ใช้ “product catalog ทั้งหมด” เป็น master list
+        const catalogNames = products.map((p) => p.name); // [ "latte", "brownie", ... ]
+
+        // เทียบสองเดือนสำหรับ “ทุกรายการสินค้าในร้าน”
+        const compareProducts = {};
+        catalogNames.forEach((name) => {
+            const currQty = currentSummary[name]?.qty || 0;
+            const prevQty = prevSummary[name]?.qty || 0;
+            const currTotal = currentSummary[name]?.total || 0;
+            const prevTotal = prevSummary[name]?.total || 0;
+
+            const change =
+                prevTotal === 0 && currTotal === 0
+                    ? 0
+                    : prevTotal === 0
+                        ? 100
+                        : ((currTotal - prevTotal) / prevTotal) * 100;
+
+            compareProducts[name] = {
+                qty: currQty,
+                total: currTotal,
+                prevQty,
+                prevTotal,
+                change,
+            };
+        });
+
+        // ยอดรวมทั้งเดือน
+        const currentTotal = Object.values(compareProducts).reduce((s, v) => s + v.total, 0);
+        const prevTotal = Object.values(compareProducts).reduce((s, v) => s + v.prevTotal, 0);
+        const totalChange = prevTotal === 0 ? 100 : ((currentTotal - prevTotal) / prevTotal) * 100;
+        const trend = totalChange >= 0 ? "Uptrend / Expansion" : "Downtrend / Contraction";
+
+        // ---------- PDF ----------
+        const doc = new jsPDF({ unit: "pt", format: "a4" });
+        doc.setFontSize(16);
+        doc.text(`Monthly Sales Report (${selectedMonth})`, 40, 40);
+
+        doc.setFontSize(12);
+        const changeText = (totalChange >= 0 ? "+" : "") + totalChange.toFixed(2) + "%";
+        doc.setTextColor(totalChange >= 0 ? 46 : 198, totalChange >= 0 ? 125 : 40, totalChange >= 0 ? 50 : 40);
+        doc.text(`Overall Trend: ${trend} (${changeText})`, 40, 60);
+        doc.setTextColor(0, 0, 0);
+
+        // ตาราง: ครบทุกสินค้าในร้าน
+        const tableData = catalogNames.map((name, i) => {
+            const d = compareProducts[name];
+            return [
+                i + 1,
+                name,
+                d.qty.toLocaleString(),
+                d.total.toLocaleString("en-US", { minimumFractionDigits: 2 }),
+                d.prevQty.toLocaleString(),
+                d.prevTotal.toLocaleString("en-US", { minimumFractionDigits: 2 }),
+                (d.change >= 0 ? "+" : "") + d.change.toFixed(2) + "%",
+            ];
+        });
+
+        autoTable(doc, {
+            startY: 80,
+            head: [
+                [
+                    "#",
+                    "Product",
+                    "Qty (This Month)",
+                    "Revenue (This Month)",
+                    "Qty (Prev Month)",
+                    "Revenue (Prev Month)",
+                    "Change (%)",
+                ],
+            ],
+            body: tableData,
+            theme: "grid",
+            headStyles: { fillColor: [25, 118, 210], textColor: 255, halign: "center" },
+            styles: { fontSize: 7 },
+            columnStyles: {
+                0: { halign: "center", cellWidth: 25 },
+                1: { halign: "left", cellWidth: 140 },
+                2: { halign: "center", cellWidth: 70 },
+                3: { halign: "right", cellWidth: 90 },
+                4: { halign: "center", cellWidth: 70 },
+                5: { halign: "right", cellWidth: 90 },
+                6: { halign: "right", cellWidth: 60 },
+            },
+            margin: { left: 40, right: 40 },
+        });
+
+        const totalY = doc.lastAutoTable.finalY + 25;
+        doc.setFontSize(11);
+        doc.text(
+            `Total Revenue (${selectedMonth}): ${currentTotal.toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+            })} THB`,
+            40,
+            totalY
+        );
+        doc.text(
+            `Previous Month (${prevMonth}): ${prevTotal.toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+            })} THB`,
+            40,
+            totalY + 16
+        );
+
+        doc.save(`Sales_Report_${selectedMonth}.pdf`);
+    };
+
+
+
 
     // ✅ ค้นหา (ตาม id หรือ status)
     const filteredOrders = orders.filter(order =>
@@ -279,19 +485,56 @@ export default function Orders() {
                 boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
             }}>
                 <h1 style={{ fontSize: 24, fontWeight: 'bold', color: '#333' }}>Order Status</h1>
-                <input
-                    type="text"
-                    placeholder="Search..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    style={{
-                        padding: '8px 12px',
-                        border: '1px solid #ddd',
-                        borderRadius: 6,
-                        width: 250,
-                        fontSize: 14
-                    }}
-                />
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    {/* เลือกเดือน */}
+                    <input
+                        type="month"
+                        value={selectedMonth}
+                        onChange={(e) => setSelectedMonth(e.target.value)}
+                        style={{
+                            padding: '8px 10px',
+                            border: '1px solid #ddd',
+                            borderRadius: 6,
+                            fontSize: 14,
+                        }}
+                    />
+
+                    {/* ปุ่มดาวน์โหลดรายงาน */}
+                    <button
+                        onClick={handleDownloadReport}
+                        style={{
+                            backgroundColor: '#4CAF50',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: 6,
+                            padding: '8px 14px',
+                            cursor: 'pointer',
+                            fontSize: 14,
+                            fontWeight: 500,
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#43a047'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#4CAF50'}
+                    >
+                        📊 Download Report
+                    </button>
+
+                    {/* ช่องค้นหาเดิม */}
+                    <input
+                        type="text"
+                        placeholder="Search..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        style={{
+                            padding: '8px 12px',
+                            border: '1px solid #ddd',
+                            borderRadius: 6,
+                            width: 180,
+                            fontSize: 14
+                        }}
+                    />
+                </div>
+
             </div>
 
             {/* Table */}
