@@ -14,11 +14,14 @@ import java.util.List;
 @RequestMapping("/api/admins")
 public class AdminController {
 
-    @Autowired
-    private AdminRepository adminRepository;
+    private final AdminRepository adminRepository;
 
-    @Autowired
-    private JwtUtil jwtUtil;
+    private final JwtUtil jwtUtil;
+
+    public AdminController(AdminRepository adminRepository, JwtUtil jwtUtil) {
+        this.adminRepository = adminRepository;
+        this.jwtUtil = jwtUtil;
+    }
 
     // ดึงข้อมูล Admin ทั้งหมด
     @GetMapping
@@ -35,6 +38,7 @@ public class AdminController {
 
     // ดึงข้อมูลตัวเองจาก token
     @GetMapping("/me")
+
     public ResponseEntity<?> getMe(@CookieValue(name = "token", required = false) String token) {
         if (token == null || token.isEmpty()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token missing");

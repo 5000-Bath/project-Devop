@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2"; // ✅ Import Swal
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
 
 const API_BASE = "";
 
 export default function Ordersdetail() {
-    const { id } = useParams(); // ✅ รับ order id จาก URL
+    const { id } = useParams();
     const navigate = useNavigate();
 
     const [order, setOrder] = useState(null);
@@ -31,59 +34,33 @@ export default function Ordersdetail() {
         fetchOrder();
     }, [id]);
 
-    // ✅ ฟังก์ชันอัปเดตสถานะ (แก้ path และ body ให้ตรงกับ backend)
+    // ✅ ฟังก์ชันอัปเดตสถานะ
     const updateOrderStatus = async (newStatus) => {
         if (!order) return;
 
-        // ----------------------------------------------------------------------
-        // ❌ ส่วนที่ถูกลบออก: การตรวจสอบสต็อกสินค้า (ตามคำขอ)
-        // ----------------------------------------------------------------------
-        /*
-        if (newStatus === "SUCCESS") {
-            const insufficient = order.orderItems.find(
-                (item) => item.quantity > item.product.stock
-            );
-            if (insufficient) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'สินค้าในสต็อกไม่เพียงพอ',
-                    text: `Stock สำหรับ "${insufficient.product.name}" มีไม่พอ`,
-                    confirmButtonText: 'ตกลง'
-                });
-                return; 
-            }
-        }
-        */
-        // ----------------------------------------------------------------------
-
         try {
-            // 1. ✅ SweetAlert2 Confirmation ก่อนส่ง request
             const result = await Swal.fire({
-                title: `ยืนยันการเปลี่ยนสถานะเป็น **${newStatus}**?`,
-                icon: 'question',
+                title: `ยืนยันการเปลี่ยนสถานะเป็น ${newStatus}?`,
+                icon: "question",
                 showCancelButton: true,
-                confirmButtonText: 'ยืนยัน',
-                cancelButtonText: 'ยกเลิก',
-                reverseButtons: true
+                confirmButtonText: "ยืนยัน",
+                cancelButtonText: "ยกเลิก",
+                reverseButtons: true,
             });
 
-            if (!result.isConfirmed) {
-                return; // ❌ ยกเลิกการอัปเดต
-            }
+            if (!result.isConfirmed) return;
 
             const res = await fetch(`${API_BASE}/api/orders/${id}/status`, {
                 method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ status: newStatus }),
             });
 
             if (!res.ok) {
                 const errMsg = await res.text();
                 Swal.fire({
-                    icon: 'error',
-                    title: 'อัปเดตสถานะไม่สำเร็จ',
+                    icon: "error",
+                    title: "อัปเดตสถานะไม่สำเร็จ",
                     text: errMsg || `ไม่สามารถอัปเดตสถานะได้ (HTTP ${res.status})`,
                 });
                 throw new Error(`HTTP ${res.status}`);
@@ -92,26 +69,193 @@ export default function Ordersdetail() {
             const updated = await res.json();
             setOrder(updated);
 
-            // 2. ✅ SweetAlert2 Success
             Swal.fire({
-                icon: 'success',
-                title: 'อัปเดตสำเร็จ',
-                text: `คำสั่งซื้อ #${order.id} ได้รับการอัปเดตเป็น "${newStatus}" เรียบร้อยแล้ว`,
+                icon: "success",
+                title: "อัปเดตสำเร็จ",
+                text: `คำสั่งซื้อ #${order.id} ได้รับการอัปเดตเป็น "${newStatus}" แล้ว`,
                 timer: 2000,
                 showConfirmButton: false,
             });
         } catch (err) {
             console.error("Error updating status:", err);
-            // แสดง SweetAlert2 สำหรับ Network Error หรือ Error ที่ไม่ได้มาจาก HTTP response (res.ok)
-            if (err.message.indexOf("HTTP") === -1) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'เกิดข้อผิดพลาด',
-                    text: 'ไม่สามารถติดต่อเซิร์ฟเวอร์เพื่ออัปเดตสถานะได้',
-                });
-            }
+            Swal.fire({
+                icon: "error",
+                title: "เกิดข้อผิดพลาด",
+                text: "ไม่สามารถติดต่อเซิร์ฟเวอร์เพื่ออัปเดตสถานะได้",
+            });
         }
     };
+
+    const handleDownloadInvoice = async () => {
+        if (!order) return;
+
+        const doc = new jsPDF({ unit: "pt", format: "a4" });
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const margin = { left: 40, top: 45, right: 40 };
+
+        // ---- Font setup (Sarabun Thai font still works fine for English) ----
+        const ensureFont = async () => {
+            if (window.__fontReady) return;
+            const res = await fetch("/fonts/THSarabunNew.ttf");
+            const buf = await res.arrayBuffer();
+            const bytes = new Uint8Array(buf);
+            let binary = "";
+            const chunk = 0x8000;
+            for (let i = 0; i < bytes.length; i += chunk)
+                binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+            const base64 = btoa(binary);
+            doc.addFileToVFS("THSarabunNew.ttf", base64);
+            doc.addFont("THSarabunNew.ttf", "THSarabunNew", "normal");
+            window.__fontReady = true;
+        };
+
+        await ensureFont();
+        doc.setFont("THSarabunNew", "normal");
+
+        // ---------- HEADER ----------
+        doc.setFontSize(18);
+        doc.text("TAX INVOICE", pageWidth / 2, margin.top, { align: "center" });
+
+        doc.setFontSize(11);
+        const headerY = margin.top + 25;
+        const metaStartX = pageWidth - margin.right - 230;
+
+        const store = {
+            name: "FOODSTORE Crayon Shinchan CO., LTD.",
+            address: "866 Asoke Road, Bangkok 10110",
+            taxId: "Tax ID: 0298736482156",
+            phone: "Tel: 02-277-7777",
+        };
+
+        const companyLines = [store.name, store.address, store.taxId, store.phone];
+        companyLines.forEach((t, i) => doc.text(t, margin.left, headerY + i * 14));
+
+        const createdAtStr = order.createdAt
+            ? new Date(order.createdAt).toLocaleString("en-GB", {
+                dateStyle: "medium",
+                timeStyle: "short",
+            })
+            : "-";
+
+        const meta = [
+            `Invoice No: INV-${String(order.id).padStart(5, "0")}`,
+            `Issue Date: ${createdAtStr}`,
+            `Order ID: #${order.id}`,
+            `User ID: ${order.userId}`,
+            `Status: ${order.status || "PENDING"}`,
+        ];
+        meta.forEach((t, i) => doc.text(t, metaStartX, headerY + i * 14));
+
+        // ---------- TABLE ----------
+        const items = (order.orderItems || []).map((it, idx) => {
+            const unit = it.product?.price || 0;
+            const qty = it.quantity || 0;
+            const total = unit * qty;
+            return [
+                idx + 1,
+                it.product?.name || "-",
+                qty,
+                unit.toLocaleString("en-US", { minimumFractionDigits: 2 }),
+                total.toLocaleString("en-US", { minimumFractionDigits: 2 }),
+            ];
+        });
+
+        const tableY = headerY + 14 * Math.max(companyLines.length, meta.length) + 20;
+
+        autoTable(doc, {
+            startY: tableY,
+            head: [["#", "Product", "Qty", "Unit Price", "Total (THB)"]],
+            body: items,
+            styles: {
+                font: "THSarabunNew",
+                fontSize: 10,
+                cellPadding: 4,
+                lineWidth: 0.1,
+            },
+            headStyles: {
+                fillColor: [69, 90, 100],
+                textColor: 255,
+                halign: "center",
+                font: "THSarabunNew",
+                fontSize: 9,
+            },
+            columnStyles: {
+                0: { halign: "center", cellWidth: 40 },
+                1: { halign: "left", cellWidth: 180 },
+                2: { halign: "center", cellWidth: 70 },
+                3: { halign: "right", cellWidth: 100 },
+                4: { halign: "right", cellWidth: 100 },
+            },
+            theme: "grid",
+            margin: { left: margin.left, right: margin.right },
+        });
+
+        // ---------- SUMMARY BOX ----------
+        const y = doc.lastAutoTable.finalY + 15;
+        const subTotal = (order.orderItems || []).reduce(
+            (s, it) => s + (it.product?.price || 0) * (it.quantity || 0),
+            0
+        );
+        const vatRate = 0.07;
+        const vat = subTotal * vatRate;
+        const grand = subTotal + vat;
+        const formatMoney = (n) =>
+            n.toLocaleString("en-US", { minimumFractionDigits: 2 });
+
+        const tableRightEdge = pageWidth - margin.right; // ขอบขวาของตาราง
+        const boxPaddingRight = 8; // ช่องว่างเล็กๆ กันตัวหนังสือชนขอบ
+        const boxW = 240; // ลดกว้างลงนิด เพื่อ align กับคอลัมน์ Total
+        const boxH = 65;
+
+        // ✅ วาดกล่องให้ชิดขอบขวาของตารางเป๊ะ
+        doc.setDrawColor(210);
+        doc.rect(tableRightEdge - boxW, y - 8, boxW, boxH);
+        const textOffsetY = 6;
+
+        const lines = [
+            ["Subtotal", `${formatMoney(subTotal)} THB`],
+            ["VAT (7%)", `${formatMoney(vat)} THB`],
+            ["Total Amount", `${formatMoney(grand)} THB`],
+        ];
+        doc.setFontSize(10.5);
+        lines.forEach((row, i) => {
+            const yy = y + textOffsetY + i * 20;
+            doc.text(row[0], tableRightEdge - boxW + 10, yy); // label ด้านซ้ายในกล่อง
+            doc.text(row[1], tableRightEdge - boxPaddingRight, yy, { align: "right" }); // ตัวเลขชิดขอบ
+        });
+
+
+        // ---------- SIGNATURE AREA ----------
+        const signY = y + boxH + 45;
+        doc.setFontSize(11);
+        doc.text("Prepared by", margin.left, signY);
+        doc.text("Received by", tableRightEdge - 180, signY);
+
+        const lineLength = 160;
+        doc.line(margin.left, signY + 18, margin.left + lineLength, signY + 18);
+        doc.line(tableRightEdge - 180, signY + 18, tableRightEdge - 180 + lineLength, signY + 18);
+
+        doc.setFontSize(9);
+        doc.text("(Signature)", margin.left + 60, signY + 34);
+        doc.text("(Signature)", tableRightEdge - 115, signY + 34);
+
+        // ---------- FOOTER ----------
+        const pageCount = doc.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(9);
+            doc.text(
+                `Page ${i} of ${pageCount}`,
+                pageWidth / 2,
+                doc.internal.pageSize.getHeight() - 20,
+                { align: "center" }
+            );
+        }
+
+        doc.save(`Invoice_Order#${order.id}.pdf`);
+    };
+
+
 
     if (loading) return <div style={{ padding: 24 }}>⏳ กำลังโหลดข้อมูล...</div>;
     if (error) return <div style={{ padding: 24, color: "red" }}>{error}</div>;
@@ -175,51 +319,38 @@ export default function Ordersdetail() {
             >
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                     <thead>
-                        <tr style={{ borderBottom: "1px solid #eee" }}>
-                            <th style={{ textAlign: "left", padding: "12px 8px" }}>Product</th>
-                            <th style={{ textAlign: "left", padding: "12px 8px" }}>Quantity</th>
-                            <th style={{ textAlign: "left", padding: "12px 8px" }}>Price</th>
-                            <th style={{ textAlign: "left", padding: "12px 8px" }}>Total</th>
-                        </tr>
+                    <tr style={{ borderBottom: "1px solid #eee" }}>
+                        <th style={{ textAlign: "left", padding: "12px 8px" }}>Product</th>
+                        <th style={{ textAlign: "left", padding: "12px 8px" }}>Quantity</th>
+                        <th style={{ textAlign: "left", padding: "12px 8px" }}>Price</th>
+                        <th style={{ textAlign: "left", padding: "12px 8px" }}>Total</th>
+                    </tr>
                     </thead>
                     <tbody>
-                        {filteredItems.length > 0 ? (
-                            filteredItems.map((item) => (
-                                <tr
-                                    key={item.id}
-                                    style={{
-                                        borderBottom: "1px solid #f0f0f0",
-                                        cursor: "pointer",
-                                        transition: "background-color 0.2s",
-                                    }}
-                                    onMouseEnter={(e) =>
-                                        (e.currentTarget.style.backgroundColor = "#f8f9fa")
-                                    }
-                                    onMouseLeave={(e) =>
-                                        (e.currentTarget.style.backgroundColor = "white")
-                                    }
-                                >
-                                    <td style={{ padding: "12px 8px", fontSize: 14 }}>
-                                        {item.product?.name || "-"}
-                                    </td>
-                                    <td style={{ padding: "12px 8px", fontSize: 14 }}>
-                                        {item.quantity}
-                                    </td>
-                                    <td style={{ padding: "12px 8px", fontSize: 14 }}>
-                                        {item.product?.price?.toLocaleString()} บาท
-                                    </td>
-                                    <td style={{ padding: "12px 8px", fontSize: 14 }}>
-                                        {(item.product?.price * item.quantity).toLocaleString()} บาท
-                                    </td>
-                                </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td colSpan="4" style={{ textAlign: "center", padding: 16 }}>
-                                    ไม่มีสินค้าในคำสั่งซื้อนี้
+                    {filteredItems.length > 0 ? (
+                        filteredItems.map((item) => (
+                            <tr key={item.id} style={{ borderBottom: "1px solid #f0f0f0" }}>
+                                <td style={{ padding: "12px 8px", fontSize: 14 }}>
+                                    {item.product?.name || "-"}
+                                </td>
+                                <td style={{ padding: "12px 8px", fontSize: 14 }}>
+                                    {item.quantity}
+                                </td>
+                                <td style={{ padding: "12px 8px", fontSize: 14 }}>
+                                    {item.product?.price?.toLocaleString()} บาท
+                                </td>
+                                <td style={{ padding: "12px 8px", fontSize: 14 }}>
+                                    {(item.product?.price * item.quantity).toLocaleString()} บาท
                                 </td>
                             </tr>
-                        )}
+                        ))
+                    ) : (
+                        <tr>
+                            <td colSpan="4" style={{ textAlign: "center", padding: 16 }}>
+                                ไม่มีสินค้าในคำสั่งซื้อนี้
+                            </td>
+                        </tr>
+                    )}
                     </tbody>
                 </table>
 
@@ -236,21 +367,19 @@ export default function Ordersdetail() {
                     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                         <div style={{ display: "flex", justifyContent: "space-between" }}>
                             <span style={{ color: "#666", fontSize: 14 }}>User ID</span>
-                            <span style={{ color: "#333", fontSize: 14 }}>
-                                {order.userId}
-                            </span>
+                            <span style={{ color: "#333", fontSize: 14 }}>{order.userId}</span>
                         </div>
 
                         <div style={{ display: "flex", justifyContent: "space-between" }}>
                             <span style={{ color: "#666", fontSize: 14 }}>Created At</span>
                             <span style={{ color: "#333", fontSize: 14 }}>
-                                {order.createdAt
-                                    ? new Date(order.createdAt).toLocaleString("th-TH", {
-                                        dateStyle: "medium",
-                                        timeStyle: "short",
-                                    })
-                                    : "-"}
-                            </span>
+                {order.createdAt
+                    ? new Date(order.createdAt).toLocaleString("th-TH", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                    })
+                    : "-"}
+              </span>
                         </div>
 
                         <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -267,15 +396,15 @@ export default function Ordersdetail() {
                                     fontWeight: 500,
                                 }}
                             >
-                                {order.status || "PENDING"}
-                            </span>
+                {order.status || "PENDING"}
+              </span>
                         </div>
 
                         <div style={{ display: "flex", justifyContent: "space-between" }}>
                             <span style={{ color: "#666", fontSize: 14 }}>Total</span>
                             <span style={{ color: "#333", fontSize: 14, fontWeight: 500 }}>
-                                {totalPrice.toLocaleString()} บาท
-                            </span>
+                {totalPrice.toLocaleString()} บาท
+              </span>
                         </div>
 
                         {/* Buttons */}
@@ -288,62 +417,48 @@ export default function Ordersdetail() {
                                     border: "1px solid #1976d2",
                                     borderRadius: 6,
                                     padding: "6px 12px",
-                                    fontSize: 14,
-                                    cursor: "pointer",
-                                    transition: "background-color 0.2s",
                                 }}
-                                onMouseEnter={(e) =>
-                                    (e.currentTarget.style.backgroundColor = "#e3f2fd")
-                                }
-                                onMouseLeave={(e) =>
-                                    (e.currentTarget.style.backgroundColor = "transparent")
-                                }
                             >
                                 ← Back
                             </button>
 
                             <button
-                                onClick={() => updateOrderStatus("SUCCESS")} // ✅ ใช้ enum ตรงกับ backend
+                                onClick={() => updateOrderStatus("SUCCESS")}
                                 style={{
                                     backgroundColor: "#4CAF50",
                                     color: "white",
                                     border: "none",
                                     borderRadius: 6,
                                     padding: "6px 12px",
-                                    fontSize: 14,
-                                    cursor: "pointer",
-                                    transition: "background-color 0.2s",
                                 }}
-                                onMouseEnter={(e) =>
-                                    (e.currentTarget.style.backgroundColor = "#45a049")
-                                }
-                                onMouseLeave={(e) =>
-                                    (e.currentTarget.style.backgroundColor = "#4CAF50")
-                                }
                             >
                                 Complete
                             </button>
 
                             <button
-                                onClick={() => updateOrderStatus("CANCELLED")} // ✅ ใช้ enum ตรงกับ backend
+                                onClick={() => updateOrderStatus("CANCELLED")}
                                 style={{
                                     backgroundColor: "#FF6B6B",
                                     color: "white",
                                     border: "none",
                                     borderRadius: 6,
                                     padding: "6px 12px",
-                                    fontSize: 14,
-                                    cursor: "pointer",
-                                    transition: "background-color 0.2s",
                                 }}
-                                onMouseEnter={(e) =>
-                                    (e.currentTarget.style.backgroundColor = "#e53935")
-                                }
-                                onMouseLeave={(e) =>
-                                    (e.currentTarget.style.backgroundColor = "#FF6B6B")
-                                }
                             >
                                 Cancel
+                            </button>
+
+                            <button
+                                onClick={handleDownloadInvoice}
+                                style={{
+                                    backgroundColor: "#1976d2",
+                                    color: "white",
+                                    border: "none",
+                                    borderRadius: 6,
+                                    padding: "6px 12px",
+                                }}
+                            >
+                                🧾 Download Invoice
                             </button>
                         </div>
                     </div>
