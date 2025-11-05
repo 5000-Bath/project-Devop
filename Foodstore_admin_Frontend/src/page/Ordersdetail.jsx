@@ -89,11 +89,35 @@ export default function Ordersdetail() {
     const handleDownloadInvoice = async () => {
         if (!order) return;
 
+        // ✅ ตรวจสถานะก่อนดาวน์โหลด
+        const status = order.status?.toUpperCase() || "PENDING";
+
+        if (status === "PENDING") {
+            Swal.fire({
+                icon: "warning",
+                title: "Order still pending",
+                text: "This order is not completed yet. Please complete it before downloading the invoice.",
+                confirmButtonText: "OK",
+            });
+            return; // ❌ หยุด ไม่ให้ดาวน์โหลด
+        }
+
+        if (status === "CANCELLED") {
+            Swal.fire({
+                icon: "error",
+                title: "Order cancelled",
+                text: "This order has been cancelled. Invoice cannot be generated.",
+                confirmButtonText: "OK",
+            });
+            return; // ❌ หยุด ไม่ให้ดาวน์โหลด
+        }
+
+        // ✅ ถ้าผ่านเงื่อนไข (status = SUCCESS หรือ COMPLETE) → ทำต่อได้เลย
         const doc = new jsPDF({ unit: "pt", format: "a4" });
         const pageWidth = doc.internal.pageSize.getWidth();
         const margin = { left: 40, top: 45, right: 40 };
 
-        // ---- Font setup (Sarabun Thai font still works fine for English) ----
+        // ---- Font setup ----
         const ensureFont = async () => {
             if (window.__fontReady) return;
             const res = await fetch("/fonts/THSarabunNew.ttf");
@@ -121,10 +145,10 @@ export default function Ordersdetail() {
         const metaStartX = pageWidth - margin.right - 230;
 
         const store = {
-            name: "FOODSTORE Crayon Shinchan CO., LTD.",
-            address: "866 Asoke Road, Bangkok 10110",
-            taxId: "Tax ID: 0298736482156",
-            phone: "Tel: 02-277-7777",
+            name: "FOODSTORE CO., LTD.",
+            address: "123/45 Example Road, Bangkok 10110",
+            taxId: "Tax ID: 0123456789012",
+            phone: "Tel: 02-123-4567",
         };
 
         const companyLines = [store.name, store.address, store.taxId, store.phone];
@@ -202,42 +226,41 @@ export default function Ordersdetail() {
         const formatMoney = (n) =>
             n.toLocaleString("en-US", { minimumFractionDigits: 2 });
 
-        const tableRightEdge = pageWidth - margin.right; // ขอบขวาของตาราง
-        const boxPaddingRight = 8; // ช่องว่างเล็กๆ กันตัวหนังสือชนขอบ
-        const boxW = 240; // ลดกว้างลงนิด เพื่อ align กับคอลัมน์ Total
+        const tableRightEdge = pageWidth - margin.right;
+        const boxW = 240;
         const boxH = 65;
 
-        // ✅ วาดกล่องให้ชิดขอบขวาของตารางเป๊ะ
         doc.setDrawColor(210);
         doc.rect(tableRightEdge - boxW, y - 8, boxW, boxH);
-        const textOffsetY = 6;
 
         const lines = [
             ["Subtotal", `${formatMoney(subTotal)} THB`],
             ["VAT (7%)", `${formatMoney(vat)} THB`],
             ["Total Amount", `${formatMoney(grand)} THB`],
         ];
+
+        const textOffsetY = 6;
         doc.setFontSize(10.5);
         lines.forEach((row, i) => {
             const yy = y + textOffsetY + i * 20;
-            doc.text(row[0], tableRightEdge - boxW + 10, yy); // label ด้านซ้ายในกล่อง
-            doc.text(row[1], tableRightEdge - boxPaddingRight, yy, { align: "right" }); // ตัวเลขชิดขอบ
+            doc.text(row[0], tableRightEdge - boxW + 10, yy);
+            doc.text(row[1], tableRightEdge - 8, yy, { align: "right" });
         });
 
-
         // ---------- SIGNATURE AREA ----------
+        const rightX = pageWidth - margin.right;
         const signY = y + boxH + 45;
         doc.setFontSize(11);
         doc.text("Prepared by", margin.left, signY);
-        doc.text("Received by", tableRightEdge - 180, signY);
+        doc.text("Received by", rightX - 180, signY);
 
         const lineLength = 160;
         doc.line(margin.left, signY + 18, margin.left + lineLength, signY + 18);
-        doc.line(tableRightEdge - 180, signY + 18, tableRightEdge - 180 + lineLength, signY + 18);
+        doc.line(rightX - 180, signY + 18, rightX - 180 + lineLength, signY + 18);
 
         doc.setFontSize(9);
         doc.text("(Signature)", margin.left + 60, signY + 34);
-        doc.text("(Signature)", tableRightEdge - 115, signY + 34);
+        doc.text("(Signature)", rightX - 115, signY + 34);
 
         // ---------- FOOTER ----------
         const pageCount = doc.getNumberOfPages();
@@ -252,8 +275,10 @@ export default function Ordersdetail() {
             );
         }
 
+        // ✅ ดาวน์โหลด PDF
         doc.save(`Invoice_Order#${order.id}.pdf`);
     };
+
 
 
 
@@ -458,7 +483,7 @@ export default function Ordersdetail() {
                                     padding: "6px 12px",
                                 }}
                             >
-                                🧾 Download Invoice
+                                 Download Invoice
                             </button>
                         </div>
                     </div>
