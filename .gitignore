@@ -1,0 +1,15 @@
+@"
+# Node modules
+node_modules/
+.vite/
+
+# Database local data
+mysql-data/
+
+# Log files
+*.log
+
+# OS files
+Thumbs.db
+.DS_Store
+"@ | Out-File -Encoding UTF8 .gitignore

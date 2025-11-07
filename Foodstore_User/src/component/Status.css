@@ -1,0 +1,265 @@
+
+.status-page {
+  background: #f4f4f5;
+  font-family: system-ui, sans-serif;
+  padding-bottom: 48px;
+  min-height: 80vh;
+}
+
+.status-header-bar {
+  background: #18181b;
+  color: white;
+  padding: 16px 0;
+  text-align: center;
+  font-size: 24px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  margin-bottom: 24px;
+}
+
+.status-main-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.search-container {
+  display: flex;
+  position: relative;
+  margin: 0 auto 32px;
+  max-width: 600px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 16px;
+  padding-right: 50px;
+  font-size: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  transition: all 0.2s ease;
+}
+
+.search-button {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  bottom: 6px;
+  border: none;
+  background: #18181b;
+  color: white;
+  border-radius: 8px;
+  padding: 0 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.search-icon {
+  width: 20px;
+  height: 20px;
+  filter: invert(1);
+}
+
+.status-grid {
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  gap: 32px;
+  align-items: start;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+
+.status-grid.animating {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.timeline {
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+}
+
+.timeline-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.timeline-bar {
+  width: 5px;
+  height: 24px;
+  background: #f59e0b;
+  border-radius: 4px;
+}
+
+.status-title {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.order-id {
+  background: #f1f1f1;
+  color: #52525b;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  display: inline-block;
+  margin-left: 15px;
+}
+
+.event {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 16px;
+  align-items: center;
+  padding: 24px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.event:last-child {
+  border-bottom: none;
+}
+
+.event-icon {
+  width: 32px;
+  height: 32px;
+}
+
+.event-details {
+  font-weight: normal;
+  color: black;
+}
+
+.event-details.inprogress {
+  font-weight: bold;
+}
+
+.event-details.pending {
+  color: #a1a1aa;
+}
+
+.event-time {
+  font-size: 14px;
+  color: #71717a;
+  margin-top: 2px;
+}
+
+.summary-card {
+  background: #fefce8;
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid #fde68a;
+  position: sticky;
+  top: 24px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+}
+
+.summary-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.summary-line {
+  height: 1px;
+  background: #fde68a;
+  margin: 16px 0;
+}
+
+.item-row {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 16px;
+  align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px solid #fde68a;
+}
+
+.item-row:last-child {
+  border-bottom: none;
+}
+
+.item-thumb {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.item-name {
+  font-weight: 500;
+}
+
+.item-price {
+  font-weight: bold;
+  margin-top: 4px;
+}
+
+.summary-meta {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px 8px;
+  margin-top: 16px;
+}
+
+.summary-label {
+  color: #374151;
+}
+
+.summary-total-label {
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.summary-total-price {
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.message-container {
+  text-align: center;
+  padding: 48px 24px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+
+.message-container.animating {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.message-icon {
+  width: 50px;
+  height: 50px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.message-text {
+  font-size: 18px;
+  color: #333;
+  font-weight: 500;
+}
+
+.message-sub-text {
+  font-size: 14px;
+  color: #666;
+  margin-top: 8px;
+}
+
+/* Special case for error message text color */
+.message-text.error {
+  color: #d9534f;
+}
