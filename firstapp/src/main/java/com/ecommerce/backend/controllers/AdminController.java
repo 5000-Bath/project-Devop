@@ -4,9 +4,9 @@ import com.ecommerce.backend.dtos.ProductSaleDto;
 import com.ecommerce.backend.dtos.StockReportDto;
 import com.ecommerce.backend.models.Admin;
 import com.ecommerce.backend.models.Product;
-import com.ecommerce.backend.repositories.AdminRepository;
 import com.ecommerce.backend.repositories.OrderItemRepository;
 import com.ecommerce.backend.repositories.ProductRepository;
+import com.ecommerce.backend.services.AdminService;
 import com.ecommerce.backend.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 public class AdminController {
 
     @Autowired
-    private AdminRepository adminRepository;
+    private AdminService adminService;
 
     @Autowired
     private ProductRepository productRepository;
@@ -62,14 +62,13 @@ public class AdminController {
     // ดึงข้อมูล Admin ทั้งหมด
     @GetMapping
     public List<Admin> getAllAdmins() {
-        return adminRepository.findAll();
+        return adminService.getAllAdmins();
     }
 
     // ดึง Admin ตาม ID
     @GetMapping("/{id}")
     public Admin getAdminById(@PathVariable Long id) {
-        return adminRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Admin not found"));
+        return adminService.getAdminById(id);
     }
 
     // ดึงข้อมูลตัวเองจาก token
@@ -80,9 +79,14 @@ public class AdminController {
         }
         try {
             String username = jwtUtil.getUsernameFromToken(token);
-            Admin admin = adminRepository.findByUsername(username)
-                    .orElseThrow(() -> new RuntimeException("Admin not found"));
-            return ResponseEntity.ok(admin);
+            // Admin admin = adminRepository.findByUsername(username) // This line needs to be updated to use AdminService
+            //         .orElseThrow(() -> new RuntimeException("Admin not found"));
+            // return ResponseEntity.ok(admin);
+            // For now, I'll keep the direct repository call for getMe as it's not a standard CRUD operation
+            // and requires a specific findByUsername method which might not be in the generic AdminService interface.
+            // If findByUsername is needed in AdminService, it should be added there.
+            return ResponseEntity.ok(adminService.getAdminByUsername(username));
+
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token invalid or expired");
         }
@@ -91,25 +95,18 @@ public class AdminController {
     // สร้าง Admin ใหม่
     @PostMapping
     public Admin createAdmin(@RequestBody Admin admin) {
-        return adminRepository.save(admin);
+        return adminService.createAdmin(admin);
     }
 
     // แก้ไข Admin
     @PutMapping("/{id}")
-    public Admin updateAdmin(@PathVariable Long id, @RequestBody Admin adminDetails) {
-        Admin admin = adminRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Admin not found"));
-
-        if (adminDetails.getUsername() != null) admin.setUsername(adminDetails.getUsername());
-        if (adminDetails.getPassword() != null) admin.setPassword(adminDetails.getPassword());
-        if (adminDetails.getEmail() != null) admin.setEmail(adminDetails.getEmail());
-
-        return adminRepository.save(admin);
+    public Admin updateAdmin(@PathVariable Long id, @RequestBody Map<String, Object> adminDetails) {
+        return adminService.updateAdmin(id, adminDetails);
     }
 
     // ลบ Admin
     @DeleteMapping("/{id}")
     public void deleteAdmin(@PathVariable Long id) {
-        adminRepository.deleteById(id);
+        adminService.deleteAdmin(id);
     }
 }

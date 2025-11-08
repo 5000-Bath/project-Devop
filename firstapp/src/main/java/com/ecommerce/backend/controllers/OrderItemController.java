@@ -1,7 +1,7 @@
 package com.ecommerce.backend.controllers;
 
 import com.ecommerce.backend.models.OrderItem;
-import com.ecommerce.backend.repositories.OrderItemRepository;
+import com.ecommerce.backend.services.OrderItemService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,15 +12,15 @@ import java.util.List;
 public class OrderItemController {
 
     @Autowired
-    private OrderItemRepository orderItemRepository;
+    private OrderItemService orderItemService;
 
     @GetMapping
     public List<OrderItem> getAllOrderItems() {
-        return orderItemRepository.findAll();
+        return orderItemService.getAllOrderItems();
     }
 
     @DeleteMapping("/{id}")
     public void deleteOrderItem(@PathVariable Long id) {
-        orderItemRepository.deleteById(id);
+        orderItemService.deleteOrderItem(id);
     }
 }

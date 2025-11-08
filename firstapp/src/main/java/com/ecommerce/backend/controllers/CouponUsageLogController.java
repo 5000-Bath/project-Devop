@@ -1,7 +1,7 @@
 package com.ecommerce.backend.controllers;
 
 import com.ecommerce.backend.models.CouponUsageLog;
-import com.ecommerce.backend.repositories.CouponUsageLogRepository;
+import com.ecommerce.backend.services.CouponUsageLogService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,41 +12,30 @@ import java.util.List;
 public class CouponUsageLogController {
 
     @Autowired
-    private CouponUsageLogRepository couponUsageLogRepository;
+    private CouponUsageLogService couponUsageLogService;
 
     @GetMapping
     public List<CouponUsageLog> getAllCouponUsageLogs() {
-        return couponUsageLogRepository.findAll();
+        return couponUsageLogService.getAllCouponUsageLogs();
     }
 
     @GetMapping("/{id}")
     public CouponUsageLog getCouponUsageLogById(@PathVariable Long id) {
-        return couponUsageLogRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("CouponUsageLog not found"));
+        return couponUsageLogService.getCouponUsageLogById(id);
     }
 
     @PostMapping
     public CouponUsageLog createCouponUsageLog(@RequestBody CouponUsageLog couponUsageLog) {
-        return couponUsageLogRepository.save(couponUsageLog);
+        return couponUsageLogService.createCouponUsageLog(couponUsageLog);
     }
 
     @PutMapping("/{id}")
     public CouponUsageLog updateCouponUsageLog(@PathVariable Long id, @RequestBody CouponUsageLog couponUsageLogDetails) {
-        CouponUsageLog couponUsageLog = couponUsageLogRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("CouponUsageLog not found"));
-
-        couponUsageLog.setCoupon(couponUsageLogDetails.getCoupon());
-        couponUsageLog.setUsedAt(couponUsageLogDetails.getUsedAt());
-        couponUsageLog.setOriginalAmount(couponUsageLogDetails.getOriginalAmount());
-        couponUsageLog.setDiscountApplied(couponUsageLogDetails.getDiscountApplied());
-        couponUsageLog.setFinalAmount(couponUsageLogDetails.getFinalAmount());
-        couponUsageLog.setRemainingAfterUse(couponUsageLogDetails.getRemainingAfterUse());
-
-        return couponUsageLogRepository.save(couponUsageLog);
+        return couponUsageLogService.updateCouponUsageLog(id, couponUsageLogDetails);
     }
 
     @DeleteMapping("/{id}")
     public void deleteCouponUsageLog(@PathVariable Long id) {
-        couponUsageLogRepository.deleteById(id);
+        couponUsageLogService.deleteCouponUsageLog(id);
     }
 }

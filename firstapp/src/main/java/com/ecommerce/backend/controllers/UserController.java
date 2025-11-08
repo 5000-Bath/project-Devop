@@ -1,7 +1,7 @@
 package com.ecommerce.backend.controllers;
 
 import com.ecommerce.backend.models.User;
-import com.ecommerce.backend.repositories.UserRepository;
+import com.ecommerce.backend.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,48 +13,30 @@ import java.util.Map;
 public class UserController {
 
     @Autowired
-    private UserRepository userRepository;
+    private UserService userService;
 
     @GetMapping
     public List<User> getAllUsers() {
-        return userRepository.findAll();
+        return userService.getAllUsers();
     }
 
     @GetMapping("/{id}")
     public User getUserById(@PathVariable Long id) {
-        return userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
+        return userService.getUserById(id);
     }
 
     @PostMapping
     public User createUser(@RequestBody User user) {
-        return userRepository.save(user);
+        return userService.createUser(user);
     }
 
     @PutMapping("/{id}")
     public User updateUser(@PathVariable Long id, @RequestBody Map<String, Object> userDetails) {
-        User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
-
-        if (userDetails.containsKey("username")) {
-            user.setUsername((String) userDetails.get("username"));
-        }
-        if (userDetails.containsKey("password")) {
-            user.setPassword((String) userDetails.get("password"));
-        }
-        if (userDetails.containsKey("email")) {
-            user.setEmail((String) userDetails.get("email"));
-        }
-        if (userDetails.containsKey("name")) {
-            user.setName((String) userDetails.get("name"));
-        }
-        if (userDetails.containsKey("lastname")) {
-            user.setLastname((String) userDetails.get("lastname"));
-        }
-
-        return userRepository.save(user);
+        return userService.updateUser(id, userDetails);
     }
 
     @DeleteMapping("/{id}")
     public void deleteUser(@PathVariable Long id) {
-        userRepository.deleteById(id);
+        userService.deleteUser(id);
     }
 }
