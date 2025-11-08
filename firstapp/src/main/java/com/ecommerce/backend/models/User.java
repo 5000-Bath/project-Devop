@@ -30,17 +30,6 @@ public class User {
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 
-    @Column(length = 30)
-    private String phone;
-
-    private String address;
-
-    @Column(name = "birth_date")
-    private java.time.LocalDate birthDate;
-
-    @Column(name = "profile_image_url", length = 400)
-    private String profileImageUrl;
-
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -93,38 +82,6 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
-    }
-
-    public String getPhone() {
-        return phone;
-    }
-
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
-
-    public String getAddress() {
-        return address;
-    }
-
-    public void setAddress(String address) {
-        this.address = address;
-    }
-
-    public java.time.LocalDate getBirthDate() {
-        return birthDate;
-    }
-
-    public void setBirthDate(java.time.LocalDate birthDate) {
-        this.birthDate = birthDate;
-    }
-
-    public String getProfileImageUrl() {
-        return profileImageUrl;
-    }
-
-    public void setProfileImageUrl(String profileImageUrl) {
-        this.profileImageUrl = profileImageUrl;
     }
 
     public LocalDateTime getCreatedAt() {

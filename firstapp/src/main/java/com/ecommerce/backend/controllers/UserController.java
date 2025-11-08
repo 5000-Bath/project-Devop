@@ -49,18 +49,6 @@ public class UserController {
         if (userDetails.containsKey("lastname")) {
             user.setLastname((String) userDetails.get("lastname"));
         }
-        if (userDetails.containsKey("phone")) {
-            user.setPhone((String) userDetails.get("phone"));
-        }
-        if (userDetails.containsKey("address")) {
-            user.setAddress((String) userDetails.get("address"));
-        }
-        if (userDetails.containsKey("birthDate")) {
-            user.setBirthDate(java.time.LocalDate.parse(userDetails.get("birthDate").toString()));
-        }
-        if (userDetails.containsKey("profileImageUrl")) {
-            user.setProfileImageUrl((String) userDetails.get("profileImageUrl"));
-        }
 
         return userRepository.save(user);
     }

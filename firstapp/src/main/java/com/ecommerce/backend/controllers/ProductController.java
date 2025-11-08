@@ -39,7 +39,6 @@ public class ProductController {
             @RequestParam("price") BigDecimal price,
             @RequestParam(value = "stock", required = false, defaultValue = "0") int stock,
             @RequestParam(value = "isActive", required = false, defaultValue = "true") boolean isActive,
-            @RequestParam(value = "category", required = false) String category,  
             @RequestParam(value = "image", required = false) MultipartFile image
     ) {
         Product product = new Product();
@@ -48,7 +47,6 @@ public class ProductController {
         product.setPrice(price);
         product.setStock(stock);
         product.setIsActive(isActive);
-        product.setCategory(category); 
 
         if (image != null && !image.isEmpty()) {
             try {
@@ -101,13 +99,6 @@ public class ProductController {
             }
         }
 
-        if (body.containsKey("category")) { 
-            Object catObj = body.get("category");
-            if (catObj != null) {
-                product.setCategory(catObj.toString());
-            }
-        }
-
         Product updated = productRepository.save(product);
         return ResponseEntity.ok(updated);
     }
@@ -141,6 +132,6 @@ public class ProductController {
 
     @DeleteMapping("/{id}")
     public void deleteProduct(@PathVariable Long id) {
-        productRepository.deleteById(id);
+        productRepository.softDeleteById(id);
     }
 }
