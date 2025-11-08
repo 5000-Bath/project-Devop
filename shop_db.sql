@@ -104,6 +104,7 @@ CREATE TABLE `products` (
   `stock_qty` int(11) NOT NULL DEFAULT 0,
   `image_url` varchar(400) DEFAULT NULL,
   `is_active` tinyint(1) DEFAULT 1,
+  `category` varchar(100) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -111,11 +112,11 @@ CREATE TABLE `products` (
 -- Dumping data for table `products`
 --
 
-INSERT INTO `products` (`id`, `name`, `description`, `price`, `stock_qty`, `image_url`, `is_active`, `created_at`) VALUES
-(1, 'Latte', NULL, 80.00, 0, NULL, 1, '2025-09-10 12:29:33'),
-(2, 'Brownie', NULL, 45.00, 0, NULL, 1, '2025-09-10 12:29:33'),
-(7, 'mala', NULL, 200.00, 10, NULL, 1, '2025-09-24 16:07:17'),
-(8, 'tempura', NULL, 150.00, 0, NULL, 1, '2025-09-24 16:07:41');
+INSERT INTO `products` (`id`, `name`, `description`, `price`, `stock_qty`, `image_url`, `is_active`, `category`, `created_at`) VALUES
+(1, 'Latte', NULL, 80.00, 0, NULL, 1, 'food', '2025-09-10 12:29:33'),
+(2, 'Brownie', NULL, 45.00, 0, NULL, 1, 'food', '2025-09-10 12:29:33'),
+(7, 'mala', NULL, 200.00, 10, NULL, 1, 'food', '2025-09-24 16:07:17'),
+(8, 'tempura', NULL, 150.00, 0, NULL, 1, 'food', '2025-09-24 16:07:41');
 
 -- --------------------------------------------------------
 

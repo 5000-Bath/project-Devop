@@ -28,16 +28,17 @@ public class Product {
     @Column(name = "stock_qty", nullable = false)
     private int stock = 0;
 
-    @Column(nullable = false)
+    @Column(name = "is_active", nullable = false)
     private boolean isActive = true;
 
-    @Column(length = 400)
+    @Column(name = "image_url", length = 400)
     private String imageUrl;
 
     @Column(length = 100)
     private String category;
 
     @CreationTimestamp
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     public Long getId() { return id; }

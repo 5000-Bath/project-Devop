@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
@@ -30,11 +31,37 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    public User updateUser(@PathVariable Long id, @RequestBody User userDetails) {
+    public User updateUser(@PathVariable Long id, @RequestBody Map<String, Object> userDetails) {
         User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
-        user.setUsername(userDetails.getUsername());
-        user.setPassword(userDetails.getPassword());
-        user.setEmail(userDetails.getEmail());
+
+        if (userDetails.containsKey("username")) {
+            user.setUsername((String) userDetails.get("username"));
+        }
+        if (userDetails.containsKey("password")) {
+            user.setPassword((String) userDetails.get("password"));
+        }
+        if (userDetails.containsKey("email")) {
+            user.setEmail((String) userDetails.get("email"));
+        }
+        if (userDetails.containsKey("name")) {
+            user.setName((String) userDetails.get("name"));
+        }
+        if (userDetails.containsKey("lastname")) {
+            user.setLastname((String) userDetails.get("lastname"));
+        }
+        if (userDetails.containsKey("phone")) {
+            user.setPhone((String) userDetails.get("phone"));
+        }
+        if (userDetails.containsKey("address")) {
+            user.setAddress((String) userDetails.get("address"));
+        }
+        if (userDetails.containsKey("birthDate")) {
+            user.setBirthDate(java.time.LocalDate.parse(userDetails.get("birthDate").toString()));
+        }
+        if (userDetails.containsKey("profileImageUrl")) {
+            user.setProfileImageUrl((String) userDetails.get("profileImageUrl"));
+        }
+
         return userRepository.save(user);
     }
 
