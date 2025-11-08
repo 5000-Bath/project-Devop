@@ -23,13 +23,17 @@ public class ProductController {
 
     @GetMapping
     public List<Product> getAllProducts() {
-        return productRepository.findAll();
+        return productRepository.findByIsActiveTrue();
     }
 
     @GetMapping("/{id}")
     public Product getProductById(@PathVariable Long id) {
-        return productRepository.findById(id)
+        Product product = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
+        if (!product.getIsActive()) {
+            throw new RuntimeException("Product not found"); // Or a more specific exception
+        }
+        return product;
     }
 
     @PostMapping
