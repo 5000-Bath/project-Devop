@@ -1,4 +1,4 @@
-/* Wrapper */
+
 .nav {
   position: sticky;
   top: 0;
@@ -8,7 +8,6 @@
   font-family: sans-serif;
 }
 
-/* Inner container */
 .nav__inner {
   max-width: 1200px;
   margin: 0 auto;
@@ -19,7 +18,6 @@
   gap: 16px;
 }
 
-/* Brand */
 .nav__brand {
   display: flex;
   align-items: center;
@@ -47,7 +45,6 @@
   font-weight: 800;
 }
 
-/* Links (desktop & tablet) */
 .nav__links {
   display: flex;
   align-items: center;
@@ -60,13 +57,172 @@
   font-weight: 700;
   padding: 6px 2px;
   border-bottom: 3px solid transparent;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
 }
 
 .nav__link.is-active {
-  border-color: #111;
+  border-bottom: 3px solid #111;
 }
 
-/* Hamburger button (ซ่อนบน desktop/tablet) */
+.nav__user-menu {
+  position: relative;
+}
+
+.nav__user-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 24px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+}
+
+.nav__user-button:hover {
+  background: #e8e8e8;
+  border-color: #ccc;
+}
+
+.nav__user-icon {
+  font-size: 18px;
+}
+
+.nav__user-name {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav__user-arrow {
+  font-size: 10px;
+  transition: transform 0.3s ease;
+  color: #666;
+}
+
+.nav__user-arrow--open {
+  transform: rotate(180deg);
+}
+
+.nav__dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 240px;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 8px;
+  animation: dropdownFadeIn 0.2s ease;
+  z-index: 100;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.nav__dropdown-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin-bottom: 4px;
+}
+
+.nav__dropdown-avatar {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.nav__dropdown-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.nav__dropdown-name {
+  font-weight: 700;
+  font-size: 15px;
+  color: #1a1a1a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav__dropdown-email {
+  font-size: 12px;
+  color: #666;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 2px;
+}
+
+.nav__dropdown-divider {
+  height: 1px;
+  background: #e8e8e8;
+  margin: 4px 0;
+}
+
+.nav__dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+
+.nav__dropdown-item:hover {
+  background: #f0f0f0;
+}
+
+.nav__dropdown-icon {
+  font-size: 16px;
+  width: 20px;
+  text-align: center;
+}
+
+.nav__dropdown-item--danger {
+  color: #dc3545;
+}
+
+.nav__dropdown-item--danger:hover {
+  background: #fee;
+}
+
 .nav__hamburger {
   display: none;
   flex-direction: column;
@@ -88,7 +244,6 @@
   transition: all 0.3s ease;
 }
 
-/* Mobile styles (max-width: 767px = มือถือ) */
 @media (max-width: 767px) {
   .nav__inner {
     padding: 10px 12px;
@@ -104,7 +259,6 @@
     height: 38px;
   }
 
-  /* ซ่อนเมนูปกติ */
   .nav__links {
     position: absolute;
     top: 100%;
@@ -115,20 +269,30 @@
     padding: 16px;
     gap: 16px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    display: none; /* เริ่มต้นซ่อน */
+    display: none; 
   }
 
   .nav__links--open {
     display: flex !important;
   }
 
-  /* แสดงแฮมเบอร์เกอร์ */
   .nav__hamburger {
     display: flex;
   }
+
+  .nav__user-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .nav__dropdown {
+    position: static;
+    margin-top: 8px;
+    box-shadow: none;
+    border: 1px solid #e8e8e8;
+  }
 }
 
-/* iPad & ขึ้นไป (>= 768px): แสดงเมนูปกติ */
 @media (min-width: 768px) {
   .nav__hamburger {
     display: none !important;
