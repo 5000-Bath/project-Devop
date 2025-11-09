@@ -2,11 +2,9 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import shinchanLogo from "../assets/shinchan.png";
 import FoodLogin from "../assets/Food_Login.png";
-import { useIsMobile } from "./useIsMobile"; // ✅ นำเข้า hook ที่มีอยู่
+import { useIsMobile } from "./useIsMobile";
 
-
-
-const API_BASE = "";
+const API_BASE = "http://localhost:3001";
 
 export default function LoginPage() {
     const navigate = useNavigate();
@@ -15,14 +13,11 @@ export default function LoginPage() {
     const [err, setErr] = useState("");
     const [showModal, setShowModal] = useState(false);
 
-    // ✅ ใช้ useIsMobile แทน
-    const isMobile = useIsMobile(768); // true = มือถือ, false = tablet / desktop
+    const isMobile = useIsMobile(768);
 
     useEffect(() => {
         if (err) setErr("");
     }, [user, password]);
-
-    
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -32,6 +27,8 @@ export default function LoginPage() {
         }
 
         try {
+            console.log("Calling:", `${API_BASE}/auth/login`); 
+            
             const res = await fetch(`${API_BASE}/auth/login`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -40,23 +37,21 @@ export default function LoginPage() {
             });
 
             const data = await res.json();
+            console.log("Response:", data); 
 
             if (!res.ok) {
-                // ✅ แก้ fallback เป็น data.message หรือข้อความ default
                 setErr(data?.message || "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
                 return;
             }
 
-            // login สำเร็จ, cookie ถูกเซ็ตแล้ว
+            console.log("Login successful!"); 
             navigate("/admin/dashboard");
         } catch (error) {
-            console.error(error);
-            setErr("เกิดข้อผิดพลาดการเชื่อมต่อServer โปรดรอสักครู่และลองอีกครั้ง");
+            console.error("Login error:", error);
+            setErr("เกิดข้อผิดพลาดการเชื่อมต่อ Server โปรดรอสักครู่และลองอีกครั้ง");
         }
     };
 
-
-    // ปรับ style ตาม isMobile
     const foodImageStyle = useMemo(() => {
         if (isMobile) {
             return {
@@ -100,7 +95,6 @@ export default function LoginPage() {
             display: "flex",
             flexDirection: "column",
         }}>
-            {/* Header */}
             <div style={{
                 width: "100%",
                 background: "transparent",
@@ -116,7 +110,6 @@ export default function LoginPage() {
                 />
             </div>
 
-            {/* Card */}
             <div style={{
                 maxWidth: isMobile ? "100%" : 1200,
                 margin: isMobile ? "20px auto" : "40px auto",
@@ -128,7 +121,6 @@ export default function LoginPage() {
                 boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
                 boxSizing: "border-box",
             }}>
-                {/* Left - Food Image */}
                 <div style={{
                     display: "flex",
                     alignItems: "center",
@@ -142,7 +134,6 @@ export default function LoginPage() {
                     />
                 </div>
 
-                {/* Right - Form */}
                 <div style={{
                     display: "flex",
                     flexDirection: "column",
@@ -183,7 +174,7 @@ export default function LoginPage() {
                                 marginTop: 6,
                                 marginBottom: isMobile ? 16 : 22,
                                 outline: "none",
-                                boxSizing: "border-box", // ✅ เพิ่มบรรทัดนี้
+                                boxSizing: "border-box",
                             }}
                         />
 
@@ -202,7 +193,7 @@ export default function LoginPage() {
                                 marginTop: 6,
                                 marginBottom: isMobile ? 10 : 10,
                                 outline: "none",
-                                boxSizing: "border-box", // ✅ เพิ่มบรรทัดนี้
+                                boxSizing: "border-box",
                             }}
                         />
 
@@ -255,7 +246,6 @@ export default function LoginPage() {
                 </div>
             </div>
 
-            {/* Modal */}
             {showModal && (
                 <>
                     <div
