@@ -1,47 +1,120 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import './Order.css';
 import { CartContext } from '../context/CartContext';
 import { createOrderFromCart } from '../api/orders';
 import { cutStock, checkStock } from '../api/products';
 import { useNavigate } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
 
 export default function Order() {
   const { cartItems, addToCart, decreaseQuantity, removeFromCart } = useContext(CartContext);
+  const { user, isAuthed, loading: authLoading } = useContext(AuthContext); 
   const nav = useNavigate();
 
   const [isCheckedOut, setIsCheckedOut] = useState(false);
   const [lastOrderId, setLastOrderId] = useState(null);
   const [stockError, setStockError] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
-    // ✅ คำนวณเฉพาะ Total Price รวมของทุกสินค้าในตะกร้า
-    const totalPrice = cartItems.reduce(
-        (sum, item) => sum + Number(item.price) * Number(item.quantity),
-        0
-    );
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('cart') || '[]');
+      if (!Array.isArray(saved) || saved.length === 0) return;
 
-    const clearCart = () => {
+      [...cartItems].forEach(it => removeFromCart(it));
+
+      for (const s of saved) {
+        const qty = Math.max(1, Number(s.quantity || 1));
+        const baseItem = {
+          id: s.productId ?? s.id ?? `${s.name}-${s.price}`,
+          name: s.name ?? '(unknown)',
+          price: Number(s.price) || 0,
+          imageUrl: s.imageUrl || '',
+        };
+        for (let i = 0; i < qty; i++) addToCart(baseItem);
+      }
+      localStorage.removeItem('cart');
+    } catch (e) {
+      console.error('Failed to load cart from localStorage:', e);
+    }
+  }, []);
+
+  const totalPrice = cartItems.reduce(
+    (sum, item) => sum + Number(item.price) * Number(item.quantity),
+    0
+  );
+
+  const clearCart = () => {
     const copy = [...cartItems];
     copy.forEach(it => removeFromCart(it));
   };
 
   const handleCheckout = async () => {
-    if (cartItems.length === 0) return;
+    if (!isAuthed) {
+      nav(`/login?redirect=${encodeURIComponent("/Order")}`);
+      return;
+    }
+
+    if (cartItems.length === 0) {
+      alert('ตะกร้าสินค้าว่างเปล่า');
+      return;
+    }
+
+    if (!user || !user.id) {
+      alert('ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่');
+      nav('/login');
+      return;
+    }
+
+    setIsProcessing(true);
+    setStockError(null);
+
     try {
       await checkStock(cartItems);
       await cutStock(cartItems);
-      const id = await createOrderFromCart(cartItems, { userId: 1 });
+
+      const id = await createOrderFromCart(cartItems, { 
+        userId: user.id  
+      });
+      
       if (id != null) {
         setLastOrderId(id);
         setIsCheckedOut(true);
         clearCart();
+      } else {
+        throw new Error('ไม่สามารถสร้างออเดอร์ได้');
       }
     } catch (error) {
-      setStockError(error.message || 'ตรวจสอบสต็อกไม่สำเร็จ');
+      console.error('Checkout error:', error);
+      setStockError(error.message || 'เกิดข้อผิดพลาดในการสั่งซื้อ');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
-  const closePopup = () => setIsCheckedOut(false);
-  const closePopupError = () => setStockError(null);
+  const closePopup = () => {
+    setIsCheckedOut(false);
+    setLastOrderId(null);
+  };
+
+  const closePopupError = () => {
+    setStockError(null);
+  };
+
+  if (authLoading) {
+    return (
+      <div className="order-page">
+        <div className="order-details-header">
+          <h1>Order Details</h1>
+        </div>
+        <div className="order-container">
+          <p style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
+            Loading...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="order-page">
@@ -65,7 +138,7 @@ export default function Order() {
                   {item.imageUrl ? (
                     <img src={item.imageUrl} alt={item.name} />
                   ) : (
-                    <div className="placeholder-image" />
+                    <div className="placeholder-image">📦</div>
                   )}
                   <div className="item-details">
                     <p className="item-name">{item.name}</p>
@@ -73,7 +146,6 @@ export default function Order() {
                   </div>
                 </div>
                 <div className="item-actions">
-                  {/* Quantity Controller */}
                   <div className="quantity-controller">
                     <button
                       className="qty-btn"
@@ -92,8 +164,6 @@ export default function Order() {
                       +
                     </button>
                   </div>
-
-                  {/* Remove Button with Trash Icon */}
                   <button
                     className="remove-item-btn"
                     onClick={() => removeFromCart(item)}
@@ -109,34 +179,40 @@ export default function Order() {
           )}
         </div>
 
-          <div className="checkout-summary" style={{
-              borderTop: '1px solid #eee',
-              paddingTop: 16,
-              marginTop: 16
+        <div className="checkout-summary" style={{ borderTop: '1px solid #eee', paddingTop: 16, marginTop: 16 }}>
+          <div className="summary-line total" style={{ 
+            fontWeight: "bold", 
+            fontSize: "1.1em", 
+            display: "flex", 
+            justifyContent: "space-between", 
+            alignItems: "center", 
+            padding: "8px 0" 
           }}>
-              <div className="summary-line total" style={{
-                  fontWeight: "bold",
-                  fontSize: "1.1em",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  padding: "8px 0"
-              }}>
-                  <span>Total Price</span>
-                  <span>{totalPrice} THB</span>
-              </div>
-
-              <button
-                  className="checkout-button"
-                  onClick={handleCheckout}
-                  disabled={cartItems.length === 0}
-              >
-                  Checkout
-              </button>
+            <span>Total Price</span>
+            <span>{totalPrice} THB</span>
           </div>
+
+          {!isAuthed && (
+            <p style={{ 
+              color: '#dc3545', 
+              fontSize: '0.9em', 
+              textAlign: 'center', 
+              marginTop: '12px' 
+            }}>
+              กรุณาเข้าสู่ระบบก่อนสั่งซื้อ
+            </p>
+          )}
+
+          <button
+            className="checkout-button"
+            onClick={handleCheckout}
+            disabled={cartItems.length === 0 || isProcessing}
+          >
+            {isProcessing ? 'Processing...' : 'Checkout'}
+          </button>
+        </div>
       </div>
 
-      {/* Success Popup */}
       {isCheckedOut && (
         <div className="popup-overlay">
           <div className="popup-content">
@@ -150,7 +226,10 @@ export default function Order() {
               </button>
               <button
                 className="popup-close-button"
-                onClick={() => nav(`/status?orderId=${lastOrderId}`)}
+                onClick={() => {
+                  closePopup();
+                  nav(`/status?orderId=${lastOrderId}`);
+                }}
               >
                 Go to Status
               </button>
@@ -159,7 +238,6 @@ export default function Order() {
         </div>
       )}
 
-      {/* Error Popup */}
       {stockError && (
         <div className="popup-overlay">
           <div className="popup-content-error">

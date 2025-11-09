@@ -1,8 +1,10 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useContext } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
 import '../component/Status.css';
-import { getOrderById } from '../api/orders';
-import { useLocation } from 'react-router-dom';
 import Swal from 'sweetalert2';
+
+const API_BASE = (import.meta.env.VITE_API_URL || "http://localhost:8080").replace(/\/+$/, "");
 
 function useQuery() {
   const { search } = useLocation();
@@ -10,13 +12,14 @@ function useQuery() {
 }
 
 export default function Status() {
+  const { user, isAuthed, loading: authLoading } = useContext(AuthContext);
+  const navigate = useNavigate();
   const q = useQuery();
+  
   const [searchInput, setSearchInput] = useState(q.get('orderId') || '');
   const [order, setOrder] = useState(null);
   const [isAnimating, setIsAnimating] = useState(false);
-  const API_BASE = "";
 
-  //  คำนวณยอดรวมทั้งหมดจาก orderItems (ไม่รวมค่าส่ง)
   const total = useMemo(() => {
     if (!order) return 0;
     const items = Array.isArray(order.orderItems) ? order.orderItems : [];
@@ -26,42 +29,11 @@ export default function Status() {
     );
   }, [order]);
 
-  // 🛠 ฟังก์ชันดึงข้อมูลออเดอร์ + จัดการ error
-  const findOrder = async (id) => {
-    const trimmed = String(id || '').trim();
-    if (!trimmed) {
-      setOrder(null);
-      return;
-    }
-
-    try {
-      setIsAnimating(false);
-      const rawData = await getOrderById(trimmed);
-
-      // ✅ แปลงข้อมูลให้เป็นรูปแบบที่ใช้งานได้
-      const adapted = adaptOrder(rawData, API_BASE);
-      if (!adapted) throw new Error('Invalid order data');
-
-      setOrder(adapted);
-    } catch (err) {
-      console.error('Failed to fetch order:', err);
-      setOrder(null);
-      Swal.fire({
-        icon: 'error',
-        title: 'ไม่พบออเดอร์',
-        text: 'หมายเลขออเดอร์นี้ไม่ถูกต้องหรือไม่มีอยู่ในระบบ',
-        timer: 3000,
-        showConfirmButton: false,
-      });
-    } finally {
-      setTimeout(() => setIsAnimating(true), 50);
-    }
-  };
-
-  // 📅 ฟอร์แมตวันที่เป็นไทย
   function formatThaiFromLocalInput(inputStr) {
+    if (!inputStr) return "";
     const iso = inputStr.replace(' ', 'T') + 'Z';
     const d = new Date(iso);
+    if (isNaN(d)) return inputStr;
     const day = String(d.getDate()).padStart(2, '0');
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const yearBE = d.getFullYear() + 543;
@@ -70,17 +42,101 @@ export default function Status() {
     return `${day}/${month}/${yearBE} ${hour}:${minute}`;
   }
 
-  // 🕒 เหตุการณ์เริ่มต้น
-  const createInitialEvents = (order) => [
-    {
-      icon: 'https://api.iconify.design/ic/outline-restaurant.svg?color=%23000000',
-      title: 'Cooking Order',
-      time: order?.createdAt ? formatThaiFromLocalInput(order.createdAt) : '',
-      status: 'done',
-    },
-  ];
+  const findOrder = async (id) => {
+    const trimmed = String(id || '').trim();
+    if (!trimmed) {
+      setOrder(null);
+      return;
+    }
 
-  // 🔍 ค้นหาเมื่อกดปุ่ม
+    if (!isAuthed) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'กรุณาเข้าสู่ระบบ',
+        text: 'คุณต้องเข้าสู่ระบบก่อนตรวจสอบสถานะออเดอร์',
+        confirmButtonText: 'เข้าสู่ระบบ',
+      }).then((result) => {
+        if (result.isConfirmed) {
+          navigate(`/login?redirect=/status?orderId=${trimmed}`);
+        }
+      });
+      return;
+    }
+
+    try {
+      setIsAnimating(false);
+
+      const res = await fetch(`${API_BASE}/api/orders/${trimmed}`, {
+        credentials: 'include',
+        headers: { Accept: 'application/json' }
+      });
+
+      if (!res.ok) {
+        if (res.status === 403) {
+          throw new Error('คุณไม่มีสิทธิ์ดูออเดอร์นี้');
+        } else if (res.status === 404) {
+          throw new Error('ไม่พบออเดอร์นี้');
+        } else if (res.status === 401) {
+          navigate(`/login?redirect=/status?orderId=${trimmed}`);
+          return;
+        }
+        throw new Error(`HTTP ${res.status}`);
+      }
+
+      const rawData = await res.json();
+      const adapted = adaptOrder(rawData);
+      
+      if (!adapted) throw new Error('Invalid order data');
+
+      setOrder(adapted);
+    } catch (err) {
+      console.error('Failed to fetch order:', err);
+      setOrder(null);
+      Swal.fire({
+        icon: 'error',
+        title: 'ไม่สามารถโหลดออเดอร์',
+        text: err.message || 'เกิดข้อผิดพลาดในการดึงข้อมูล',
+        timer: 3000,
+        showConfirmButton: false,
+      });
+    } finally {
+      setTimeout(() => setIsAnimating(true), 50);
+    }
+  };
+
+  function adaptOrder(api) {
+    if (!api || typeof api !== 'object') return null;
+
+    const items = Array.isArray(api.orderItems)
+      ? api.orderItems.map((it) => ({
+          id: it.id ?? null,
+          name: it.product?.name ?? '',
+          price: Number(it.product?.price ?? 0),
+          qty: Number(it.quantity ?? it.qty ?? 1),
+          img: it.product?.imageUrl ?? '/khao-man-kai.jpg',
+        }))
+      : [];
+
+    const defaultEvents = [
+      {
+        title: 'Order Created',
+        status: 'done',
+        time: api.createdAt ? formatThaiFromLocalInput(api.createdAt) : '',
+        icon: 'https://api.iconify.design/mdi/clipboard-text.svg',
+      },
+    ];
+
+    return {
+      id: api.id ?? null,
+      status: api.status ?? 'PENDING',
+      createdAt: api.createdAt ?? null,
+      deliveryFee: Number(api.deliveryFee ?? 0),
+      orderItems: items,
+      items,
+      events: defaultEvents,
+    };
+  }
+
   const handleSearch = () => {
     const input = searchInput.trim();
     if (!input) {
@@ -109,8 +165,9 @@ export default function Status() {
     if (e.key === 'Enter') handleSearch();
   };
 
-  // 🔄 โหลดออเดอร์จาก URL (เมื่อเข้ามาครั้งแรก)
   useEffect(() => {
+    if (authLoading) return; 
+
     const orderIdFromUrl = q.get('orderId');
     if (orderIdFromUrl) {
       const trimmed = orderIdFromUrl.trim();
@@ -129,46 +186,21 @@ export default function Status() {
     } else {
       setIsAnimating(true);
     }
-  }, []); // รันแค่ตอน mount
+  }, [authLoading]);
 
-  // 🧩 แปลงข้อมูลออเดอร์ให้ใช้งานง่าย
-  function adaptOrder(api) {
-    if (!api || typeof api !== 'object') return null;
-
-    const items = Array.isArray(api.orderItems)
-      ? api.orderItems.map((it) => {
-        return {
-          id: it.id ?? null,
-          name: it.product?.name ?? '',
-          price: Number(it.product?.price ?? 0),
-          qty: Number(it.quantity ?? it.qty ?? 1),
-          img: it.product?.imageUrl ?? '/khao-man-kai.jpg', // <-- ใช้ตรงๆ เหมือน Home
-        };
-      })
-      : [];
-
-    const defaultEvents = [
-      {
-        title: 'Order Created',
-        status: 'done',
-        time: api.createdAt ? formatThaiFromLocalInput(api.createdAt) : '',
-        icon: 'https://api.iconify.design/mdi/clipboard-text.svg',
-      },
-    ];
-
-    return {
-      id: api.id ?? null,
-      status: api.status ?? 'PENDING',
-      createdAt: api.createdAt ?? null,
-      deliveryFee: Number(api.deliveryFee ?? 0),
-      orderItems: items,
-      items,
-      events: defaultEvents,
-    };
+  if (authLoading) {
+    return (
+      <div className="status-page">
+        <div className="status-header-bar">ORDER STATUS</div>
+        <div className="status-main-container">
+          <div className="message-container animating">
+            <p className="message-text">Checking authentication...</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
-
-  // 🖼 Render UI
   return (
     <div className="status-page">
       <div className="status-header-bar">ORDER STATUS</div>
@@ -206,9 +238,16 @@ export default function Status() {
             <p className="message-text">
               Please enter your Order ID to see the status.
             </p>
-            <p className="message-sub-text">
-              (Try: 1, 2, 3, or 4 — หรือใช้ Order ID ล่าสุดที่เพิ่ง Checkout)
-            </p>
+            {isAuthed && (
+              <p className="message-sub-text">
+                หรือดูประวัติออเดอร์ทั้งหมดได้ที่ <a href="/history" style={{color:'#3b82f6'}}>History</a>
+              </p>
+            )}
+            {!isAuthed && (
+              <p className="message-sub-text">
+                กรุณา <a href="/login" style={{color:'#3b82f6'}}>เข้าสู่ระบบ</a> เพื่อดูสถานะออเดอร์
+              </p>
+            )}
           </div>
         )}
 
@@ -241,15 +280,11 @@ export default function Status() {
               <div>
                 {order.orderItems.map((it, i) => (
                   <div key={i} className="item-row">
-                    {it.img ? (
-                      <img src={it.img} alt={it.name} className="item-thumb" />
-                    ) : (
-                      <img
-                        src="/khao-man-kai.jpg"
-                        alt={it.name}
-                        className="item-thumb"
-                      />
-                    )}
+                    <img
+                      src={it.img || '/khao-man-kai.jpg'}
+                      alt={it.name}
+                      className="item-thumb"
+                    />
                     <div>
                       <div className="item-name">{it.name}</div>
                       <div className="item-price">
