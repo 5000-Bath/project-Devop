@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import Swal from "sweetalert2"; // ✅ Import Swal
+import Swal from "sweetalert2";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-
-const API_BASE = "";
+const API_BASE = "http://localhost:8080";
 
 export default function Ordersdetail() {
     const { id } = useParams();
@@ -16,12 +15,35 @@ export default function Ordersdetail() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // ✅ โหลดข้อมูลจาก backend
     useEffect(() => {
         const fetchOrder = async () => {
             try {
-                const res = await fetch(`${API_BASE}/api/orders/${id}`);
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const res = await fetch(`${API_BASE}/api/orders/${id}`, {
+                    credentials: "include"
+                });
+
+                if (!res.ok) {
+                    if (res.status === 401) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Not authenticated',
+                            text: 'Please login as admin first',
+                        });
+                        navigate('/admin/login');
+                        return;
+                    }
+                    if (res.status === 403) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Access denied',
+                            text: 'You do not have permission to view this order',
+                        });
+                        navigate('/admin/orders');
+                        return;
+                    }
+                    throw new Error(`HTTP ${res.status}`);
+                }
+
                 const data = await res.json();
                 setOrder(data);
             } catch (err) {
@@ -32,9 +54,8 @@ export default function Ordersdetail() {
             }
         };
         fetchOrder();
-    }, [id]);
+    }, [id, navigate]);
 
-    // ✅ ฟังก์ชันอัปเดตสถานะ
     const updateOrderStatus = async (newStatus) => {
         if (!order) return;
 
@@ -53,6 +74,7 @@ export default function Ordersdetail() {
             const res = await fetch(`${API_BASE}/api/orders/${id}/status`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
+                credentials: "include",
                 body: JSON.stringify({ status: newStatus }),
             });
 
@@ -89,7 +111,6 @@ export default function Ordersdetail() {
     const handleDownloadInvoice = async () => {
         if (!order) return;
 
-        // ✅ ตรวจสถานะก่อนดาวน์โหลด
         const status = order.status?.toUpperCase() || "PENDING";
 
         if (status === "PENDING") {
@@ -99,7 +120,7 @@ export default function Ordersdetail() {
                 text: "This order is not completed yet. Please complete it before downloading the invoice.",
                 confirmButtonText: "OK",
             });
-            return; // ❌ หยุด ไม่ให้ดาวน์โหลด
+            return;
         }
 
         if (status === "CANCELLED") {
@@ -109,15 +130,13 @@ export default function Ordersdetail() {
                 text: "This order has been cancelled. Invoice cannot be generated.",
                 confirmButtonText: "OK",
             });
-            return; // ❌ หยุด ไม่ให้ดาวน์โหลด
+            return;
         }
 
-        // ✅ ถ้าผ่านเงื่อนไข (status = SUCCESS หรือ COMPLETE) → ทำต่อได้เลย
         const doc = new jsPDF({ unit: "pt", format: "a4" });
         const pageWidth = doc.internal.pageSize.getWidth();
         const margin = { left: 40, top: 45, right: 40 };
 
-        // ---- Font setup ----
         const ensureFont = async () => {
             if (window.__fontReady) return;
             const res = await fetch("/fonts/THSarabunNew.ttf");
@@ -136,7 +155,6 @@ export default function Ordersdetail() {
         await ensureFont();
         doc.setFont("THSarabunNew", "normal");
 
-        // ---------- HEADER ----------
         doc.setFontSize(18);
         doc.text("TAX INVOICE", pageWidth / 2, margin.top, { align: "center" });
 
@@ -170,7 +188,6 @@ export default function Ordersdetail() {
         ];
         meta.forEach((t, i) => doc.text(t, metaStartX, headerY + i * 14));
 
-        // ---------- TABLE ----------
         const items = (order.orderItems || []).map((it, idx) => {
             const unit = it.product?.price || 0;
             const qty = it.quantity || 0;
@@ -214,7 +231,6 @@ export default function Ordersdetail() {
             margin: { left: margin.left, right: margin.right },
         });
 
-        // ---------- SUMMARY BOX ----------
         const y = doc.lastAutoTable.finalY + 15;
         const subTotal = (order.orderItems || []).reduce(
             (s, it) => s + (it.product?.price || 0) * (it.quantity || 0),
@@ -247,7 +263,6 @@ export default function Ordersdetail() {
             doc.text(row[1], tableRightEdge - 8, yy, { align: "right" });
         });
 
-        // ---------- SIGNATURE AREA ----------
         const rightX = pageWidth - margin.right;
         const signY = y + boxH + 45;
         doc.setFontSize(11);
@@ -262,7 +277,6 @@ export default function Ordersdetail() {
         doc.text("(Signature)", margin.left + 60, signY + 34);
         doc.text("(Signature)", rightX - 115, signY + 34);
 
-        // ---------- FOOTER ----------
         const pageCount = doc.getNumberOfPages();
         for (let i = 1; i <= pageCount; i++) {
             doc.setPage(i);
@@ -275,12 +289,8 @@ export default function Ordersdetail() {
             );
         }
 
-        // ✅ ดาวน์โหลด PDF
         doc.save(`Invoice_Order#${order.id}.pdf`);
     };
-
-
-
 
     if (loading) return <div style={{ padding: 24 }}>⏳ กำลังโหลดข้อมูล...</div>;
     if (error) return <div style={{ padding: 24, color: "red" }}>{error}</div>;
@@ -333,7 +343,6 @@ export default function Ordersdetail() {
                 </div>
             </div>
 
-            {/* Table */}
             <div
                 style={{
                     backgroundColor: "white",
@@ -344,42 +353,41 @@ export default function Ordersdetail() {
             >
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                     <thead>
-                    <tr style={{ borderBottom: "1px solid #eee" }}>
-                        <th style={{ textAlign: "left", padding: "12px 8px" }}>Product</th>
-                        <th style={{ textAlign: "left", padding: "12px 8px" }}>Quantity</th>
-                        <th style={{ textAlign: "left", padding: "12px 8px" }}>Price</th>
-                        <th style={{ textAlign: "left", padding: "12px 8px" }}>Total</th>
-                    </tr>
+                        <tr style={{ borderBottom: "1px solid #eee" }}>
+                            <th style={{ textAlign: "left", padding: "12px 8px" }}>Product</th>
+                            <th style={{ textAlign: "left", padding: "12px 8px" }}>Quantity</th>
+                            <th style={{ textAlign: "left", padding: "12px 8px" }}>Price</th>
+                            <th style={{ textAlign: "left", padding: "12px 8px" }}>Total</th>
+                        </tr>
                     </thead>
                     <tbody>
-                    {filteredItems.length > 0 ? (
-                        filteredItems.map((item) => (
-                            <tr key={item.id} style={{ borderBottom: "1px solid #f0f0f0" }}>
-                                <td style={{ padding: "12px 8px", fontSize: 14 }}>
-                                    {item.product?.name || "-"}
-                                </td>
-                                <td style={{ padding: "12px 8px", fontSize: 14 }}>
-                                    {item.quantity}
-                                </td>
-                                <td style={{ padding: "12px 8px", fontSize: 14 }}>
-                                    {item.product?.price?.toLocaleString()} บาท
-                                </td>
-                                <td style={{ padding: "12px 8px", fontSize: 14 }}>
-                                    {(item.product?.price * item.quantity).toLocaleString()} บาท
+                        {filteredItems.length > 0 ? (
+                            filteredItems.map((item) => (
+                                <tr key={item.id} style={{ borderBottom: "1px solid #f0f0f0" }}>
+                                    <td style={{ padding: "12px 8px", fontSize: 14 }}>
+                                        {item.product?.name || "-"}
+                                    </td>
+                                    <td style={{ padding: "12px 8px", fontSize: 14 }}>
+                                        {item.quantity}
+                                    </td>
+                                    <td style={{ padding: "12px 8px", fontSize: 14 }}>
+                                        {item.product?.price?.toLocaleString()} บาท
+                                    </td>
+                                    <td style={{ padding: "12px 8px", fontSize: 14 }}>
+                                        {(item.product?.price * item.quantity).toLocaleString()} บาท
+                                    </td>
+                                </tr>
+                            ))
+                        ) : (
+                            <tr>
+                                <td colSpan="4" style={{ textAlign: "center", padding: 16 }}>
+                                    ไม่มีสินค้าในคำสั่งซื้อนี้
                                 </td>
                             </tr>
-                        ))
-                    ) : (
-                        <tr>
-                            <td colSpan="4" style={{ textAlign: "center", padding: 16 }}>
-                                ไม่มีสินค้าในคำสั่งซื้อนี้
-                            </td>
-                        </tr>
-                    )}
+                        )}
                     </tbody>
                 </table>
 
-                {/* Order Summary */}
                 <div
                     style={{
                         marginTop: 24,
@@ -398,13 +406,13 @@ export default function Ordersdetail() {
                         <div style={{ display: "flex", justifyContent: "space-between" }}>
                             <span style={{ color: "#666", fontSize: 14 }}>Created At</span>
                             <span style={{ color: "#333", fontSize: 14 }}>
-                {order.createdAt
-                    ? new Date(order.createdAt).toLocaleString("th-TH", {
-                        dateStyle: "medium",
-                        timeStyle: "short",
-                    })
-                    : "-"}
-              </span>
+                                {order.createdAt
+                                    ? new Date(order.createdAt).toLocaleString("th-TH", {
+                                        dateStyle: "medium",
+                                        timeStyle: "short",
+                                    })
+                                    : "-"}
+                            </span>
                         </div>
 
                         <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -421,18 +429,17 @@ export default function Ordersdetail() {
                                     fontWeight: 500,
                                 }}
                             >
-                {order.status || "PENDING"}
-              </span>
+                                {order.status || "PENDING"}
+                            </span>
                         </div>
 
                         <div style={{ display: "flex", justifyContent: "space-between" }}>
                             <span style={{ color: "#666", fontSize: 14 }}>Total</span>
                             <span style={{ color: "#333", fontSize: 14, fontWeight: 500 }}>
-                {totalPrice.toLocaleString()} บาท
-              </span>
+                                {totalPrice.toLocaleString()} บาท
+                            </span>
                         </div>
 
-                        {/* Buttons */}
                         <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
                             <button
                                 onClick={() => navigate("/admin/orders")}
@@ -483,7 +490,7 @@ export default function Ordersdetail() {
                                     padding: "6px 12px",
                                 }}
                             >
-                                 Download Invoice
+                                📄 Download Invoice
                             </button>
                         </div>
                     </div>
