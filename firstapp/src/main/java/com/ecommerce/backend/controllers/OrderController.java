@@ -5,18 +5,24 @@ import com.ecommerce.backend.models.Order;
 import com.ecommerce.backend.models.OrderItem;
 import com.ecommerce.backend.models.OrderStatus;
 import com.ecommerce.backend.models.Product;
+import com.ecommerce.backend.models.User;
 import com.ecommerce.backend.repositories.OrderItemRepository;
 import com.ecommerce.backend.repositories.OrderRepository;
 import com.ecommerce.backend.repositories.ProductRepository;
+import com.ecommerce.backend.repositories.UserRepository;
+import com.ecommerce.backend.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/orders")
+@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"}, allowCredentials = "true")
 public class OrderController {
 
     @Autowired
@@ -28,53 +34,212 @@ public class OrderController {
     @Autowired
     private OrderItemRepository orderItemRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private JwtUtil jwtUtil;
+
     @PostMapping
-    public Order createOrder(@RequestBody Order order) {
-        return orderRepository.save(order);
+    public ResponseEntity<?> createOrder(
+            @RequestBody Order order,
+            @CookieValue(name = "user_token", required = false) String token
+    ) {
+        if (token != null && !token.isEmpty()) {
+            try {
+                String username = jwtUtil.getUsernameFromToken(token);
+                User user = userRepository.findByUsername(username).orElse(null);
+                if (user != null && order.getUserId() == null) {
+                    order.setUserId(user.getId());
+                }
+            } catch (Exception e) {
+            }
+        }
+        
+        Order saved = orderRepository.save(order);
+        return ResponseEntity.ok(saved);
     }
 
     @PostMapping("/{id}/items")
-    public List<OrderItem> addOrderItems(@PathVariable Long id, @RequestBody List<OrderItemRequest> orderItemRequests) {
+    public ResponseEntity<?> addOrderItems(
+            @PathVariable Long id, 
+            @RequestBody List<OrderItemRequest> orderItemRequests
+    ) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
+        
         List<OrderItem> newOrderItems = new ArrayList<>();
         for (OrderItemRequest request : orderItemRequests) {
             Product product = productRepository.findById(request.getProductId())
                     .orElseThrow(() -> new RuntimeException("Product not found with id: " + request.getProductId()));
+            
             OrderItem orderItem = new OrderItem();
             orderItem.setOrder(order);
             orderItem.setProduct(product);
             orderItem.setQuantity(request.getQuantity());
             newOrderItems.add(orderItem);
         }
-        return orderItemRepository.saveAll(newOrderItems);
+        
+        List<OrderItem> saved = orderItemRepository.saveAll(newOrderItems);
+        return ResponseEntity.ok(saved);
     }
 
     @GetMapping("/{id}")
-    public Order getOrderById(@PathVariable Long id) {
-        return orderRepository.findByIdWithOrderItems(id)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
-    }
-
-    @GetMapping
-    public List<Order> getAllOrders() {
-        return orderRepository.findAll();
-    }
-
-    @DeleteMapping("/{id}")
-    public void deleteOrder(@PathVariable Long id) {
-        orderRepository.deleteById(id);
-    }
-
-    // ✅ อัปเดตสถานะใหม่: ไม่หัก stock ซ้ำ แต่คืน stock เมื่อ CANCELLED
-    @PutMapping("/{id}/status")
-    public ResponseEntity<?> updateOrderStatus(@PathVariable Long id, @RequestBody UpdateStatusRequest request) {
+    public ResponseEntity<?> getOrderById(
+            @PathVariable Long id,
+            @CookieValue(name = "user_token", required = false) String userToken
+    ) {
         Order order = orderRepository.findByIdWithOrderItems(id)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
-        OrderStatus newStatus = request.getStatus();
+        if (userToken != null && !userToken.isEmpty()) {
+            try {
+                String username = jwtUtil.getUsernameFromToken(userToken);
+                User user = userRepository.findByUsername(username).orElse(null);
+                
+                if (user == null) {
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                            .body(Map.of("error", "User not found"));
+                }
 
-        // ✅ ถ้า CANCELLED → คืน stock กลับ
+                if (!order.getUserId().equals(user.getId())) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                            .body(Map.of("error", "คุณไม่มีสิทธิ์ดู Order นี้"));
+                }
+                
+                return ResponseEntity.ok(order); 
+                
+            } catch (Exception e) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Invalid token"));
+            }
+        }
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("error", "กรุณาเข้าสู่ระบบ"));
+    }
+
+    @GetMapping
+    public ResponseEntity<?> getAllOrders(
+            @CookieValue(name = "user_token", required = false) String userToken,
+            @CookieValue(name = "token", required = false) String adminToken
+    ) {
+        if (adminToken != null && !adminToken.isEmpty()) {
+            try {
+                jwtUtil.getUsernameFromToken(adminToken);
+                List<Order> allOrders = orderRepository.findAll();
+                return ResponseEntity.ok(allOrders); 
+            } catch (Exception e) {
+            }
+        }
+
+        if (userToken != null && !userToken.isEmpty()) {
+            try {
+                String username = jwtUtil.getUsernameFromToken(userToken);
+                User user = userRepository.findByUsername(username).orElse(null);
+                
+                if (user == null) {
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                            .body(Map.of("error", "User not found", "orders", List.of()));
+                }
+
+                List<Order> orders = orderRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
+                
+                return ResponseEntity.ok(orders); 
+                
+            } catch (Exception e) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Invalid token", "orders", List.of()));
+            }
+        }
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("error", "Not authenticated", "orders", List.of()));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteOrder(
+            @PathVariable Long id,
+            @CookieValue(name = "user_token", required = false) String userToken,
+            @CookieValue(name = "token", required = false) String adminToken
+    ) {
+        if (adminToken != null && !adminToken.isEmpty()) {
+            try {
+                jwtUtil.getUsernameFromToken(adminToken);
+                orderRepository.deleteById(id);
+                return ResponseEntity.ok(Map.of("message", "Deleted successfully"));
+            } catch (Exception e) {
+            }
+        }
+
+        if (userToken != null && !userToken.isEmpty()) {
+            try {
+                String username = jwtUtil.getUsernameFromToken(userToken);
+                User user = userRepository.findByUsername(username).orElse(null);
+                
+                if (user == null) {
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                            .body(Map.of("error", "User not found"));
+                }
+
+                Order order = orderRepository.findById(id)
+                        .orElseThrow(() -> new RuntimeException("Order not found"));
+
+                if (!order.getUserId().equals(user.getId())) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                            .body(Map.of("error", "Access denied"));
+                }
+
+                orderRepository.deleteById(id);
+                return ResponseEntity.ok(Map.of("message", "Deleted successfully"));
+                
+            } catch (Exception e) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Invalid token"));
+            }
+        }
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("error", "Not authenticated"));
+    }
+
+    @PutMapping("/{id}/status")
+    public ResponseEntity<?> updateOrderStatus(
+            @PathVariable Long id, 
+            @RequestBody UpdateStatusRequest request,
+            @CookieValue(name = "user_token", required = false) String userToken,
+            @CookieValue(name = "token", required = false) String adminToken
+    ) {
+        Order order = orderRepository.findByIdWithOrderItems(id)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        boolean isAuthorized = false;
+
+        if (adminToken != null && !adminToken.isEmpty()) {
+            try {
+                jwtUtil.getUsernameFromToken(adminToken);
+                isAuthorized = true;
+            } catch (Exception e) {
+            }
+        }
+
+        if (!isAuthorized && userToken != null && !userToken.isEmpty()) {
+            try {
+                String username = jwtUtil.getUsernameFromToken(userToken);
+                User user = userRepository.findByUsername(username).orElse(null);
+                if (user != null && order.getUserId().equals(user.getId())) {
+                    isAuthorized = true;
+                }
+            } catch (Exception e) {
+            }
+        }
+
+        if (!isAuthorized) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Access denied"));
+        }
+
+        OrderStatus newStatus = request.getStatus();
+        
         if (newStatus == OrderStatus.CANCELLED) {
             for (OrderItem item : order.getOrderItems()) {
                 Product product = item.getProduct();
@@ -83,8 +248,6 @@ public class OrderController {
             }
         }
 
-        // ✅ ถ้า SUCCESS → ไม่ทำอะไรกับ stock (เพราะ stock ถูกลดไปตอน user สั่งแล้ว)
-        // ✅ แค่เปลี่ยนสถานะตามปกติ
         order.setStatus(newStatus);
         orderRepository.save(order);
 

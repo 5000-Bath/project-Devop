@@ -11,6 +11,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Arrays;
 
@@ -25,16 +27,9 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // ✅ ปล่อย preflight ทุก path (React ต้องใช้)
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
-                        // ✅ ปล่อย endpoint ที่ใช้ login
-                        .requestMatchers("/auth/**", "/api/auth/**").permitAll()
-
-                        // ✅ ปล่อย public GET เช่น สินค้า, รูปภาพ
+                        .requestMatchers("/auth/**", "/api/auth/**", "/api/login", "/api/register").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products/**", "/uploads/images/**").permitAll()
-
-                        // ✅ ปล่อยทุกอย่างก่อน (debug)
                         .anyRequest().permitAll()
                 );
 
@@ -64,5 +59,10 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }

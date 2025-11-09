@@ -23,20 +23,17 @@ public class AdminController {
         this.jwtUtil = jwtUtil;
     }
 
-    // ดึงข้อมูล Admin ทั้งหมด
     @GetMapping
     public List<Admin> getAllAdmins() {
         return adminRepository.findAll();
     }
 
-    // ดึง Admin ตาม ID
     @GetMapping("/{id}")
     public Admin getAdminById(@PathVariable Long id) {
         return adminRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Admin not found"));
     }
 
-    // ดึงข้อมูลตัวเองจาก token
     @GetMapping("/me")
 
     public ResponseEntity<?> getMe(@CookieValue(name = "token", required = false) String token) {
@@ -53,13 +50,11 @@ public class AdminController {
         }
     }
 
-    // สร้าง Admin ใหม่
     @PostMapping
     public Admin createAdmin(@RequestBody Admin admin) {
         return adminRepository.save(admin);
     }
 
-    // แก้ไข Admin
     @PutMapping("/{id}")
     public Admin updateAdmin(@PathVariable Long id, @RequestBody Admin adminDetails) {
         Admin admin = adminRepository.findById(id)
@@ -72,7 +67,6 @@ public class AdminController {
         return adminRepository.save(admin);
     }
 
-    // ลบ Admin
     @DeleteMapping("/{id}")
     public void deleteAdmin(@PathVariable Long id) {
         adminRepository.deleteById(id);
