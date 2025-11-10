@@ -6,21 +6,26 @@ import com.ecommerce.backend.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admins")
+@CrossOrigin(origins = {"http://localhost:3001"}, allowCredentials = "true")
 public class AdminController {
 
     private final AdminRepository adminRepository;
-
     private final JwtUtil jwtUtil;
+    private final PasswordEncoder passwordEncoder;
 
-    public AdminController(AdminRepository adminRepository, JwtUtil jwtUtil) {
+    @Autowired
+    public AdminController(AdminRepository adminRepository, JwtUtil jwtUtil, PasswordEncoder passwordEncoder) {
         this.adminRepository = adminRepository;
         this.jwtUtil = jwtUtil;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @GetMapping
@@ -35,10 +40,10 @@ public class AdminController {
     }
 
     @GetMapping("/me")
-
-    public ResponseEntity<?> getMe(@CookieValue(name = "token", required = false) String token) {
+    public ResponseEntity<?> getMe(@CookieValue(name = "admin_token", required = false) String token) {
         if (token == null || token.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token missing");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Token missing"));
         }
         try {
             String username = jwtUtil.getUsernameFromToken(token);
@@ -46,7 +51,8 @@ public class AdminController {
                     .orElseThrow(() -> new RuntimeException("Admin not found"));
             return ResponseEntity.ok(admin);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token invalid or expired");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Token invalid or expired"));
         }
     }
 
@@ -56,15 +62,38 @@ public class AdminController {
     }
 
     @PutMapping("/{id}")
-    public Admin updateAdmin(@PathVariable Long id, @RequestBody Admin adminDetails) {
+    public ResponseEntity<?> updateAdmin(
+            @PathVariable Long id, 
+            @RequestBody Map<String, String> body,
+            @CookieValue(name = "admin_token", required = false) String token
+    ) {
+        if (token == null || token.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Not authenticated"));
+        }
+
+        try {
+            jwtUtil.getUsernameFromToken(token);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Invalid token"));
+        }
+
         Admin admin = adminRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Admin not found"));
 
-        if (adminDetails.getUsername() != null) admin.setUsername(adminDetails.getUsername());
-        if (adminDetails.getPassword() != null) admin.setPassword(adminDetails.getPassword());
-        if (adminDetails.getEmail() != null) admin.setEmail(adminDetails.getEmail());
+        if (body.containsKey("username")) {
+            admin.setUsername(body.get("username"));
+        }
+        if (body.containsKey("email")) {
+            admin.setEmail(body.get("email"));
+        }
+        if (body.containsKey("password") && body.get("password") != null && !body.get("password").isEmpty()) {
+            admin.setPassword(passwordEncoder.encode(body.get("password")));
+        }
 
-        return adminRepository.save(admin);
+        Admin updated = adminRepository.save(admin);
+        return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/{id}")
