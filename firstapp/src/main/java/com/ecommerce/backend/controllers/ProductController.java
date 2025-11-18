@@ -52,7 +52,7 @@ public class ProductController {
 
         if (image != null && !image.isEmpty()) {
             try {
-                String folderPath = "/app/uploads/images/";
+                String folderPath = System.getProperty("java.io.tmpdir") + "/uploads/images/";
                 Path path = Paths.get(folderPath);
                 if (!Files.exists(path)) {
                     Files.createDirectories(path);

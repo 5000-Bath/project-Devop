@@ -12,4 +12,10 @@ mysql-data/
 # OS files
 Thumbs.db
 .DS_Store
+
+# Cypress artifacts
+/Foodstore_admin_Frontend/cypress/screenshots/
+/Foodstore_admin_Frontend/cypress/downloads/
+/Foodstore_User/cypress/screenshots/
+/Foodstore_User/cypress/downloads/
 "@ | Out-File -Encoding UTF8 .gitignore
