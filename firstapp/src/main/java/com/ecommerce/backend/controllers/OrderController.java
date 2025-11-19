@@ -101,16 +101,27 @@ public class OrderController {
     @GetMapping("/{id}")
     public ResponseEntity<?> getOrderById(
             @PathVariable Long id,
-            @CookieValue(name = "user_token", required = false) String token
+            @CookieValue(name = "user_token", required = false) String userToken,
+            @CookieValue(name = "admin_token", required = false) String adminToken
     ) {
         Order order = orderRepository.findByIdWithOrderItems(id)
                 .orElseThrow(() -> new RuntimeException("Order not found with id: " + id));
 
-        if (token != null && !token.isEmpty()) {
+        // 🟢 1) ถ้าเป็น admin ให้ผ่านทันที
+        if (adminToken != null && !adminToken.isEmpty()) {
             try {
-                String username = jwtUtil.getUsernameFromToken(token);
+                jwtUtil.getUsernameFromToken(adminToken);  // แค่ verify token ใช้ได้ก็พอ
+                return ResponseEntity.ok(order);
+            } catch (Exception ignore) {
+            }
+        }
+
+        // 🟡 2) ถ้าไม่ใช่ admin → ทำ logic เดิมเหมือนก่อนแก้
+        if (userToken != null && !userToken.isEmpty()) {
+            try {
+                String username = jwtUtil.getUsernameFromToken(userToken);
                 User user = userRepository.findByUsername(username).orElse(null);
-                
+
                 if (user != null) {
                     if (!order.getUserId().equals(user.getId())) {
                         return ResponseEntity.status(HttpStatus.FORBIDDEN)
