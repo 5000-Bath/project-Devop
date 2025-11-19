@@ -6,6 +6,7 @@ import com.ecommerce.backend.models.OrderItem;
 import com.ecommerce.backend.models.OrderStatus;
 import com.ecommerce.backend.models.Product;
 import com.ecommerce.backend.models.User;
+import com.ecommerce.backend.services.OrderService;
 import com.ecommerce.backend.repositories.OrderItemRepository;
 import com.ecommerce.backend.repositories.OrderRepository;
 import com.ecommerce.backend.repositories.ProductRepository;
@@ -16,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -32,6 +34,15 @@ public class OrderController {
 
     @Autowired
     private JwtUtil jwtUtil;
+
+    @Autowired
+    private OrderRepository orderRepository;
+
+    @Autowired
+    private OrderItemRepository orderItemRepository;
+
+    @Autowired
+    private ProductRepository productRepository;
 
     @PostMapping
     public ResponseEntity<?> createOrder(
@@ -93,7 +104,7 @@ public class OrderController {
             @CookieValue(name = "user_token", required = false) String token
     ) {
         Order order = orderRepository.findByIdWithOrderItems(id)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
+                .orElseThrow(() -> new RuntimeException("Order not found with id: " + id));
 
         if (token != null && !token.isEmpty()) {
             try {
@@ -198,7 +209,7 @@ public class OrderController {
             @CookieValue(name = "admin_token", required = false) String adminToken
     ) {
         Order order = orderRepository.findByIdWithOrderItems(id)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
+                .orElseThrow(() -> new RuntimeException("Order not found with id: " + id));
 
         boolean isAuthorized = false;
 

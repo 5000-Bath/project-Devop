@@ -1,15 +1,10 @@
 package com.ecommerce.backend.controllers;
 
-import com.ecommerce.backend.dtos.ProductSaleDto;
-import com.ecommerce.backend.dtos.StockReportDto;
 import com.ecommerce.backend.models.Admin;
-import com.ecommerce.backend.models.Product;
-import com.ecommerce.backend.repositories.OrderItemRepository;
-import com.ecommerce.backend.repositories.ProductRepository;
+import com.ecommerce.backend.repositories.AdminRepository;
 import com.ecommerce.backend.services.AdminService;
 import com.ecommerce.backend.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -17,7 +12,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 
@@ -26,12 +20,14 @@ import java.util.Map;
 @CrossOrigin(origins = {"http://localhost:3001"}, allowCredentials = "true")
 public class AdminController {
 
+    private final AdminService adminService;
     private final AdminRepository adminRepository;
     private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public AdminController(AdminRepository adminRepository, JwtUtil jwtUtil, PasswordEncoder passwordEncoder) {
+    public AdminController(AdminService adminService, AdminRepository adminRepository, JwtUtil jwtUtil, PasswordEncoder passwordEncoder) {
+        this.adminService = adminService;
         this.adminRepository = adminRepository;
         this.jwtUtil = jwtUtil;
         this.passwordEncoder = passwordEncoder;

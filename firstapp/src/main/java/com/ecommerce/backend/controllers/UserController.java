@@ -2,6 +2,7 @@ package com.ecommerce.backend.controllers;
 
 import com.ecommerce.backend.models.User;
 import com.ecommerce.backend.repositories.UserRepository;
+import com.ecommerce.backend.services.UserService;
 import com.ecommerce.backend.security.JwtUtil;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +21,9 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     private JwtUtil jwtUtil;
