@@ -83,7 +83,7 @@ public class AuthController {
         }
         if (userOpt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง"));
+                    .body(Map.of("message", e.getMessage()));
         }
         User user = userOpt.get();
 

@@ -16,7 +16,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -26,13 +25,7 @@ import java.util.Map;
 public class OrderController {
 
     @Autowired
-    private OrderRepository orderRepository;
-
-    @Autowired
-    private ProductRepository productRepository;
-
-    @Autowired
-    private OrderItemRepository orderItemRepository;
+    private OrderService orderService;
 
     @Autowired
     private UserRepository userRepository;

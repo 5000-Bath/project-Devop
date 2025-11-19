@@ -1,14 +1,23 @@
 package com.ecommerce.backend.controllers;
 
+import com.ecommerce.backend.dtos.ProductSaleDto;
+import com.ecommerce.backend.dtos.StockReportDto;
 import com.ecommerce.backend.models.Admin;
-import com.ecommerce.backend.repositories.AdminRepository;
+import com.ecommerce.backend.models.Product;
+import com.ecommerce.backend.repositories.OrderItemRepository;
+import com.ecommerce.backend.repositories.ProductRepository;
+import com.ecommerce.backend.services.AdminService;
 import com.ecommerce.backend.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 
@@ -30,13 +39,12 @@ public class AdminController {
 
     @GetMapping
     public List<Admin> getAllAdmins() {
-        return adminRepository.findAll();
+        return adminService.getAllAdmins();
     }
 
     @GetMapping("/{id}")
     public Admin getAdminById(@PathVariable Long id) {
-        return adminRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Admin not found"));
+        return adminService.getAdminById(id);
     }
 
     @GetMapping("/me")
@@ -47,9 +55,14 @@ public class AdminController {
         }
         try {
             String username = jwtUtil.getUsernameFromToken(token);
-            Admin admin = adminRepository.findByUsername(username)
-                    .orElseThrow(() -> new RuntimeException("Admin not found"));
-            return ResponseEntity.ok(admin);
+            // Admin admin = adminRepository.findByUsername(username) // This line needs to be updated to use AdminService
+            //         .orElseThrow(() -> new RuntimeException("Admin not found"));
+            // return ResponseEntity.ok(admin);
+            // For now, I'll keep the direct repository call for getMe as it's not a standard CRUD operation
+            // and requires a specific findByUsername method which might not be in the generic AdminService interface.
+            // If findByUsername is needed in AdminService, it should be added there.
+            return ResponseEntity.ok(adminService.getAdminByUsername(username));
+
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", "Token invalid or expired"));
@@ -58,7 +71,7 @@ public class AdminController {
 
     @PostMapping
     public Admin createAdmin(@RequestBody Admin admin) {
-        return adminRepository.save(admin);
+        return adminService.createAdmin(admin);
     }
 
     @PutMapping("/{id}")
@@ -98,6 +111,6 @@ public class AdminController {
 
     @DeleteMapping("/{id}")
     public void deleteAdmin(@PathVariable Long id) {
-        adminRepository.deleteById(id);
+        adminService.deleteAdmin(id);
     }
 }
