@@ -1,12 +1,13 @@
 // components/Navbar.jsx
 import { NavLink } from "react-router-dom";
-import { FiTrendingUp, FiBookOpen, FiGrid, FiSettings, FiLogOut } from "react-icons/fi";
+import { FiTrendingUp, FiBookOpen, FiGrid, FiSettings, FiLogOut,FiPercent } from "react-icons/fi";
 import { useNavigate } from 'react-router-dom';
 
 const menu = [
   { to: "/admin/dashboard", label: "Dashboard", icon: <FiTrendingUp /> },
   { to: "/admin/menu", label: "Menu", icon: <FiBookOpen /> },
   { to: "/admin/orders", label: "Orders", icon: <FiGrid /> },
+  { to: "/admin/Coupons", label: "Coupons", icon: <FiPercent /> },
   { to: "/admin/setting", label: "Setting", icon: <FiSettings /> },
 ];
 

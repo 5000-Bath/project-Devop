@@ -168,11 +168,6 @@
   margin-bottom: 16px;
 }
 
-.summary-line {
-  height: 1px;
-  background: #fde68a;
-  margin: 16px 0;
-}
 
 .item-row {
   display: grid;

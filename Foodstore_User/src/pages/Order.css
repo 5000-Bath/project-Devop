@@ -187,37 +187,6 @@
   color: #c82333;
 }
 
-/* Checkout Summary */
-.checkout-summary {
-    background: #fff;
-    border-radius: 8px;
-    padding: 16px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-}
-
-.checkout-summary .total {
-    color: #222;
-    font-weight: 600;
-}
-
-
-.summary-line {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 0.8rem;
-  font-size: 1rem;
-  color: #495057;
-}
-
-.summary-line.total,
-.checkout-summary .total {
-    background-color: transparent !important;
-
-    padding-top: 12px;
-    font-size: 1.2rem;
-}
-
-
 .checkout-button {
   width: 100%;
   padding: 1rem;
@@ -321,6 +290,79 @@
   }
 }
 
+/* Checkout Summary */
+.checkout-summary {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  border: 1px solid #e9ecef;
+}
+
+.summary-line {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  font-size: 1rem;
+  color: #495057;
+}
+
+.summary-line span:last-child {
+  font-weight: 500;
+  color: #212529;
+}
+
+.summary-line.discount {
+  color: #28a745;
+}
+
+.summary-line.discount span:last-child {
+  font-weight: 600;
+  color: #28a745;
+}
+
+.summary-line.total {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #212529;
+  border-top: 2px solid #e9ecef;
+  margin-top: 0.5rem;
+  padding-top: 1rem;
+}
+
+/* Coupon Section */
+.coupon-section {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 1rem;
+}
+
+.coupon-input {
+  flex-grow: 1;
+  padding: 10px 14px;
+  border: 1px solid #ced4da;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.coupon-input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
+}
+
+.coupon-apply-btn {
+  padding: 10px 18px;
+  border: none;
+  background-color: #28a745;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
 /* === Responsive Breakpoints === */
 
 /* Tablet (iPad, 768px+) */
@@ -409,5 +451,30 @@
 @media (min-width: 1200px) {
   .checkout-summary {
     width: 400px;
+  }
+}
+
+.coupon-apply-btn:hover:not(:disabled) {
+  background-color: #218838;
+}
+
+.coupon-apply-btn:disabled {
+  background-color: #e9ecef;
+  color: #adb5bd;
+  cursor: not-allowed;
+}
+
+.coupon-error {
+  color: #dc3545;
+  font-size: 0.9em;
+  text-align: center;
+  margin-top: -0.5rem;
+  margin-bottom: 1rem;
+}
+
+@media (min-width: 768px) {
+  .checkout-summary {
+    position: sticky;
+    top: 20px;
   }
 }

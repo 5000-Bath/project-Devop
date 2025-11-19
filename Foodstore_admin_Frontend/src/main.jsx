@@ -12,6 +12,7 @@ import Contact from "./page/status.jsx";
 import Additem from "./page/AddItem.jsx";
 import Setting from "./page/setting.jsx";
 import Orders from "./page/Orders.jsx";
+import Coupons from "./page/coupons.jsx"; // แก้ไข path
 import Ordersdetail from "./page/Ordersdetail.jsx";
 import Login from "./page/Login.jsx";
 
@@ -67,6 +68,7 @@ const router = createBrowserRouter([
       { path: "orders", element: <PrivateRoute><Orders /></PrivateRoute> }, { path: "orders/orders-detail/:id", element: <PrivateRoute><Ordersdetail /></PrivateRoute> },
       { path: "add-item", element: <PrivateRoute><Additem /></PrivateRoute> },
       { path: "setting", element: <PrivateRoute><Setting /></PrivateRoute> },
+      { path: "Coupons", element: <PrivateRoute><Coupons /></PrivateRoute> },
     ],
   },
   { path: "*", element: <div>Not Found</div> },
