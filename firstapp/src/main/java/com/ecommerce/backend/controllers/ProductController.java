@@ -37,7 +37,33 @@ public class ProductController {
             @RequestParam(value = "isActive", required = false, defaultValue = "true") boolean isActive,
             @RequestParam(value = "image", required = false) MultipartFile image
     ) {
-        return productService.createProduct(name, description, price, stock, isActive, image);
+        Product product = new Product();
+        product.setName(name);
+        product.setDescription(description);
+        product.setPrice(price);
+        product.setStock(stock);
+        product.setIsActive(isActive);
+        product.setCategory(category); 
+
+        if (image != null && !image.isEmpty()) {
+            try {
+                String folderPath = System.getProperty("java.io.tmpdir") + "/uploads/images/";
+                Path path = Paths.get(folderPath);
+                if (!Files.exists(path)) {
+                    Files.createDirectories(path);
+                }
+
+                String fileName = System.currentTimeMillis() + "_" + image.getOriginalFilename();
+                Path filePath = path.resolve(fileName);
+                image.transferTo(filePath.toFile());
+
+                product.setImageUrl("/uploads/images/" + fileName);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        return productRepository.save(product);
     }
 
     @PutMapping("/{id}")

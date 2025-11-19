@@ -1,14 +1,45 @@
-import { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { useState, useContext, useRef, useEffect } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
 import "./Navbar.css";
-
 import logo from "../assets/shinchan.png";
+import { AuthContext } from "../context/AuthContext";
 
 export default function Navbar({ brand = "Crayon Shinchan" }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const { isAuthed, user, logout } = useContext(AuthContext);
+  const nav = useNavigate();
+  const userMenuRef = useRef(null);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
+  };
+
+  const toggleUserMenu = () => {
+    setIsUserMenuOpen(!isUserMenuOpen);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+
+    if (isUserMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isUserMenuOpen]);
+
+  const handleLogout = () => {
+    logout();
+    setIsUserMenuOpen(false);
+    setIsMenuOpen(false);
+    nav("/");
   };
 
   return (
@@ -44,6 +75,7 @@ export default function Navbar({ brand = "Crayon Shinchan" }) {
           >
             Menu
           </NavLink>
+
           <NavLink
             to="/Order"
             className={({ isActive }) =>
@@ -53,6 +85,7 @@ export default function Navbar({ brand = "Crayon Shinchan" }) {
           >
             Orders
           </NavLink>
+
           <NavLink
             to="/Status"
             className={({ isActive }) =>
@@ -62,7 +95,7 @@ export default function Navbar({ brand = "Crayon Shinchan" }) {
           >
             Status
           </NavLink>
-          
+
           <NavLink
             to="/History"
             className={({ isActive }) =>
@@ -74,7 +107,7 @@ export default function Navbar({ brand = "Crayon Shinchan" }) {
           </NavLink>
 
           <NavLink
-            to="/contact"
+            to="/Contact"
             className={({ isActive }) =>
               "nav__link" + (isActive ? " is-active" : "")
             }
@@ -82,6 +115,79 @@ export default function Navbar({ brand = "Crayon Shinchan" }) {
           >
             Contact
           </NavLink>
+
+          {!isAuthed ? (
+            <NavLink
+              to="/login"
+              className={({ isActive }) =>
+                "nav__link" + (isActive ? " is-active" : "")
+              }
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Login
+            </NavLink>
+          ) : (
+            <div className="nav__user-menu" ref={userMenuRef}>
+              <button
+                className="nav__user-button"
+                onClick={toggleUserMenu}
+                aria-expanded={isUserMenuOpen}
+                aria-haspopup="true"
+              >
+                <span className="nav__user-icon">👤</span>
+                <span className="nav__user-name">{user?.username || "User"}</span>
+                <span className={`nav__user-arrow ${isUserMenuOpen ? "nav__user-arrow--open" : ""}`}>
+                  ▼
+                </span>
+              </button>
+
+              {isUserMenuOpen && (
+                <div className="nav__dropdown">
+                  <div className="nav__dropdown-header">
+                    <div className="nav__dropdown-avatar">👤</div>
+                    <div className="nav__dropdown-info">
+                      <div className="nav__dropdown-name">{user?.username || "User"}</div>
+                      <div className="nav__dropdown-email">{user?.email || "user@example.com"}</div>
+                    </div>
+                  </div>
+
+                  <div className="nav__dropdown-divider"></div>
+
+                  {/* <button
+                    className="nav__dropdown-item"
+                    onClick={() => {
+                      setIsUserMenuOpen(false);
+                      nav("/profile");
+                    }}
+                  >
+                    <span className="nav__dropdown-icon">👤</span>
+                    <span>Profile</span>
+                  </button> */}
+
+                  {/* <button
+                    className="nav__dropdown-item"
+                    onClick={() => {
+                      setIsUserMenuOpen(false);
+                      nav("/settings");
+                    }}
+                  >
+                    <span className="nav__dropdown-icon">⚙️</span>
+                    <span>Settings</span>
+                  </button> */}
+
+                  <div className="nav__dropdown-divider"></div>
+
+                  <button
+                    className="nav__dropdown-item nav__dropdown-item--danger"
+                    onClick={handleLogout}
+                  >
+                    <span className="nav__dropdown-icon">🚪</span>
+                    <span>Logout</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </nav>
       </div>
     </header>
