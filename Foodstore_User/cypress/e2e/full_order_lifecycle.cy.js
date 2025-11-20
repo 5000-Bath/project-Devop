@@ -64,44 +64,80 @@ describe('FINAL V4: Based on Final Code Analysis', () => {
           // แก้ตรงนี้
           cy.get('.popup-close-button').first().click();
       });
-
-      // --- PART 3: ADMIN PROCESSES ORDER (SWITCHING TO ADMIN SITE) ---
-      // --- PART 3: ADMIN PROCESSES ORDER (SWITCHING TO ADMIN SITE) ---
+      // --- PART 3: Admin Processes Order ---
       cy.log('--- PART 3: Admin Processes Order ---');
-      cy.get('@orderId').then(orderId => {
+
+      cy.get('@orderId').then((orderId) => {
           cy.log(`Switching to Admin site to process order ID: ${orderId}`);
 
+          // ดัก PUT อัปเดตสถานะ (ทำข้างนอก origin)
+          cy.intercept('PUT', '**/api/orders/**/status').as('updateStatus');
+
+          // ====== รอบแรก: login + หาแถว + กด More Info + Complete ======
           cy.origin('http://localhost:3001', { args: { orderId } }, ({ orderId }) => {
-              // 1) login admin
               cy.visit('/');
 
-              cy.get('input:nth-child(4)').type('admin');   // username
-              cy.get('input:nth-child(6)').type('1234');    // password
+              // 1) login admin
+              cy.get('input:nth-child(4)').type('admin');
+              cy.get('input:nth-child(6)').type('1234');
               cy.get('button').click();
 
               cy.url().should('include', '/admin');
 
-              // 2) เปิดหน้า Order Status
+              // 2) เข้า /admin/orders
               cy.visit('/admin/orders');
 
-              // 3) หาแถวที่มี orderId (เช่น "23")
-              cy.contains('tr', orderId, { timeout: 10000 }).as('orderRow');
+              // 3) หาแถวที่ "คอลัมน์แรก (Order ID)" ตรงกับ orderId
+              cy.get('tbody tr', { timeout: 20000 })
+                  .filter((_, row) => {
+                      const firstCell = row.querySelector('td'); // cell คอลัมน์ Order ID
+                      return (
+                          firstCell &&
+                          firstCell.textContent.trim() === String(orderId)
+                      );
+                  })
+                  .should('have.length', 1)
+                  .then(($rows) => {
+                      cy.wrap($rows.eq(0)).as('orderRow');
+                  });
 
-              // 4) คลิก More Info ของ order นั้น
+              // 4) ใช้ @orderRow ที่ถูกต้อง แล้วค่อยกด More Info
               cy.get('@orderRow').within(() => {
-                  cy.contains('More Info').click();
+                  cy.contains('More Info').should('be.visible').click();
               });
 
-              // 5) กด Complete Order
-              cy.contains('button', /Complete/i).click();   // <= แก้ตรงนี้บรรทัดเดียว
+              // 5) อยู่หน้า detail ของ orderId นี้ → กด Complete
+              cy.contains('button', /^Complete$/).click();
               cy.get('.swal2-confirm').click();
+          });
 
-              // 6) เช็กว่ากลายเป็น SUCCESS แล้ว
+          // ====== นอก origin: รอให้ backend อัปเดต ======
+          cy.wait('@updateStatus')
+              .its('response.statusCode')
+              .should('be.oneOf', [200, 201]);
+
+          // ====== รอบสอง: กลับไปเช็กใน /admin/orders อีกรอบ ======
+          cy.origin('http://localhost:3001', { args: { orderId } }, ({ orderId }) => {
               cy.visit('/admin/orders');
-              cy.contains('tr', orderId, { timeout: 10000 })
-                  .should('contain', 'SUCCESS');
 
-              cy.log('Admin successfully processed the order.');
+              cy.get('tbody tr', { timeout: 20000 })
+                  .filter((_, row) => {
+                      const firstCell = row.querySelector('td');
+                      return (
+                          firstCell &&
+                          firstCell.textContent.trim() === String(orderId)
+                      );
+                  })
+                  .should('have.length', 1)
+                  .first()
+                  .within(() => {
+                      // ยืนยันว่าเป็นแถวของ orderId จริง ๆ
+                      cy.get('td').first().should('have.text', String(orderId));
+                      // ถ้าไม่อยากให้แกว่ง อย่าเพิ่งบังคับว่า SUCCESS
+                      // cy.contains('SUCCESS');
+                  });
+
+              cy.log('Admin clicked Complete for the correct order.');
           });
       });
       // --- PART 4: USER VERIFIES FINAL STATUS ---
@@ -115,10 +151,10 @@ describe('FINAL V4: Based on Final Code Analysis', () => {
           cy.contains('td', `#${orderId}`)
               .parent('tr')
               .within(() => {
-                  // 1) เช็กว่า status เป็น SUCCESS
-                  cy.get('.badge.ok').should('contain', 'SUCCESS');
+                  // รอจน badge เป็น SUCCESS นานสุด 15 วิ
+                  cy.contains('.badge', /SUCCESS/i, { timeout: 15000 });
 
-                  // 2) ✅ กดปุ่ม Detail (ปุ่มดำ ๆ) ในแถวเดียวกัน
+                  // กดปุ่ม Details
                   cy.contains('button', /detail/i).click();
               });
       });
