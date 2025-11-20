@@ -18,7 +18,7 @@ import html2canvas from "html2canvas";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import { ReportDocument } from "./ReportDocument"; // **ต้องสร้างไฟล์นี้เอง**
 
-import { fmtTH, money, isPending, isDone, isCancel } from "../utils/formatters";
+import { fmtTH as _fmtTH, money, isPending, isDone, isCancel } from "../utils/formatters";
 
 function formatThaiDateTime(dateString) {
     if (!dateString) return "-";
@@ -40,6 +40,7 @@ function formatThaiDateTime(dateString) {
 }
 
 
+
 ChartJS.register(
     LineElement,
     CategoryScale,
@@ -52,10 +53,11 @@ ChartJS.register(
 
 const API_BASE = "";
 
+
 export default function AdminDashboard() {
     const [orders, setOrders] = useState([]);
     const [products, setProducts] = useState([]);
-    
+    const [showAllAlerts, setShowAllAlerts] = useState(false);
     // **เพิ่ม** useRef สำหรับอ้างอิงองค์ประกอบ Chart
     const chartRef = useRef(null);
     // **เพิ่ม** State สำหรับเก็บรูปภาพ Chart ในรูปแบบ Base64 string
@@ -162,17 +164,20 @@ export default function AdminDashboard() {
         return [...tally.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3);
     }, [orders, products]);
 
-    const alerts = useMemo(() => {
+    const lowStockProducts = useMemo(() => {
         return products
             .map((p) => ({
                 id: p.id ?? p.productId,
                 name: p.name,
-                stock: Number(p.stock ?? p.quantity ?? 0) || 0,
+                stock: Number(p.stock ?? 0) || 0,
             }))
-            .filter((p) => p.stock < 3)
-            .sort((a, b) => a.stock - b.stock)
-            .slice(0, 3);
+            .filter((p) => p.stock >= 0 && p.stock < 3)
+            .sort((a, b) => a.stock - b.stock);
     }, [products]);
+
+// เฉพาะ 3 อันดับแรก
+    const alerts = lowStockProducts.slice(0, 3);
+
 
     const chartData = useMemo(() => {
         const days = [...Array(8)].map((_, i) => {
@@ -426,20 +431,27 @@ export default function AdminDashboard() {
                     <div className="card">
                         <h4>⚠️ Inventory Alerts</h4>
                         <ul className="list">
-                            {alerts.map((p, i) => (
+                            {(showAllAlerts ? lowStockProducts : alerts).map((p, i) => (
                                 <li key={p.id} className="row">
-                                    <span>
-                                        {i + 1}. {p.name}
-                                    </span>
-                                    <span
-                                        className={`stock ${p.stock < 1 ? "danger" : ""}`}
-                                    >{`${p.stock} left`}</span>
+                                    <span>{i + 1}. {p.name}</span>
+                                    <span className={`stock ${p.stock < 1 ? "danger" : ""}`}>
+                {p.stock} left
+            </span>
                                 </li>
                             ))}
-                            {!alerts.length && (
+
+                            {!lowStockProducts.length && (
                                 <li className="muted">All stocks are sufficient</li>
                             )}
                         </ul>
+
+                        <button
+                            className="btn small"
+                            onClick={() => setShowAllAlerts(!showAllAlerts)}
+                        >
+                            {showAllAlerts ? "Hide" : "View All"}
+                        </button>
+
                     </div>
                 </div>
             </div>
