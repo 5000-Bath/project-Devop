@@ -5,8 +5,24 @@ import { createOrderFromCart } from '../api/orders';
 import { cutStock, checkStock } from '../api/products';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { applyCoupon } from '../api/coupons';
 import Swal from 'sweetalert2';
+
+// API function สำหรับใช้คูปอง
+const applyCoupon = async (code, originalAmount) => {
+  const response = await fetch('http://localhost:8080/api/coupons/use', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ code, originalAmount }),
+  });
+  
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(error || 'ไม่สามารถใช้คูปองได้');
+  }
+  
+  return await response.json();
+};
 
 export default function Order() {
   const { cartItems, addToCart, decreaseQuantity, removeFromCart } = useContext(CartContext);
@@ -46,19 +62,29 @@ export default function Order() {
     }
   }, []);
 
-  const totalPrice = cartItems.reduce(
-    (sum, item) => sum + Number(item.price) * Number(item.quantity),
-    0
-  );
+  // คำนวณราคารวมจากสินค้าในตะกร้า
+  const totalPrice = useMemo(() => {
+    return cartItems.reduce(
+      (sum, item) => sum + Number(item.price) * Number(item.quantity),
+      0
+    );
+  }, [cartItems]);
 
+  // คำนวณราคาหลังหักส่วนลด
   const finalPrice = useMemo(() => {
-    if (appliedCoupon && appliedCoupon.newAmount >= 0) {
+    if (appliedCoupon && appliedCoupon.newAmount !== undefined) {
       return appliedCoupon.newAmount;
     }
     return totalPrice;
   }, [totalPrice, appliedCoupon]);
 
-  const discountAmount = useMemo(() => appliedCoupon?.discountAmount ?? 0, [appliedCoupon]);
+  // จำนวนส่วนลด
+  const discountAmount = useMemo(() => {
+    if (appliedCoupon && appliedCoupon.discountAmount !== undefined) {
+      return appliedCoupon.discountAmount;
+    }
+    return 0;
+  }, [appliedCoupon]);
 
   const clearCart = () => {
     const copy = [...cartItems];
@@ -101,6 +127,8 @@ export default function Order() {
         setLastOrderId(id);
         setIsCheckedOut(true);
         clearCart();
+        setAppliedCoupon(null);
+        setCouponCode('');
       } else {
         throw new Error('ไม่สามารถสร้างออเดอร์ได้');
       }
@@ -117,26 +145,50 @@ export default function Order() {
       setCouponError('กรุณากรอกโค้ดคูปอง');
       return;
     }
+
+    if (totalPrice <= 0) {
+      setCouponError('ไม่สามารถใช้คูปองกับตะกร้าว่างได้');
+      return;
+    }
+
     setIsApplyingCoupon(true);
     setCouponError('');
     setAppliedCoupon(null);
+
     try {
       const result = await applyCoupon(couponCode, totalPrice);
+      
+      console.log('Coupon result:', result); // Debug
+
       setAppliedCoupon({
         code: couponCode,
-        discountAmount: result.discountAmount,
-        newAmount: result.newAmount,
+        discountAmount: Number(result.discountAmount || 0),
+        newAmount: Number(result.newAmount || totalPrice),
       });
+
       Swal.fire({
         icon: 'success',
         title: 'ใช้คูปองสำเร็จ!',
         text: `คุณได้รับส่วนลด ${result.discountAmount} บาท`,
+        timer: 2000,
       });
     } catch (error) {
+      console.error('Coupon error:', error);
       setCouponError(error.message || 'ไม่สามารถใช้คูปองได้');
+      Swal.fire({
+        icon: 'error',
+        title: 'ไม่สามารถใช้คูปองได้',
+        text: error.message,
+      });
     } finally {
       setIsApplyingCoupon(false);
     }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode('');
+    setCouponError('');
   };
 
   const closePopup = () => {
@@ -234,46 +286,69 @@ export default function Order() {
               onChange={(e) => {
                 setCouponCode(e.target.value);
                 setCouponError('');
-                setAppliedCoupon(null);
               }}
               placeholder="กรอกโค้ดส่วนลด"
               className="coupon-input"
-              disabled={isProcessing}
+              disabled={isProcessing || appliedCoupon !== null}
             />
-            <button
-              onClick={handleApplyCoupon}
-              className="coupon-apply-btn"
-              disabled={isApplyingCoupon || !couponCode || cartItems.length === 0}
-            >
-              {isApplyingCoupon ? '...' : 'ใช้คูปอง'}
-            </button>
+            {appliedCoupon ? (
+              <button
+                onClick={handleRemoveCoupon}
+                className="coupon-apply-btn"
+                style={{ backgroundColor: '#dc3545' }}
+              >
+                ยกเลิก
+              </button>
+            ) : (
+              <button
+                onClick={handleApplyCoupon}
+                className="coupon-apply-btn"
+                disabled={isApplyingCoupon || !couponCode || cartItems.length === 0}
+              >
+                {isApplyingCoupon ? '...' : 'ใช้คูปอง'}
+              </button>
+            )}
           </div>
-          {couponError && <p className="coupon-error">{couponError}</p>}
-
-          <div className="summary-line" style={{ display: "flex", justifyContent: "space-between", padding: "8px 0" }}>
-            <span>ราคารวม</span>
-            <span>{totalPrice} THB</span>
-          </div>
-
+          
+          {couponError && <p className="coupon-error" style={{ color: 'red', fontSize: '0.9em', marginTop: '8px' }}>{couponError}</p>}
+          
           {appliedCoupon && (
-            <div className="summary-line discount" style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", color: 'green' }}>
-              <span>ส่วนลด</span>
-              <span>- {discountAmount} THB</span>
+            <p style={{ color: 'green', fontSize: '0.9em', marginTop: '8px' }}>
+              ✓ ใช้คูปอง "{appliedCoupon.code}" แล้ว
+            </p>
+          )}
+
+          <div className="summary-line" style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", marginTop: '16px' }}>
+            <span>ราคารวม</span>
+            <span>{totalPrice.toFixed(2)} THB</span>
+          </div>
+
+          {appliedCoupon && discountAmount > 0 && (
+            <div className="summary-line discount" style={{ 
+              display: "flex", 
+              justifyContent: "space-between", 
+              padding: "8px 0", 
+              color: '#28a745',
+              fontWeight: '500'
+            }}>
+              <span>ส่วนลด ({appliedCoupon.code})</span>
+              <span>- {discountAmount.toFixed(2)} THB</span>
             </div>
           )}
 
           <div className="summary-line total" style={{ 
             fontWeight: "bold", 
-            fontSize: "1.2em", 
+            fontSize: "1.3em", 
             display: "flex", 
             justifyContent: "space-between", 
             alignItems: "center", 
             padding: "12px 0",
-            borderTop: '1px solid #ddd',
-            marginTop: '8px'
+            borderTop: '2px solid #ddd',
+            marginTop: '8px',
+            color: appliedCoupon ? '#28a745' : '#000'
           }}>
-            <span>Total Price</span>
-            <span>{finalPrice} THB</span>
+            <span>ราคาสุทธิ</span>
+            <span>{finalPrice.toFixed(2)} THB</span>
           </div>
 
           {!isAuthed && (
