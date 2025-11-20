@@ -5,9 +5,11 @@ import com.ecommerce.backend.models.Product;
 import com.ecommerce.backend.repositories.CategoryRepository;
 import com.ecommerce.backend.repositories.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -24,6 +26,9 @@ public class ProductServiceImpl implements ProductService {
 
     @Autowired
     private CategoryRepository categoryRepository;
+
+    @Value("${upload.path.images}")
+    private String uploadPath;
 
     @Override
     public List<Product> getAllProducts() {
@@ -54,14 +59,13 @@ public class ProductServiceImpl implements ProductService {
 
         if (image != null && !image.isEmpty()) {
             try {
-                String folderPath = "/app/uploads/images/";
-                Path path = Paths.get(folderPath);
-                if (!Files.exists(path)) {
-                    Files.createDirectories(path);
+                File uploadDir = new File(uploadPath);
+                if (!uploadDir.exists()) {
+                    uploadDir.mkdirs();
                 }
 
                 String fileName = System.currentTimeMillis() + "_" + image.getOriginalFilename();
-                Path filePath = path.resolve(fileName);
+                Path filePath = Paths.get(uploadPath, fileName);
                 image.transferTo(filePath.toFile());
 
                 product.setImageUrl("/uploads/images/" + fileName);
@@ -119,13 +123,12 @@ public class ProductServiceImpl implements ProductService {
             MultipartFile image = (MultipartFile) updates.get("image");
             if (image != null && !image.isEmpty()) {
                 try {
-                    String folderPath = "/app/uploads/images/";
-                    Path path = Paths.get(folderPath);
-                    if (!Files.exists(path)) {
-                        Files.createDirectories(path);
+                    File uploadDir = new File(uploadPath);
+                    if (!uploadDir.exists()) {
+                        uploadDir.mkdirs();
                     }
                     String fileName = System.currentTimeMillis() + "_" + image.getOriginalFilename();
-                    Path filePath = path.resolve(fileName);
+                    Path filePath = Paths.get(uploadPath, fileName);
                     image.transferTo(filePath.toFile());
                     product.setImageUrl("/uploads/images/" + fileName);
                 } catch (Exception e) {
