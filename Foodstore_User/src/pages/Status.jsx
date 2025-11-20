@@ -15,18 +15,29 @@ export default function Status() {
   const { user, isAuthed, loading: authLoading } = useContext(AuthContext);
   const navigate = useNavigate();
   const q = useQuery();
-  
+
   const [searchInput, setSearchInput] = useState(q.get('orderId') || '');
   const [order, setOrder] = useState(null);
   const [isAnimating, setIsAnimating] = useState(false);
 
-  const total = useMemo(() => {
+  // คำนวณ total ก่อน discount
+  const subtotal = useMemo(() => {
     if (!order) return 0;
-    const items = Array.isArray(order.orderItems) ? order.orderItems : [];
-    return items.reduce(
-      (sum, item) => sum + Number(item?.price ?? 0) * Number(item?.qty ?? 0),
+    return order.orderItems.reduce(
+      (sum, item) => sum + Number(item.price) * Number(item.qty),
       0
     );
+  }, [order]);
+
+  // คำนวณ final amount หลัง discount
+  const finalAmount = useMemo(() => {
+    if (!order) return 0;
+    return Number(order.finalAmount ?? subtotal);
+  }, [order, subtotal]);
+
+  const discountAmount = useMemo(() => {
+    if (!order) return 0;
+    return Number(order.discountAmount ?? 0);
   }, [order]);
 
   function formatThaiFromLocalInput(inputStr) {
@@ -72,11 +83,9 @@ export default function Status() {
       });
 
       if (!res.ok) {
-        if (res.status === 403) {
-          throw new Error('คุณไม่มีสิทธิ์ดูออเดอร์นี้');
-        } else if (res.status === 404) {
-          throw new Error('ไม่พบออเดอร์นี้');
-        } else if (res.status === 401) {
+        if (res.status === 403) throw new Error('คุณไม่มีสิทธิ์ดูออเดอร์นี้');
+        if (res.status === 404) throw new Error('ไม่พบออเดอร์นี้');
+        if (res.status === 401) {
           navigate(`/login?redirect=/status?orderId=${trimmed}`);
           return;
         }
@@ -85,7 +94,7 @@ export default function Status() {
 
       const rawData = await res.json();
       const adapted = adaptOrder(rawData);
-      
+
       if (!adapted) throw new Error('Invalid order data');
 
       setOrder(adapted);
@@ -131,6 +140,9 @@ export default function Status() {
       status: api.status ?? 'PENDING',
       createdAt: api.createdAt ?? null,
       deliveryFee: Number(api.deliveryFee ?? 0),
+      couponCode: api.couponCode ?? null,
+      discountAmount: Number(api.discountAmount ?? 0),
+      finalAmount: Number(api.finalAmount ?? null),
       orderItems: items,
       items,
       events: defaultEvents,
@@ -140,33 +152,20 @@ export default function Status() {
   const handleSearch = () => {
     const input = searchInput.trim();
     if (!input) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'กรุณากรอกหมายเลขออเดอร์',
-        timer: 2000,
-        showConfirmButton: false,
-      });
+      Swal.fire({ icon: 'warning', title: 'กรุณากรอกหมายเลขออเดอร์', timer: 2000, showConfirmButton: false });
       return;
     }
     if (!/^\d+$/.test(input)) {
-      Swal.fire({
-        icon: 'error',
-        title: 'ไม่ถูกต้อง',
-        text: 'กรุณากรอกตัวเลขเท่านั้น',
-        timer: 2000,
-        showConfirmButton: false,
-      });
+      Swal.fire({ icon: 'error', title: 'ไม่ถูกต้อง', text: 'กรุณากรอกตัวเลขเท่านั้น', timer: 2000, showConfirmButton: false });
       return;
     }
     findOrder(input);
   };
 
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter') handleSearch();
-  };
+  const handleKeyDown = (e) => { if (e.key === 'Enter') handleSearch(); };
 
   useEffect(() => {
-    if (authLoading) return; 
+    if (authLoading) return;
 
     const orderIdFromUrl = q.get('orderId');
     if (orderIdFromUrl) {
@@ -175,17 +174,9 @@ export default function Status() {
         setSearchInput(trimmed);
         findOrder(trimmed);
       } else {
-        Swal.fire({
-          icon: 'error',
-          title: 'ลิงก์ไม่ถูกต้อง',
-          text: 'หมายเลขออเดอร์ในลิงก์ไม่ถูกต้อง',
-          timer: 3000,
-          showConfirmButton: false,
-        });
+        Swal.fire({ icon: 'error', title: 'ลิงก์ไม่ถูกต้อง', text: 'หมายเลขออเดอร์ในลิงก์ไม่ถูกต้อง', timer: 3000, showConfirmButton: false });
       }
-    } else {
-      setIsAnimating(true);
-    }
+    } else setIsAnimating(true);
   }, [authLoading]);
 
   if (authLoading) {
@@ -204,50 +195,20 @@ export default function Status() {
   return (
     <div className="status-page">
       <div className="status-header-bar">ORDER STATUS</div>
-
       <div className="status-main-container">
         <div className="search-container">
-          <input
-            type="text"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Check your Order with your Order ID here"
-            className="search-input"
-          />
-          <button
-            onClick={handleSearch}
-            className="search-button"
-            title="Search order by ID"
-          >
-            <img
-              src="https://api.iconify.design/ic/outline-search.svg"
-              alt="Search"
-              className="search-icon"
-            />
+          <input type="text" value={searchInput} onChange={(e) => setSearchInput(e.target.value)} onKeyDown={handleKeyDown} placeholder="Check your Order with your Order ID here" className="search-input" />
+          <button onClick={handleSearch} className="search-button" title="Search order by ID">
+            <img src="https://api.iconify.design/ic/outline-search.svg" alt="Search" className="search-icon" />
           </button>
         </div>
 
         {!order && (
           <div className={`message-container ${isAnimating ? 'animating' : ''}`}>
-            <img
-              src="https://api.iconify.design/ic/outline-receipt-long.svg?color=%239ca3af"
-              alt="Search for order"
-              className="message-icon"
-            />
-            <p className="message-text">
-              Please enter your Order ID to see the status.
-            </p>
-            {isAuthed && (
-              <p className="message-sub-text">
-                หรือดูประวัติออเดอร์ทั้งหมดได้ที่ <a href="/history" style={{color:'#3b82f6'}}>History</a>
-              </p>
-            )}
-            {!isAuthed && (
-              <p className="message-sub-text">
-                กรุณา <a href="/login" style={{color:'#3b82f6'}}>เข้าสู่ระบบ</a> เพื่อดูสถานะออเดอร์
-              </p>
-            )}
+            <img src="https://api.iconify.design/ic/outline-receipt-long.svg?color=%239ca3af" alt="Search for order" className="message-icon" />
+            <p className="message-text">Please enter your Order ID to see the status.</p>
+            {isAuthed && <p className="message-sub-text">หรือดูประวัติออเดอร์ทั้งหมดได้ที่ <a href="/history" style={{ color: '#3b82f6' }}>History</a></p>}
+            {!isAuthed && <p className="message-sub-text">กรุณา <a href="/login" style={{ color: '#3b82f6' }}>เข้าสู่ระบบ</a> เพื่อดูสถานะออเดอร์</p>}
           </div>
         )}
 
@@ -280,23 +241,27 @@ export default function Status() {
               <div>
                 {order.orderItems.map((it, i) => (
                   <div key={i} className="item-row">
-                    <img
-                      src={it.img || '/khao-man-kai.jpg'}
-                      alt={it.name}
-                      className="item-thumb"
-                    />
+                    <img src={it.img || '/khao-man-kai.jpg'} alt={it.name} className="item-thumb" />
                     <div>
                       <div className="item-name">{it.name}</div>
-                      <div className="item-price">
-                        {it.price} THB × {it.qty}
-                      </div>
+                      <div className="item-price">{it.price} THB × {it.qty}</div>
                     </div>
                   </div>
                 ))}
               </div>
               <div className="summary-meta" style={{ borderTop: "1px solid #eee", paddingTop: 12 }}>
-                <div className="summary-total-label">Total Price</div>
-                <div className="summary-total-price">{total} THB</div>
+                <div className="summary-total-label">Subtotal</div>
+                <div className="summary-total-price">{subtotal} THB</div>
+
+                {discountAmount > 0 && (
+                  <>
+                    <div className="summary-total-label">Discount ({order.couponCode})</div>
+                    <div className="summary-total-price">- {discountAmount} THB</div>
+                  </>
+                )}
+
+                <div className="summary-total-label" style={{ fontWeight: 'bold' }}>Final Amount</div>
+                <div className="summary-total-price" style={{ fontWeight: 'bold' }}>{finalAmount} THB</div>
               </div>
             </aside>
           </div>
