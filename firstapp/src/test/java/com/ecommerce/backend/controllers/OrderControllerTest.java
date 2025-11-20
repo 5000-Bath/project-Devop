@@ -1,11 +1,14 @@
 package com.ecommerce.backend.controllers;
 
-import com.ecommerce.backend.models.*;
+import com.ecommerce.backend.models.Order;
+import com.ecommerce.backend.models.OrderItem;
+import com.ecommerce.backend.models.User;
 import com.ecommerce.backend.repositories.OrderItemRepository;
 import com.ecommerce.backend.repositories.OrderRepository;
 import com.ecommerce.backend.repositories.ProductRepository;
 import com.ecommerce.backend.repositories.UserRepository;
 import com.ecommerce.backend.security.JwtUtil;
+import com.ecommerce.backend.services.OrderService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,11 +20,13 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import jakarta.servlet.http.Cookie;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -35,13 +40,16 @@ public class OrderControllerTest {
     private MockMvc mockMvc;
 
     @MockBean
+    private OrderService orderService;
+
+    @MockBean
     private OrderRepository orderRepository;
 
     @MockBean
-    private ProductRepository productRepository;
+    private OrderItemRepository orderItemRepository;
 
     @MockBean
-    private OrderItemRepository orderItemRepository;
+    private ProductRepository productRepository;
 
     @MockBean
     private UserRepository userRepository;
@@ -54,7 +62,6 @@ public class OrderControllerTest {
 
     private User user;
     private Order order;
-    private Product product;
 
     @BeforeEach
     void setUp() {
@@ -65,11 +72,6 @@ public class OrderControllerTest {
         order = new Order();
         order.setId(1L);
         order.setUserId(user.getId());
-
-        product = new Product();
-        product.setId(1L);
-        product.setName("Test Product");
-        product.setStock(10);
     }
 
     @Test
@@ -89,12 +91,13 @@ public class OrderControllerTest {
 
     @Test
     void addOrderItems_shouldReturnOk() throws Exception {
-        OrderItemRequest orderItemRequest = new OrderItemRequest();
+        com.ecommerce.backend.controllers.OrderItemRequest orderItemRequest = new com.ecommerce.backend.controllers.OrderItemRequest();
         orderItemRequest.setProductId(1L);
         orderItemRequest.setQuantity(2);
-
-        when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
-        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
+        
+        when(orderRepository.findById(anyLong())).thenReturn(Optional.of(order));
+        when(productRepository.findById(anyLong())).thenReturn(Optional.of(new com.ecommerce.backend.models.Product()));
+        when(orderItemRepository.saveAll(any(List.class))).thenReturn(Collections.singletonList(new OrderItem()));
 
         mockMvc.perform(post("/api/orders/1/items")
                 .with(csrf())

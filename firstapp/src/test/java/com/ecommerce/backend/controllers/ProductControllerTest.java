@@ -1,7 +1,9 @@
 package com.ecommerce.backend.controllers;
 
 import com.ecommerce.backend.models.Product;
+import com.ecommerce.backend.repositories.CategoryRepository;
 import com.ecommerce.backend.repositories.ProductRepository;
+import com.ecommerce.backend.services.ProductService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,9 +15,11 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 
 import static org.hamcrest.Matchers.is;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -30,7 +34,13 @@ public class ProductControllerTest {
     private MockMvc mockMvc;
 
     @MockBean
+    private ProductService productService;
+
+    @MockBean
     private ProductRepository productRepository;
+
+    @MockBean
+    private CategoryRepository categoryRepository;
 
     private Product product1;
     private Product product2;
@@ -52,7 +62,7 @@ public class ProductControllerTest {
 
     @Test
     void getAllProducts_shouldReturnListOfProducts() throws Exception {
-        when(productRepository.findAll()).thenReturn(List.of(product1, product2));
+        when(productService.getAllProducts()).thenReturn(List.of(product1, product2));
 
         mockMvc.perform(get("/api/products"))
                 .andExpect(status().isOk())
@@ -63,7 +73,7 @@ public class ProductControllerTest {
 
     @Test
     void getProductById_whenProductExists_shouldReturnProduct() throws Exception {
-        when(productRepository.findById(1L)).thenReturn(Optional.of(product1));
+        when(productService.getProductById(1L)).thenReturn(product1);
 
         mockMvc.perform(get("/api/products/1"))
                 .andExpect(status().isOk())
@@ -72,7 +82,7 @@ public class ProductControllerTest {
 
     @Test
     void cutQuantityJson_withSufficientStock_shouldReturnOk() throws Exception {
-        when(productRepository.findById(1L)).thenReturn(Optional.of(product1));
+        when(productService.cutQuantity(anyLong(), anyInt())).thenReturn(Map.of("remainingQty", 90));
 
         mockMvc.perform(post("/api/products/1/quantity/cut")
                 .with(csrf())
@@ -84,7 +94,7 @@ public class ProductControllerTest {
 
     @Test
     void cutQuantityJson_withInsufficientStock_shouldReturnBadRequest() throws Exception {
-        when(productRepository.findById(1L)).thenReturn(Optional.of(product1));
+        when(productService.cutQuantity(anyLong(), anyInt())).thenThrow(new IllegalArgumentException("Insufficient stock"));
 
         mockMvc.perform(post("/api/products/1/quantity/cut")
                 .with(csrf())

@@ -1,7 +1,10 @@
 package com.ecommerce.backend.controllers;
 
 import com.ecommerce.backend.models.Admin;
+
+import com.ecommerce.backend.models.Admin;
 import com.ecommerce.backend.repositories.AdminRepository;
+import com.ecommerce.backend.services.AdminService;
 import com.ecommerce.backend.security.JwtUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,7 +17,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
-import java.util.Optional;
 
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
@@ -28,6 +30,9 @@ public class AdminControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @MockBean
+    private AdminService adminService;
 
     @MockBean
     private AdminRepository adminRepository;
@@ -56,7 +61,7 @@ public class AdminControllerTest {
 
     @Test
     void getAllAdmins_shouldReturnListOfAdmins() throws Exception {
-        when(adminRepository.findAll()).thenReturn(List.of(admin1, admin2));
+        when(adminService.getAllAdmins()).thenReturn(List.of(admin1, admin2));
 
         mockMvc.perform(get("/api/admins"))
                 .andExpect(status().isOk())
@@ -67,7 +72,7 @@ public class AdminControllerTest {
 
     @Test
     void getAdminById_whenAdminExists_shouldReturnAdmin() throws Exception {
-        when(adminRepository.findById(1L)).thenReturn(Optional.of(admin1));
+        when(adminService.getAdminById(1L)).thenReturn(admin1);
 
         mockMvc.perform(get("/api/admins/1"))
                 .andExpect(status().isOk())
@@ -76,7 +81,7 @@ public class AdminControllerTest {
 
     @Test
     void createAdmin_shouldReturnNewAdmin() throws Exception {
-        when(adminRepository.save(any(Admin.class))).thenReturn(admin1);
+        when(adminService.createAdmin(any(Admin.class))).thenReturn(admin1);
 
         mockMvc.perform(post("/api/admins")
                 .with(csrf())

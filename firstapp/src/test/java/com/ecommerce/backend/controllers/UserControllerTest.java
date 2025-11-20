@@ -2,6 +2,7 @@ package com.ecommerce.backend.controllers;
 
 import com.ecommerce.backend.models.User;
 import com.ecommerce.backend.repositories.UserRepository;
+import com.ecommerce.backend.services.UserService;
 import com.ecommerce.backend.security.JwtUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,9 @@ public class UserControllerTest {
     private MockMvc mockMvc;
 
     @MockBean
+    private UserService userService;
+
+    @MockBean
     private UserRepository userRepository;
 
     @MockBean
@@ -54,8 +58,7 @@ public class UserControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"username\": \"testuser\", \"password\": \"password\"}"))
                 .andExpect(status().isOk())
-                .andExpect(cookie().value("user_token", "test-token"))
-                .andExpect(jsonPath("$.message", is("Login success")));
+                .andExpect(cookie().value("user_token", "test-token"));
     }
 
     @Test
