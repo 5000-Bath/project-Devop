@@ -8,7 +8,7 @@ export default function Login() {
   const { login } = useContext(AuthContext);
   const nav = useNavigate();
   const loc = useLocation();
-  const redirect = new URLSearchParams(loc.search).get("redirect") || "/";
+  const redirect = new URLSearchParams(loc.search).get("redirect") || "/Home";
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");

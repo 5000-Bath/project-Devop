@@ -211,23 +211,48 @@ export default function LoginPage() {
                                 justifyContent: "center",
                                 alignItems: "center",
                                 width: isMobile ? "80%" : "60%",
-                                margin: "12px auto 10px",
-                                background: "#90caf9",
+                                margin: "16px auto",
+                                background: (!user.trim() || !password.trim()) ? "#b4d3ef" : "#64b5f6",
                                 color: "#fff",
-                                fontWeight: 600,
+                                fontWeight: 700,
                                 fontSize: isMobile ? 16 : 20,
-                                padding: isMobile ? 10 : 12,
+                                padding: isMobile ? "12px 0" : "14px 0",
                                 border: "none",
-                                borderRadius: 10,
-                                boxShadow: "0 2px 8px #e3f2fd",
+                                borderRadius: 12,
+                                boxShadow: (!user.trim() || !password.trim())
+                                    ? "0 2px 6px rgba(0, 0, 0, 0.08)"
+                                    : "0 4px 14px rgba(100, 181, 246, .45)",
                                 cursor: (!user.trim() || !password.trim()) ? "not-allowed" : "pointer",
-                                opacity: (!user.trim() || !password.trim()) ? 0.6 : 1,
-                                textAlign: "center",
-                                transition: "opacity .15s ease",
+                                opacity: (!user.trim() || !password.trim()) ? 0.7 : 1,
+                                transition: "all .18s ease-in-out",
+                                transform: (!user.trim() || !password.trim()) ? "none" : "translateY(0)",
+                            }}
+                            onMouseEnter={(e) => {
+                                if (!(!user.trim() || !password.trim())) {
+                                    e.currentTarget.style.background = "#42a5f5";
+                                    e.currentTarget.style.transform = "translateY(-2px)";
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (!(!user.trim() || !password.trim())) {
+                                    e.currentTarget.style.background = "#64b5f6";
+                                    e.currentTarget.style.transform = "translateY(0)";
+                                }
+                            }}
+                            onMouseDown={(e) => {
+                                if (!(!user.trim() || !password.trim())) {
+                                    e.currentTarget.style.transform = "translateY(1px)";
+                                }
+                            }}
+                            onMouseUp={(e) => {
+                                if (!(!user.trim() || !password.trim())) {
+                                    e.currentTarget.style.transform = "translateY(-2px)";
+                                }
                             }}
                         >
                             เข้าสู่ระบบ
                         </button>
+
 
                         <div
                             onClick={() => setShowModal(true)}
