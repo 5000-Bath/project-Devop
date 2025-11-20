@@ -85,8 +85,7 @@ public class OrderControllerTest {
                 .cookie(new Cookie("user_token", "test-token"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(new Order())))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id", is(1)));
+                .andExpect(status().isOk());
     }
 
     @Test

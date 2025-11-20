@@ -12,7 +12,7 @@ describe('FINAL V4: Based on Final Code Analysis', () => {
   const customerFullName = `${newUser.name} ${newUser.lastname}`;
 
   it('should run the entire lifecycle with correct login verification', () => {
-    
+
     // --- PART 1: USER SIGNUP AND FORCED LOGIN ---
     cy.log('--- PART 1: User Signup and Forced Login ---');
     cy.visit('http://localhost:3000/');
@@ -33,7 +33,7 @@ describe('FINAL V4: Based on Final Code Analysis', () => {
     cy.get('.auth-btn').click();
 
     cy.url().should('include', '/login');
-    
+
     // --- CORRECT LOGIN VERIFICATION (based on AuthContext.jsx & Navbar.jsx) ---
     cy.log('--- Verifying Login with API Intercept and UI interaction ---');
     // 1. Intercept the REAL login API call
@@ -45,10 +45,12 @@ describe('FINAL V4: Based on Final Code Analysis', () => {
 
     // 2. Wait for the API to respond successfully
     cy.wait('@loginRequest').its('response.statusCode').should('be.oneOf', [200, 201]);
-    
+
     // --- PART 2: USER PLACES ORDER (POST-LOGIN) ---
     cy.log('--- PART 2: User starts shopping AGAIN after login ---');
-    cy.contains('🍜 Browse Menu').click();
+    // Assert redirection to the menu page
+    cy.url().should('include', '/Home');
+    cy.get('.menu-grid', { timeout: 15000 }).should('be.visible');
     cy.get('.add-to-cart-button').first().click();
     cy.contains('Orders').click();
 
