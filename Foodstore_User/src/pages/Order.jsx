@@ -74,7 +74,8 @@ export default function Order() {
   // คำนวณราคาหลังหักส่วนลด
   const finalPrice = useMemo(() => {
     if (appliedCoupon && appliedCoupon.newAmount !== undefined) {
-      return appliedCoupon.newAmount;
+      // ป้องกันราคาติดลบ ถ้าส่วนลดเยอะกว่าราคาสินค้า ให้เป็น 0
+      return Math.max(0, appliedCoupon.newAmount);
     }
     return totalPrice;
   }, [totalPrice, appliedCoupon]);
