@@ -1,8 +1,8 @@
 package com.ecommerce.backend.controllers;
 
 import com.ecommerce.backend.models.Product;
-import com.ecommerce.backend.models.Category; // Corrected import
-import com.ecommerce.backend.repositories.CategoryRepository; // Corrected import
+import com.ecommerce.backend.models.Category; 
+import com.ecommerce.backend.repositories.CategoryRepository; 
 import com.ecommerce.backend.repositories.ProductRepository;
 import com.ecommerce.backend.services.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,8 +49,7 @@ public class ProductController {
             @RequestParam(value = "stock", required = false, defaultValue = "0") int stock,
             @RequestParam(value = "isActive", required = false, defaultValue = "true") boolean isActive,
             @RequestParam(value = "image", required = false) MultipartFile image,
-            @RequestParam(value = "categoryId", required = false) Long categoryId
-    ) {
+            @RequestParam(value = "categoryId", required = false) Long categoryId) {
         Product product = new Product();
         product.setName(name);
         product.setDescription(description);
@@ -64,7 +63,7 @@ public class ProductController {
 
         if (image != null && !image.isEmpty()) {
             try {
-                String folderPath = System.getProperty("java.io.tmpdir") + "/uploads/images/";
+                String folderPath = "/app/uploads/images/";
                 Path path = Paths.get(folderPath);
                 if (!Files.exists(path)) {
                     Files.createDirectories(path);
@@ -86,8 +85,7 @@ public class ProductController {
     @PutMapping("/{id}")
     public ResponseEntity<?> updateProduct(
             @PathVariable Long id,
-            @RequestBody Map<String, Object> body
-    ) {
+            @RequestBody Map<String, Object> body) {
         Product updated = productService.updateProduct(id, body);
         return ResponseEntity.ok(updated);
     }
@@ -95,8 +93,7 @@ public class ProductController {
     @PostMapping("/{id}/quantity/cut")
     public ResponseEntity<?> cutQuantityJson(
             @PathVariable Long id,
-            @RequestBody Map<String, Integer> body
-    ) {
+            @RequestBody Map<String, Integer> body) {
         int qty = body.getOrDefault("qty", 0);
         try {
             Map<String, Object> result = productService.cutQuantity(id, qty);
