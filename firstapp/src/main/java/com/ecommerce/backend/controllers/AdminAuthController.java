@@ -55,6 +55,7 @@ public class AdminAuthController {
         ResponseCookie cookie = ResponseCookie.from("admin_token", token)
                 .httpOnly(true)
                 .path("/")  
+                // ไม่ต้องระบุ domain เพื่อให้ browser จัดการเอง
                 .maxAge(7 * 24 * 60 * 60) 
                 .build();
 

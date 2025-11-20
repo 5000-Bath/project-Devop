@@ -1,9 +1,11 @@
 package com.ecommerce.backend.services;
 
 import com.ecommerce.backend.models.Coupon;
+import com.ecommerce.backend.models.Order;
 import com.ecommerce.backend.models.CouponUsageLog;
 import com.ecommerce.backend.repositories.CouponRepository;
 import com.ecommerce.backend.repositories.CouponUsageLogRepository;
+import com.ecommerce.backend.repositories.OrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +22,9 @@ public class CouponServiceImpl implements CouponService {
 
     @Autowired
     private CouponUsageLogRepository couponUsageLogRepository;
+
+    @Autowired
+    private OrderRepository orderRepository;
 
     @Override
     public List<Coupon> getAllCoupons() {
@@ -68,36 +73,52 @@ public class CouponServiceImpl implements CouponService {
     }
 
     @Override
-    public Map<String, Object> useCoupon(String code, BigDecimal originalAmount) {
-        Coupon coupon = couponRepository.findByCode(code)
-                .orElseThrow(() -> new RuntimeException("Coupon not found"));
+    public Map<String, Object> validateCoupon(String code, BigDecimal originalAmount) {
+         Coupon coupon = couponRepository.findByCode(code)
+                .orElseThrow(() -> new RuntimeException("ไม่พบคูปองนี้ในระบบ"));
 
         if (coupon.getExpirationDate().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("Coupon has expired");
+            throw new RuntimeException("คูปองนี้หมดอายุแล้ว");
         }
 
         if (coupon.getRemainingCount() <= 0) {
-            throw new RuntimeException("Coupon has no remaining uses");
+            throw new RuntimeException("คูปองนี้ใช้ครบจำนวนแล้ว");
         }
 
         BigDecimal discountAmount = coupon.getDiscountAmount();
         BigDecimal finalAmount = originalAmount.subtract(discountAmount);
 
+        return Map.of(
+                "finalAmount", finalAmount,
+                "discountApplied", discountAmount
+        );
+    }
+
+    @Override
+    public void applyCouponToOrder(Order order) {
+        if (order.getCouponCode() == null || order.getCouponCode().isEmpty()) {
+            return; // ไม่มีคูปองให้ใช้
+        }
+
+        Coupon coupon = couponRepository.findByCode(order.getCouponCode())
+                .orElseThrow(() -> new RuntimeException("Coupon not found during order creation"));
+
+        // ลดจำนวนคูปอง
         coupon.setRemainingCount(coupon.getRemainingCount() - 1);
         couponRepository.save(coupon);
 
+        // บันทึก Log
         CouponUsageLog log = new CouponUsageLog();
         log.setCoupon(coupon);
-        log.setOriginalAmount(originalAmount);
-        log.setDiscountApplied(discountAmount);
-        log.setFinalAmount(finalAmount);
+        log.setOrder(order); // ผูกกับ Order ที่สร้างขึ้น
+        log.setUserId(order.getUserId());
+        log.setOriginalAmount(order.getFinalAmount().add(order.getDiscountAmount())); // คำนวณราคาก่อนลด
+        log.setDiscountApplied(order.getDiscountAmount());
+        log.setFinalAmount(order.getFinalAmount());
         log.setRemainingAfterUse(coupon.getRemainingCount());
         couponUsageLogRepository.save(log);
-
-        return Map.of(
-                "finalAmount", finalAmount,
-                "discountApplied", discountAmount,
-                "logId", log.getId()
-        );
     }
+
+
+
 }

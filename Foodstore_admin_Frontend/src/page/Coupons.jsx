@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { PlusCircle, Trash2, Edit, X, Save } from 'lucide-react';
 
-const API_BASE = "http://localhost:8080";
-
 const formatDate = (dateString) => {
-  if (!dateString) return 'N/A';
+  if (!dateString) return '–';
   try {
     return new Date(dateString).toLocaleDateString('th-TH', {
       year: 'numeric',
-      month: 'long',
+      month: 'short',
       day: 'numeric',
     });
   } catch (e) {
@@ -16,10 +14,10 @@ const formatDate = (dateString) => {
   }
 };
 
-// สำหรับ SweetAlert2 - ใช้ window.Swal แทน import
+// ใช้ SweetAlert2 ผ่าน window.Swal
 const showAlert = (title, text, icon) => {
   if (window.Swal) {
-    window.Swal.fire(title, text, icon);
+    window.Swal.fire({ title, text, icon, timer: 2000, showConfirmButton: false });
   } else {
     alert(`${title}: ${text}`);
   }
@@ -32,10 +30,11 @@ const showConfirm = async (title, text) => {
       text,
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
+      confirmButtonColor: '#e53e3e',
+      cancelButtonColor: '#3182ce',
       confirmButtonText: 'ใช่, ลบเลย!',
-      cancelButtonText: 'ยกเลิก'
+      cancelButtonText: 'ยกเลิก',
+      reverseButtons: true,
     });
   } else {
     return { isConfirmed: window.confirm(`${title}\n${text}`) };
@@ -66,7 +65,7 @@ export default function Coupons() {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`${API_BASE}/api/coupons`, { credentials: 'include' });
+      const res = await fetch(`/api/coupons`, { credentials: 'include' });
       if (!res.ok) throw new Error('ไม่สามารถโหลดข้อมูลคูปองได้');
       const data = await res.json();
       setCoupons(Array.isArray(data) ? data : []);
@@ -80,9 +79,9 @@ export default function Coupons() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -115,10 +114,7 @@ export default function Coupons() {
       return;
     }
 
-    const url = editingCoupon
-      ? `${API_BASE}/api/coupons/${editingCoupon.id}`
-      : `${API_BASE}/api/coupons`;
-    
+    const url = editingCoupon ? `/api/coupons/${editingCoupon.id}` : `/api/coupons`;
     const method = editingCoupon ? 'PUT' : 'POST';
 
     const body = {
@@ -131,7 +127,7 @@ export default function Coupons() {
     try {
       const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify(body),
       });
@@ -158,7 +154,7 @@ export default function Coupons() {
 
     if (result.isConfirmed) {
       try {
-        const res = await fetch(`${API_BASE}/api/coupons/${couponId}`, {
+        const res = await fetch(`/api/coupons/${couponId}`, {
           method: 'DELETE',
           credentials: 'include',
         });
@@ -172,52 +168,61 @@ export default function Coupons() {
   };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.header}>
-        <h1 style={styles.title}>จัดการคูปอง</h1>
-        <button style={styles.btnPrimary} onClick={() => openModal()}>
+    <div className="coupons-container">
+      <div className="coupons-header">
+        <h1 className="coupons-title">จัดการคูปอง</h1>
+        <button className="btn btn-primary" onClick={() => openModal()}>
           <PlusCircle size={18} />
-          <span style={{ marginLeft: '8px' }}>เพิ่มคูปองใหม่</span>
+          <span>เพิ่มคูปองใหม่</span>
         </button>
       </div>
 
-      {loading && <p style={styles.loadingText}>กำลังโหลด...</p>}
-      {error && <p style={styles.errorText}>{error}</p>}
+      {loading && <p className="loading">กำลังโหลด...</p>}
+      {error && <p className="error">{error}</p>}
 
       {!loading && !error && (
-        <div style={styles.tableContainer}>
-          <table style={styles.table}>
+        <div className="table-container">
+          <table className="coupons-table">
             <thead>
               <tr>
-                <th style={styles.th}>โค้ด</th>
-                <th style={styles.th}>มูลค่าส่วนลด</th>
-                <th style={styles.th}>จำนวนคงเหลือ</th>
-                <th style={styles.th}>วันหมดอายุ</th>
-                <th style={styles.th}>จัดการ</th>
+                <th>โค้ด</th>
+                <th>มูลค่าส่วนลด</th>
+                <th>จำนวนคงเหลือ</th>
+                <th>วันหมดอายุ</th>
+                <th>จัดการ</th>
               </tr>
             </thead>
             <tbody>
-              {coupons.map(coupon => (
-                <tr key={coupon.id} style={styles.tr}>
-                  <td style={styles.td}><strong>{coupon.code}</strong></td>
-                  <td style={styles.td}>{coupon.discountAmount} บาท</td>
-                  <td style={styles.td}>{coupon.remainingCount}</td>
-                  <td style={styles.td}>{formatDate(coupon.expirationDate)}</td>
-                  <td style={styles.td}>
-                    <div style={styles.actionButtons}>
-                      <button style={styles.btnIcon} onClick={() => openModal(coupon)} title="แก้ไข">
-                        <Edit size={16} />
-                      </button>
-                      <button style={{...styles.btnIcon, ...styles.btnDanger}} onClick={() => handleDelete(coupon.id)} title="ลบ">
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {coupons.length === 0 && (
+              {coupons.length > 0 ? (
+                coupons.map((coupon) => (
+                  <tr key={coupon.id}>
+                    <td><strong>{coupon.code}</strong></td>
+                    <td>{coupon.discountAmount} บาท</td>
+                    <td>{coupon.remainingCount || '–'}</td>
+                    <td>{formatDate(coupon.expirationDate)}</td>
+                    <td>
+                      <div className="action-buttons">
+                        <button
+                          className="btn-icon btn-edit"
+                          onClick={() => openModal(coupon)}
+                          title="แก้ไข"
+                        >
+                          <Edit size={16} />
+                        </button>
+                        <button
+                          className="btn-icon btn-delete"
+                          onClick={() => handleDelete(coupon.id)}
+                          title="ลบ"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
                 <tr>
-                  <td colSpan="5" style={styles.noData}>ยังไม่มีคูปองในระบบ</td>
+                  <td colSpan="5" className="no-data">ยังไม่มีคูปองในระบบ</td>
                 </tr>
               )}
             </tbody>
@@ -226,63 +231,67 @@ export default function Coupons() {
       )}
 
       {isModalOpen && (
-        <div style={styles.modalOverlay} onClick={closeModal}>
-          <div style={styles.modalContent} onClick={e => e.stopPropagation()}>
-            <div style={styles.modalHeader}>
+        <div className="modal-overlay" onClick={closeModal}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
               <h2>{editingCoupon ? 'แก้ไขคูปอง' : 'เพิ่มคูปองใหม่'}</h2>
-              <button onClick={closeModal} style={styles.btnClose}><X size={24} /></button>
+              <button className="btn-close" onClick={closeModal}>
+                <X size={24} />
+              </button>
             </div>
-            <form onSubmit={handleSubmit} style={styles.form}>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>โค้ดคูปอง</label>
-                <input 
-                  type="text" 
-                  name="code" 
-                  value={formData.code} 
-                  onChange={handleInputChange} 
-                  required 
-                  style={styles.input}
-                />
-              </div>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>มูลค่าส่วนลด (บาท)</label>
-                <input 
-                  type="number" 
-                  name="discountValue" 
-                  value={formData.discountValue} 
-                  onChange={handleInputChange} 
-                  required 
-                  min="0" 
-                  step="0.01"
-                  style={styles.input}
-                />
-              </div>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>จำนวนคงเหลือ</label>
-                <input 
-                  type="number" 
-                  name="maxUses" 
-                  value={formData.maxUses} 
-                  onChange={handleInputChange} 
-                  min="0"
-                  style={styles.input}
-                />
-              </div>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>วันหมดอายุ</label>
-                <input 
-                  type="date" 
-                  name="expiryDate" 
-                  value={formData.expiryDate} 
+            <form onSubmit={handleSubmit} className="modal-form">
+              <div className="form-group">
+                <label>โค้ดคูปอง</label>
+                <input
+                  type="text"
+                  name="code"
+                  value={formData.code}
                   onChange={handleInputChange}
-                  style={styles.input}
+                  required
+                  className="form-input"
                 />
               </div>
-              <div style={styles.modalFooter}>
-                <button type="button" style={styles.btnGhost} onClick={closeModal}>ยกเลิก</button>
-                <button type="submit" style={styles.btnPrimary}>
+              <div className="form-group">
+                <label>มูลค่าส่วนลด (บาท)</label>
+                <input
+                  type="number"
+                  name="discountValue"
+                  value={formData.discountValue}
+                  onChange={handleInputChange}
+                  required
+                  min="0"
+                  step="0.01"
+                  className="form-input"
+                />
+              </div>
+              <div className="form-group">
+                <label>จำนวนคงเหลือ</label>
+                <input
+                  type="number"
+                  name="maxUses"
+                  value={formData.maxUses}
+                  onChange={handleInputChange}
+                  min="0"
+                  className="form-input"
+                />
+              </div>
+              <div className="form-group">
+                <label>วันหมดอายุ</label>
+                <input
+                  type="date"
+                  name="expiryDate"
+                  value={formData.expiryDate}
+                  onChange={handleInputChange}
+                  className="form-input"
+                />
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-ghost" onClick={closeModal}>
+                  ยกเลิก
+                </button>
+                <button type="submit" className="btn btn-primary">
                   <Save size={18} />
-                  <span style={{ marginLeft: '8px' }}>{editingCoupon ? 'บันทึกการเปลี่ยนแปลง' : 'เพิ่มคูปอง'}</span>
+                  <span>{editingCoupon ? 'บันทึกการเปลี่ยนแปลง' : 'เพิ่มคูปอง'}</span>
                 </button>
               </div>
             </form>
@@ -293,157 +302,251 @@ export default function Coupons() {
   );
 }
 
-const styles = {
-  container: {
-    padding: '20px',
-    maxWidth: '1200px',
-    margin: '0 auto',
-    fontFamily: 'Arial, sans-serif',
-  },
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '20px',
-  },
-  title: {
-    fontSize: '28px',
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  btnPrimary: {
-    display: 'flex',
-    alignItems: 'center',
-    padding: '10px 20px',
-    backgroundColor: '#4CAF50',
-    color: 'white',
-    border: 'none',
-    borderRadius: '5px',
-    cursor: 'pointer',
-    fontSize: '16px',
-  },
-  loadingText: {
-    textAlign: 'center',
-    fontSize: '18px',
-    color: '#666',
-  },
-  errorText: {
-    textAlign: 'center',
-    fontSize: '18px',
-    color: '#f44336',
-  },
-  tableContainer: {
-    overflowX: 'auto',
-    backgroundColor: 'white',
-    borderRadius: '8px',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-  },
-  table: {
-    width: '100%',
-    borderCollapse: 'collapse',
-  },
-  th: {
-    backgroundColor: '#f5f5f5',
-    padding: '12px',
-    textAlign: 'left',
-    borderBottom: '2px solid #ddd',
-    fontWeight: 'bold',
-  },
-  tr: {
-    borderBottom: '1px solid #eee',
-  },
-  td: {
-    padding: '12px',
-  },
-  noData: {
-    textAlign: 'center',
-    padding: '20px',
-    color: '#999',
-  },
-  actionButtons: {
-    display: 'flex',
-    gap: '8px',
-  },
-  btnIcon: {
-    padding: '6px',
-    backgroundColor: '#2196F3',
-    color: 'white',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  btnDanger: {
-    backgroundColor: '#f44336',
-  },
-  modalOverlay: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1000,
-  },
-  modalContent: {
-    backgroundColor: 'white',
-    borderRadius: '8px',
-    width: '90%',
-    maxWidth: '500px',
-    maxHeight: '90vh',
-    overflow: 'auto',
-  },
-  modalHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '20px',
-    borderBottom: '1px solid #eee',
-  },
-  btnClose: {
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    color: '#666',
-  },
-  form: {
-    padding: '20px',
-  },
-  formGroup: {
-    marginBottom: '16px',
-  },
-  label: {
-    display: 'block',
-    marginBottom: '8px',
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  input: {
-    width: '100%',
-    padding: '10px',
-    border: '1px solid #ddd',
-    borderRadius: '4px',
-    fontSize: '14px',
-    boxSizing: 'border-box',
-  },
-  modalFooter: {
-    display: 'flex',
-    justifyContent: 'flex-end',
-    gap: '10px',
-    marginTop: '20px',
-  },
-  btnGhost: {
-    padding: '10px 20px',
-    backgroundColor: '#f5f5f5',
-    color: '#333',
-    border: 'none',
-    borderRadius: '5px',
-    cursor: 'pointer',
-    fontSize: '16px',
-  },
-};
+// ใช้ <style> แทน inline styles เพื่อให้จัดการง่าย + ใส่ animation
+const style = document.createElement('style');
+style.textContent = `
+  .coupons-container {
+    padding: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+    font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+    color: #333;
+  }
+
+  .coupons-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+
+  .coupons-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #2d3748;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+  }
+
+  .btn-primary {
+    background-color: #3182ce;
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background-color: #2c5282;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(49, 130, 206, 0.3);
+  }
+
+  .btn-ghost {
+    background-color: #f7fafc;
+    color: #4a5568;
+  }
+
+  .btn-ghost:hover {
+    background-color: #edf2f7;
+  }
+
+  .loading, .error {
+    text-align: center;
+    font-size: 16px;
+    padding: 20px;
+  }
+
+  .error {
+    color: #e53e3e;
+  }
+
+  .table-container {
+    overflow-x: auto;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  }
+
+  .coupons-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .coupons-table th {
+    background-color: #f8fafc;
+    padding: 16px 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #4a5568;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .coupons-table td {
+    padding: 14px 12px;
+    border-bottom: 1px solid #edf2f7;
+  }
+
+  .coupons-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  .no-data {
+    text-align: center;
+    color: #a0aec0;
+    padding: 32px;
+    font-style: italic;
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 8px;
+  }
+
+  .btn-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-edit {
+    background-color: #4299e1;
+    color: white;
+  }
+
+  .btn-edit:hover {
+    background-color: #2b6cb0;
+  }
+
+  .btn-delete {
+    background-color: #e53e3e;
+    color: white;
+  }
+
+  .btn-delete:hover {
+    background-color: #c53030;
+  }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.2s ease;
+  }
+
+  .modal-content {
+    background: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #edf2f7;
+  }
+
+  .modal-header h2 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #2d3748;
+  }
+
+  .btn-close {
+    background: none;
+    border: none;
+    color: #718096;
+    cursor: pointer;
+    padding: 4px;
+  }
+
+  .btn-close:hover {
+    color: #1a202c;
+  }
+
+  .modal-form {
+    padding: 20px;
+  }
+
+  .form-group {
+    margin-bottom: 18px;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+    color: #2d3748;
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 15px;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+  }
+
+  .form-input:focus {
+    outline: none;
+    border-color: #3182ce;
+    box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+  }
+
+  .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 20px;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @media (max-width: 768px) {
+    .coupons-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .btn {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+`;
+
+// เพิ่ม style เข้าไปใน document
+if (!document.getElementById('coupons-styles')) {
+  style.id = 'coupons-styles';
+  document.head.appendChild(style);
+}

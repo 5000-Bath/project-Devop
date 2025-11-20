@@ -5,8 +5,8 @@ import "./History.css";
 
 const STATUSES = ["ALL", "PENDING", "SUCCESS", "CANCELLED"];
 
-const API_BASE = (import.meta.env.VITE_API_URL || "http://localhost:8080").replace(/\/+$/, "");
-const ORDERS_URL = `${API_BASE}/api/orders`;
+
+const ORDERS_URL = `/api/orders`;
 
 function formatThaiFromLocalInput(inputStr) {
   if (!inputStr) return "-";
@@ -254,10 +254,12 @@ export default function History() {
               {filtered.map((o) => {
                 const items = Array.isArray(o.orderItems) ? o.orderItems : [];
                 const totalItems = items.reduce((s, it) => s + Number(it.quantity ?? 0), 0);
-                const totalPrice = items.reduce(
+                const subtotal = items.reduce(
                   (s, it) => s + Number(it.quantity ?? 0) * Number(it?.product?.price ?? 0),
                   0
                 );
+                const finalAmount = o.finalAmount ?? subtotal;
+                const discountAmount = o.discountAmount ?? 0;
                 const opened = openId === o.id;
 
                 return (
@@ -269,7 +271,14 @@ export default function History() {
                         <span className={badgeClass(o.status)}>{o.status || "UNKNOWN"}</span>
                       </td>
                       <td className="ta-right">{totalItems}</td>
-                      <td className="ta-right">฿ {money(totalPrice)}</td>
+                      <td className="ta-right">
+                        {discountAmount > 0 && (
+                          <span className="discount-applied" title={`ส่วนลด ${money(discountAmount)} บาท`}>
+                            -฿{money(discountAmount)}
+                          </span>
+                        )}
+                        <span className="final-price">฿ {money(finalAmount)}</span>
+                      </td>
                       <td className="ta-center">
                         <div className="btn-group">
                           <button
@@ -298,9 +307,9 @@ export default function History() {
                                 <tr>
                                   <th>#</th>
                                   <th>Product</th>
-                                  <th>Price</th>
-                                  <th>Qty</th>
-                                  <th>Subtotal</th>
+                                  <th className="ta-right">Price</th>
+                                  <th className="ta-center">Qty</th>
+                                  <th className="ta-right">Subtotal</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -312,9 +321,9 @@ export default function History() {
                                     <tr key={it.id || idx}>
                                       <td>{idx + 1}</td>
                                       <td className="ta-left">{name}</td>
-                                      <td>฿ {money(price)}</td>
-                                      <td>{qty}</td>
-                                      <td>฿ {money(price * qty)}</td>
+                                      <td className="ta-right">฿ {money(price)}</td>
+                                      <td className="ta-center">{qty}</td>
+                                      <td className="ta-right">฿ {money(price * qty)}</td>
                                     </tr>
                                   );
                                 })}
@@ -323,6 +332,22 @@ export default function History() {
                                     <td colSpan={5} className="ta-left">No items</td>
                                   </tr>
                                 )}
+                                {discountAmount > 0 && (
+                                  <>
+                                    <tr className="summary-row">
+                                      <td colSpan="4" className="ta-right">Subtotal</td>
+                                      <td className="ta-right">฿ {money(subtotal)}</td>
+                                    </tr>
+                                    <tr className="summary-row">
+                                      <td colSpan="4" className="ta-right">Discount ({o.couponCode})</td>
+                                      <td className="ta-right">- ฿ {money(discountAmount)}</td>
+                                    </tr>
+                                  </>
+                                )}
+                                <tr className="summary-row total-row">
+                                  <td colSpan="4" className="ta-right">Total</td>
+                                  <td className="ta-right">฿ {money(finalAmount)}</td>
+                                </tr>
                               </tbody>
                             </table>
                           </div>

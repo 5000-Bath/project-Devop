@@ -93,24 +93,22 @@ public class CouponController {
         couponService.deleteCoupon(id);
     }
 
-    
-    @PostMapping("/use")
-        public ResponseEntity<?> useCoupon(@RequestBody Map<String, Object> body) {
-            String code = (String) body.get("code");
-            BigDecimal originalAmount = new BigDecimal(body.get("originalAmount").toString());
+    @PostMapping("/validate")
+    public ResponseEntity<?> validateCoupon(@RequestBody Map<String, Object> body) {
+        String code = (String) body.get("code");
+        BigDecimal originalAmount = new BigDecimal(body.get("originalAmount").toString());
 
-            try {
-                Map<String, Object> result = couponService.useCoupon(code, originalAmount);
+        try {
+            // เปลี่ยนไปเรียก validateCoupon ซึ่งจะไม่บันทึกข้อมูล
+            Map<String, Object> result = couponService.validateCoupon(code, originalAmount);
 
-                // แก้ไขให้แน่ใจว่ามี key สำหรับ Front-End
-                Map<String, Object> response = new HashMap<>();
-                response.put("discountAmount", result.get("discountAmount")); // จำนวนส่วนลด
-                response.put("newAmount", result.get("newAmount"));           // ราคาหลังหักส่วนลด
+            Map<String, Object> response = new HashMap<>();
+            response.put("discountAmount", result.get("discountApplied"));
+            response.put("newAmount", result.get("finalAmount"));
 
-                return ResponseEntity.ok(response);
-            } catch (RuntimeException e) {
-                return ResponseEntity.badRequest().body(e.getMessage());
-            }
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
-
+    }
 }

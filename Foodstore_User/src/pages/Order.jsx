@@ -6,10 +6,11 @@ import { cutStock, checkStock } from '../api/products';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import Swal from 'sweetalert2';
+import placeholderImage from '../assets/menupic/khao-man-kai.jpg';
 
 // API function สำหรับใช้คูปอง
-const applyCoupon = async (code, originalAmount) => {
-  const response = await fetch('http://localhost:8080/api/coupons/use', {
+const validateCoupon = async (code, originalAmount) => {
+  const response = await fetch('http://localhost:8080/api/coupons/validate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
@@ -120,8 +121,10 @@ export default function Order() {
 
       const id = await createOrderFromCart(cartItems, { 
         userId: user.id,
-        couponCode: appliedCoupon ? appliedCoupon.code : null,
-      });
+        couponCode: appliedCoupon?.code || null,
+        discountAmount: discountAmount,
+        finalAmount: finalPrice,
+      }, finalPrice);
       
       if (id != null) {
         setLastOrderId(id);
@@ -156,7 +159,7 @@ export default function Order() {
     setAppliedCoupon(null);
 
     try {
-      const result = await applyCoupon(couponCode, totalPrice);
+      const result = await validateCoupon(couponCode, totalPrice);
       
       console.log('Coupon result:', result); // Debug
 
@@ -234,11 +237,7 @@ export default function Order() {
             cartItems.map((item) => (
               <div className="order-item" key={item.id ?? item.name}>
                 <div className="item-info">
-                  {item.imageUrl ? (
-                    <img src={item.imageUrl} alt={item.name} />
-                  ) : (
-                    <div className="placeholder-image">📦</div>
-                  )}
+                  <img src={item.imageUrl || placeholderImage} alt={item.name} />
                   <div className="item-details">
                     <p className="item-name">{item.name}</p>
                     <p className="item-price">{item.price} THB</p>

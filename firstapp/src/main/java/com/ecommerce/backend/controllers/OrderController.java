@@ -17,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +50,7 @@ public class OrderController {
             @RequestBody Order order,
             @CookieValue(name = "user_token", required = false) String token
     ) {
+        
         if (token == null || token.isEmpty()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", "Not authenticated"));
@@ -64,13 +66,15 @@ public class OrderController {
             }
 
             order.setUserId(user.getId());
-            
-            Order saved = orderRepository.save(order);
+
+            // ส่งต่อให้ Service Layer จัดการทั้งหมด
+            Order saved = orderService.createOrder(order);
             return ResponseEntity.ok(saved);
             
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "Invalid token"));
+            // เปลี่ยนการตอบกลับเพื่อให้เห็นข้อผิดพลาดที่แท้จริง
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage()));
         }
     }
 

@@ -34,6 +34,7 @@ public class CouponUsageLogServiceImpl implements CouponUsageLogService {
                 .orElseThrow(() -> new RuntimeException("CouponUsageLog not found"));
 
         couponUsageLog.setCoupon(couponUsageLogDetails.getCoupon());
+        couponUsageLog.setOrder(couponUsageLogDetails.getOrder());
         couponUsageLog.setUsedAt(couponUsageLogDetails.getUsedAt());
         couponUsageLog.setOriginalAmount(couponUsageLogDetails.getOriginalAmount());
         couponUsageLog.setDiscountApplied(couponUsageLogDetails.getDiscountApplied());

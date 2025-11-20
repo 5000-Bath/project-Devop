@@ -20,6 +20,14 @@ public class CouponUsageLog {
     @JoinColumn(name = "coupon_id", nullable = false)
     private Coupon coupon;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id", nullable = true) // Allow null
+    private Order order;
+
+    @Column(name = "user_id")
+    private Long userId;
+
+
     @CreationTimestamp
     @Column(name = "used_at")
     private LocalDateTime usedAt;
@@ -50,6 +58,22 @@ public class CouponUsageLog {
 
     public void setCoupon(Coupon coupon) {
         this.coupon = coupon;
+    }
+
+    public Order getOrder() {
+        return order;
+    }
+
+    public void setOrder(Order order) {
+        this.order = order;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 
     public LocalDateTime getUsedAt() {

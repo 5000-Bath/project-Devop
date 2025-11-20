@@ -4,7 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import '../component/Status.css';
 import Swal from 'sweetalert2';
 
-const API_BASE = (import.meta.env.VITE_API_URL || "http://localhost:8080").replace(/\/+$/, "");
+
 
 function useQuery() {
   const { search } = useLocation();
@@ -77,7 +77,7 @@ export default function Status() {
     try {
       setIsAnimating(false);
 
-      const res = await fetch(`${API_BASE}/api/orders/${trimmed}`, {
+      const res = await fetch(`/api/orders/${trimmed}`, {
         credentials: 'include',
         headers: { Accept: 'application/json' }
       });

@@ -3,14 +3,19 @@ package com.ecommerce.backend.services;
 import com.ecommerce.backend.controllers.OrderItemRequest;
 import com.ecommerce.backend.models.Order;
 import com.ecommerce.backend.models.OrderItem;
+import com.ecommerce.backend.models.CouponUsageLog;
 import com.ecommerce.backend.models.OrderStatus;
 import com.ecommerce.backend.models.Product;
 import com.ecommerce.backend.repositories.OrderItemRepository;
 import com.ecommerce.backend.repositories.OrderRepository;
+import com.ecommerce.backend.repositories.CouponUsageLogRepository;
 import com.ecommerce.backend.repositories.ProductRepository;
+import com.ecommerce.backend.services.CouponService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -27,9 +32,26 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private OrderItemRepository orderItemRepository;
 
+    @Autowired
+    private CouponUsageLogRepository couponUsageLogRepository;
+
+    @Autowired
+    private CouponService couponService;
+
     @Override
     public List<Order> getAllOrders() {
         return orderRepository.findAll();
+    }
+
+    private void linkCouponLogToOrder(Order order) {
+        if (order.getUserId() == null || order.getCouponCode() == null || order.getCouponCode().isEmpty()) {
+            return;
+        }
+        List<CouponUsageLog> logs = couponUsageLogRepository.findUnlinkedByUserIdAndCouponCode(order.getUserId(), order.getCouponCode());
+        for (CouponUsageLog log : logs) {
+            log.setOrder(order);
+            couponUsageLogRepository.save(log);
+        }
     }
 
     @Override
@@ -40,7 +62,11 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public Order createOrder(Order order) {
-        return orderRepository.save(order);
+        Order savedOrder = orderRepository.save(order);
+        if (savedOrder.getCouponCode() != null && !savedOrder.getCouponCode().isEmpty()) {
+            couponService.applyCouponToOrder(savedOrder);
+        }
+        return savedOrder;
     }
 
     @Override

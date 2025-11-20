@@ -1,6 +1,7 @@
 package com.ecommerce.backend.services;
 
 import com.ecommerce.backend.models.Coupon;
+import com.ecommerce.backend.models.Order;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -13,5 +14,6 @@ public interface CouponService {
     Coupon createCoupon(Coupon coupon);
     Coupon updateCoupon(Long id, Map<String, Object> updates);
     void deleteCoupon(Long id);
-    Map<String, Object> useCoupon(String code, BigDecimal originalAmount);
+    Map<String, Object> validateCoupon(String code, BigDecimal originalAmount);
+    void applyCouponToOrder(Order order);
 }
