@@ -16,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -49,44 +50,36 @@ public class ProductController {
             @RequestParam(value = "stock", required = false, defaultValue = "0") int stock,
             @RequestParam(value = "isActive", required = false, defaultValue = "true") boolean isActive,
             @RequestParam(value = "image", required = false) MultipartFile image,
-            @RequestParam(value = "categoryId", required = false) Long categoryId) {
-        Product product = new Product();
-        product.setName(name);
-        product.setDescription(description);
-        product.setPrice(price);
-        product.setStock(stock);
-        product.setIsActive(isActive);
-        if (categoryId != null) {
-            Category category = categoryRepository.findById(categoryId).orElse(null);
-            product.setCategory(category);
-        }
-
-        if (image != null && !image.isEmpty()) {
-            try {
-                String folderPath = "/app/uploads/images/";
-                Path path = Paths.get(folderPath);
-                if (!Files.exists(path)) {
-                    Files.createDirectories(path);
-                }
-
-                String fileName = System.currentTimeMillis() + "_" + image.getOriginalFilename();
-                Path filePath = path.resolve(fileName);
-                image.transferTo(filePath.toFile());
-
-                product.setImageUrl("/uploads/images/" + fileName);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-        return productRepository.save(product);
+            @RequestParam(value = "category", required = false) String category
+    ) {
+        return productService.createProduct(name, description, price, stock, isActive, image, category);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateProduct(
             @PathVariable Long id,
-            @RequestBody Map<String, Object> body) {
-        Product updated = productService.updateProduct(id, body);
+            @RequestParam(value = "name", required = false) String name,
+            @RequestParam(value = "description", required = false) String description,
+            @RequestParam(value = "price", required = false) BigDecimal price,
+            @RequestParam(value = "stock", required = false) Integer stock,
+            @RequestParam(value = "isActive", required = false) Boolean isActive,
+            @RequestParam(value = "image", required = false) MultipartFile image,
+            @RequestParam(value = "category", required = false) String category) { // Keep this as is
+
+        Map<String, Object> updates = new HashMap<>();
+        if (name != null) updates.put("name", name);
+        if (description != null) updates.put("description", description);
+        if (price != null) updates.put("price", price);
+        if (stock != null) updates.put("stock", stock);
+        if (isActive != null) updates.put("isActive", isActive);
+        if (image != null && !image.isEmpty()) updates.put("image", image);
+        if (category != null) updates.put("category", category);
+
+        if (updates.isEmpty()) {
+            return ResponseEntity.badRequest().body("No fields to update");
+        }
+
+        Product updated = productService.updateProduct(id, updates);
         return ResponseEntity.ok(updated);
     }
 

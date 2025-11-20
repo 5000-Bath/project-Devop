@@ -1,6 +1,8 @@
 package com.ecommerce.backend.services;
 
+import com.ecommerce.backend.models.Category;
 import com.ecommerce.backend.models.Product;
+import com.ecommerce.backend.repositories.CategoryRepository;
 import com.ecommerce.backend.repositories.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,9 @@ public class ProductServiceImpl implements ProductService {
     @Autowired
     private ProductRepository productRepository;
 
+    @Autowired
+    private CategoryRepository categoryRepository;
+
     @Override
     public List<Product> getAllProducts() {
         return productRepository.findByIsActiveTrue();
@@ -36,7 +41,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public Product createProduct(String name, String description, BigDecimal price, int stock, boolean isActive, MultipartFile image) {
+    public Product createProduct(String name, String description, BigDecimal price, int stock, boolean isActive, MultipartFile image, String category) {
         Product product = new Product();
         product.setName(name);
         product.setDescription(description);
@@ -44,6 +49,8 @@ public class ProductServiceImpl implements ProductService {
         product.setStock(stock);
         product.setIsActive(isActive);
         product.setCreatedAt(LocalDateTime.now()); // Set creation timestamp
+
+        product.setCategory(category);
 
         if (image != null && !image.isEmpty()) {
             try {
@@ -72,10 +79,14 @@ public class ProductServiceImpl implements ProductService {
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
         if (updates.containsKey("name")) {
-            product.setName((String) updates.get("name"));
+            Object nameObj = updates.get("name");
+            if (nameObj != null) {
+                product.setName(nameObj.toString());
+            }
         }
         if (updates.containsKey("description")) {
-            product.setDescription((String) updates.get("description"));
+            Object descObj = updates.get("description");
+            product.setDescription(descObj != null ? descObj.toString() : null);
         }
         if (updates.containsKey("price")) {
             Object priceObj = updates.get("price");
@@ -84,13 +95,43 @@ public class ProductServiceImpl implements ProductService {
             }
         }
         if (updates.containsKey("stock")) {
-            Object qtyObj = updates.get("stock");
-            if (qtyObj != null) {
-                product.setStock(Integer.parseInt(qtyObj.toString()));
+            Object stockObj = updates.get("stock");
+            if (stockObj != null) {
+                product.setStock(Integer.parseInt(stockObj.toString()));
             }
         }
         if (updates.containsKey("isActive")) {
-            product.setIsActive((Boolean) updates.get("isActive"));
+            Object isActiveObj = updates.get("isActive");
+            if (isActiveObj != null) {
+                product.setIsActive((Boolean) isActiveObj);
+            }
+        }
+        if (updates.containsKey("category")) {
+            // Handle empty string for category to set it to null or keep as is
+            Object categoryObj = updates.get("category");
+            if (categoryObj == null || categoryObj.toString().isEmpty()) {
+                product.setCategory(null);
+            } else {
+                product.setCategory(categoryObj.toString());
+            }
+        }
+        if (updates.containsKey("image")) {
+            MultipartFile image = (MultipartFile) updates.get("image");
+            if (image != null && !image.isEmpty()) {
+                try {
+                    String folderPath = "/app/uploads/images/";
+                    Path path = Paths.get(folderPath);
+                    if (!Files.exists(path)) {
+                        Files.createDirectories(path);
+                    }
+                    String fileName = System.currentTimeMillis() + "_" + image.getOriginalFilename();
+                    Path filePath = path.resolve(fileName);
+                    image.transferTo(filePath.toFile());
+                    product.setImageUrl("/uploads/images/" + fileName);
+                } catch (Exception e) {
+                    e.printStackTrace(); // Consider a better error handling
+                }
+            }
         }
 
         return productRepository.save(product);

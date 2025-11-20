@@ -10,7 +10,7 @@ import java.util.Map;
 public interface ProductService {
     List<Product> getAllProducts();
     Product getProductById(Long id);
-    Product createProduct(String name, String description, BigDecimal price, int stock, boolean isActive, MultipartFile image);
+    Product createProduct(String name, String description, BigDecimal price, int stock, boolean isActive, MultipartFile image, String category);
     Product updateProduct(Long id, Map<String, Object> updates);
     Map<String, Object> cutQuantity(Long id, int qty);
     void softDeleteProduct(Long id);

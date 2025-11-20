@@ -85,15 +85,15 @@ export default function About() {
 
   const handleUpdate = async () => {
     try {
+      const formData = new FormData();
+      formData.append("description", editData.description);
+      formData.append("price", editData.price);
+      formData.append("stock", editData.stock);
+      formData.append("category", editData.category || "");
+
       const res = await fetch(`${API_BASE}/api/products/${selectedItem.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          description: editData.description,
-          price: parseFloat(editData.price),
-          stock: parseInt(editData.stock),
-          category: editData.category || null, 
-        }),
+        body: formData,
       });
       if (!res.ok) throw new Error("Failed to update product");
       const updated = await res.json();

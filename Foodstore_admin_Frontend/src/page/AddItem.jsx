@@ -45,7 +45,7 @@ export default function Additem() {
     if (image) formData.append('image', image);
 
     try {
-      const res = await fetch('http://localhost:8080/api/products', {
+      const res = await fetch('/api/products', {
         method: 'POST',
         body: formData,
       });
