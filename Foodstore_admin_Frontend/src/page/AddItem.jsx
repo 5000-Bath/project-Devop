@@ -39,8 +39,9 @@ export default function Additem() {
     formData.append('name', name.trim());
     formData.append('description', desc.trim());
     formData.append('price', price.trim());
-    formData.append('stock', stock.trim());
-    if (category) formData.append('category', category);
+      const safeStock = Math.max(0, Number(stock) || 0);
+      formData.append('stock', safeStock);
+      if (category) formData.append('category', category);
     if (image) formData.append('image', image);
 
     try {
@@ -113,19 +114,26 @@ export default function Additem() {
                 />
               </div>
 
-              <div className="field">
-                <label>Stock Quantity</label>
-                <input
-                  className="form-input"
-                  name="stock"
-                  placeholder="Enter stock quantity"
-                  value={stock}
-                  onChange={(e) => setStock(e.target.value)}
-                  inputMode="numeric"
-                />
-              </div>
+                <div className="field">
+                    <label>Stock Quantity</label>
+                    <input
+                        className="form-input"
+                        name="stock"
+                        placeholder="Enter stock quantity"
+                        value={stock}
+                        onChange={(e) => {
+                            const value = Math.max(0, Number(e.target.value));
+                            setStock(value);
+                        }}
+                        inputMode="numeric"
+                        type="number"
+                        min="0"
+                    />
+                </div>
 
-              <div className="field">
+
+
+                <div className="field">
                 <label>Category</label>
                 <select
                   className="form-select"

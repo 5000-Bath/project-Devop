@@ -455,7 +455,19 @@ export default function Ordersdetail() {
                             </button>
 
                             <button
-                                onClick={() => updateOrderStatus("SUCCESS")}
+                                onClick={() => {
+                                    if (order.status === "SUCCESS") {
+                                        Swal.fire("คำสั่งซื้อนี้ถูกสำเร็จแล้ว", "", "info");
+                                        return;
+                                    }
+                                    if (order.status === "CANCELLED") {
+                                        Swal.fire("คำสั่งซื้อนี้ถูกยกเลิกแล้ว", "", "info");
+                                        return;
+                                    }
+
+                                    // อนุญาตให้ complete แม้ stock จะเหลือ 0
+                                    updateOrderStatus("SUCCESS");
+                                }}
                                 style={{
                                     backgroundColor: "#4CAF50",
                                     color: "white",
@@ -467,8 +479,20 @@ export default function Ordersdetail() {
                                 Complete
                             </button>
 
+
                             <button
-                                onClick={() => updateOrderStatus("CANCELLED")}
+                                onClick={() => {
+                                    if (order.status === "SUCCESS") {
+                                        Swal.fire("คำสั่งซื้อสำเร็จแล้ว ไม่สามารถยกเลิกได้", "", "warning");
+                                        return;
+                                    }
+                                    if (order.status === "CANCELLED") {
+                                        Swal.fire("คำสั่งซื้อนี้ถูกยกเลิกไปแล้ว", "", "info");
+                                        return;
+                                    }
+
+                                    updateOrderStatus("CANCELLED");
+                                }}
                                 style={{
                                     backgroundColor: "#FF6B6B",
                                     color: "white",
@@ -479,6 +503,7 @@ export default function Ordersdetail() {
                             >
                                 Cancel
                             </button>
+
 
                             <button
                                 onClick={handleDownloadInvoice}

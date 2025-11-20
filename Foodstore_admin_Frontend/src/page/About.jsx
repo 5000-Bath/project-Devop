@@ -331,14 +331,18 @@ export default function About() {
             />
 
             <label style={{ display: "block", marginBottom: 6, fontWeight: 500 }}>Stock (จำนวน)</label>
-            <input
-              type="number"
-              value={editData.stock}
-              onChange={(e) => setEditData((prev) => ({ ...prev, stock: e.target.value }))}
-              style={{ width: "100%", border: "1px solid #ccc", borderRadius: 6, padding: 8, marginBottom: 12 }}
-            />
+              <input
+                  type="number"
+                  value={editData.stock}
+                  onChange={(e) => {
+                      const value = Math.max(0, Number(e.target.value));
+                      setEditData((prev) => ({ ...prev, stock: value }));
+                  }}
+                  style={{ width: "100%", border: "1px solid #ccc", borderRadius: 6, padding: 8, marginBottom: 12 }}
+              />
 
-            <label style={{ display: "block", marginBottom: 6, fontWeight: 500 }}>Category</label>
+
+              <label style={{ display: "block", marginBottom: 6, fontWeight: 500 }}>Category</label>
             <select
               value={editData.category}
               onChange={(e) => setEditData((prev) => ({ ...prev, category: e.target.value }))}
