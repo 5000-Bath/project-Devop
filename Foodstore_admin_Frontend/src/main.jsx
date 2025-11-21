@@ -12,7 +12,7 @@ import Contact from "./page/status.jsx";
 import Additem from "./page/AddItem.jsx";
 import Setting from "./page/setting.jsx";
 import Orders from "./page/Orders.jsx";
-import Coupons from "./page/coupons.jsx"; // แก้ไข path
+import Coupons from "./page/Coupons.jsx"; // แก้ไข path
 import Ordersdetail from "./page/Ordersdetail.jsx";
 import Login from "./page/Login.jsx";
 
