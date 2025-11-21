@@ -50,14 +50,17 @@ pipeline {
 
                                     echo "⚠️ Cleaning old PVC/PV to avoid stuck 'Released'..."
 
-                                    # Remove PVC finalizers
-                                    kubectl patch pvc backend-pvc -n \$K8S_NAMESPACE -p '{"metadata":{"finalizers":[]}}' --type=merge || true
+                                    
 
                                     # Delete PVC
                                     kubectl delete pvc backend-pvc -n \$K8S_NAMESPACE --ignore-not-found=true || true
 
+
                                     # Remove PV claimRef
                                     kubectl patch pv backend-pv -p '{"spec":{"claimRef": null}}' || true
+
+                                    # Remove PVC finalizers
+                                    kubectl patch pvc backend-pvc -n \$K8S_NAMESPACE -p '{"metadata":{"finalizers":[]}}' --type=merge || true
 
                                     echo "♻️ Re-create backend PV & PVC..."
 
@@ -119,9 +122,12 @@ pipeline {
 
                                     echo "⚠️ Cleaning old PVC/PV..."
 
-                                    kubectl patch pvc backend-pvc -n \$K8S_NAMESPACE -p '{"metadata":{"finalizers":[]}}' --type=merge || true
+
                                     kubectl delete pvc backend-pvc -n \$K8S_NAMESPACE --ignore-not-found=true || true
                                     kubectl patch pv backend-pv -p '{"spec":{"claimRef": null}}' || true
+
+                                    # Remove PVC finalizers
+                                    kubectl patch pvc backend-pvc -n \$K8S_NAMESPACE -p '{"metadata":{"finalizers":[]}}' --type=merge || true
 
                                     echo "♻️ Re-create backend PV & PVC..."
 
