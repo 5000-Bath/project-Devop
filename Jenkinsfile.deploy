@@ -2,16 +2,24 @@ pipeline {
     agent { label 'docker-host' }
 
     parameters {
-        string(name: 'IMAGE_VERSION', defaultValue: '1.0.0', description: 'Version of Docker images to deploy')
+        string(name: 'IMAGE_VERSION', defaultValue: '1.0.0', description: 'Version for Docker images')
     }
 
     environment {
-        K8S_NAMESPACE = 'production'
-        IMAGE_VERSION = "${params.IMAGE_VERSION}"
+        DOCKER_HUB_USERNAME = 'filmfilm'
+        IMAGE_NAME_ADMIN = "${DOCKER_HUB_USERNAME}/foodstore-admin-frontend"
+        IMAGE_NAME_USER  = "${DOCKER_HUB_USERNAME}/foodstore-user-frontend"
+        IMAGE_NAME_BACKEND = "${DOCKER_HUB_USERNAME}/foodstore-backend"
+        
+        USER_PORT = '3000'
+        ADMIN_PORT = '3001'
+        BACKEND_PORT = '8080'
+        
+        COMPOSE_FILE = 'docker-compose.yml' 
     }
 
     stages {
-
+        /* ------------------------------- GIT ------------------------------- */
         stage('Checkout') {
             steps {
                 deleteDir()
@@ -19,163 +27,83 @@ pipeline {
                     url: 'https://github.com/5000-Bath/project-Devop.git'
             }
         }
+        
+        /* --------------------------- TEST ENVIRONMENT -------------------------- */
 
-        stage('Deploy to Clusters in Parallel') {
-            parallel {
+        stage('Start Test Environment') {
+            steps {
+                echo "1. Starting DB and Backend API..."
+                sh "docker-compose -f ${COMPOSE_FILE} up -d db backend"
+                sh 'sleep 45'
+                
+                echo "2. Installing Frontend Dependencies and starting Vite Dev Servers..."
+                sh 'cd Foodstore_User && npm install'
+                sh "cd Foodstore_User && VITE_API_URL=http://localhost:${BACKEND_PORT} npm run dev > /tmp/user-dev.log 2>&1 &"
+                
+                sh 'cd Foodstore_admin_Frontend && npm install'
+                sh "cd Foodstore_admin_Frontend && VITE_API_URL=http://localhost:${BACKEND_PORT} npm run dev > /tmp/admin-dev.log 2>&1 &"
+                
+                sh 'sleep 15'
+            }
+        }
 
-                /* ============================================================
-                 *   Deploy Rayong (Master)
-                 * ============================================================ */
-                stage('Deploy Rayong (Master)') {
-                    steps {
-                        script {
-                            withCredentials([file(credentialsId: 'kubeconfig-rayong', variable: 'KUBECONFIG_PATH')]) {
-                                sh """
-                                    export KUBECONFIG=\$KUBECONFIG_PATH
-                                    export DB_HOST_NAME="mysql-rayong"
+        /* --------------------------- E2E Test -------------------------- */
+        stage('E2E Test') {
+            steps {
+                echo "Running Cypress E2E Tests with Xvfb..."
+                
+                sh 'cd Foodstore_User && npx cypress install'
+                sh "cd Foodstore_User && DISPLAY=:99 xvfb-run -a npx cypress run --config baseUrl=http://localhost:${USER_PORT} --headless || true"
+                
+                sh 'cd Foodstore_admin_Frontend && npx cypress install'
+                sh "cd Foodstore_admin_Frontend && DISPLAY=:99 xvfb-run -a npx cypress run --config baseUrl=http://localhost:${ADMIN_PORT} --headless || true"
+            }
+        }
 
-                                    echo "🚀 Deploying Master to Rayong..."
+        stage('Cleanup Test Environment') {
+            steps {
+                echo "Killing running Frontend Dev Servers..."
+                sh "kill \$(lsof -t -i:${USER_PORT}) || true"
+                sh "kill \$(lsof -t -i:${ADMIN_PORT}) || true"
 
-                                    kubectl get ns \$K8S_NAMESPACE || kubectl create ns \$K8S_NAMESPACE
+                echo "Stopping Docker Compose services..."
+                sh "docker-compose -f ${COMPOSE_FILE} down"
+            }
+        }
 
-                                    /* --- MySQL Master ---
-                                    kubectl apply -f k8s/mysql-config-master.yaml -n \$K8S_NAMESPACE
-                                    kubectl apply -f k8s/mysql-secret.yaml -n \$K8S_NAMESPACE
-                                    kubectl apply -f k8s/mysql-init-master.yaml -n \$K8S_NAMESPACE
-                                    kubectl apply -f k8s/mysql-master.yaml -n \$K8S_NAMESPACE
-                                    */
+        /* --------------------------- BUILD IMAGES -------------------------- */
+        stage('Build and Push Docker Images') {
+            steps {
+                echo "Building FINAL Production Images version ${params.IMAGE_VERSION}..."
 
-                                    #####################################################
-                                    #   FIX: BACKEND PV / PVC MUST BE CLEANED FIRST    #
-                                    #####################################################
+                sh "docker build -t ${IMAGE_NAME_ADMIN}:${params.IMAGE_VERSION} ./Foodstore_admin_Frontend"
+                sh "docker build -t ${IMAGE_NAME_USER}:${params.IMAGE_VERSION} ./Foodstore_User"
+                sh "docker build -t ${IMAGE_NAME_BACKEND}:${params.IMAGE_VERSION} ./firstapp"
 
-                                    echo "⚠️ Cleaning old PVC/PV to avoid stuck 'Released'..."
+                withCredentials([usernamePassword(
+                    credentialsId: 'docker-hub-creds',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh 'echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin'
 
-                                    # Remove PVC finalizers
-                                    kubectl patch pvc backend-pvc -n \$K8S_NAMESPACE -p '{"metadata":{"finalizers":[]}}' --type=merge || true
-
-                                    # Delete PVC
-                                    kubectl delete pvc backend-pvc -n \$K8S_NAMESPACE --ignore-not-found=true || true
-
-                                    # Remove PV claimRef
-                                    kubectl patch pv backend-pv -p '{"spec":{"claimRef": null}}' || true
-
-                                    echo "♻️ Re-create backend PV & PVC..."
-
-                                    # Apply PV & PVC again
-                                    kubectl apply -f k8s/backend-pv.yaml
-                                    kubectl apply -f k8s/backend-pvc.yaml
-
-
-                                    # --- Backend ---
-                                    envsubst < k8s/backend.yaml | kubectl apply -f - -n \$K8S_NAMESPACE
-
-                                    # --- Frontend ConfigMaps ---
-                                    kubectl create configmap nginx-conf-user-rayong \
-                                        --from-file=default.conf=Foodstore_User/nginx-rayong.conf \
-                                        -n \$K8S_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
-
-                                    kubectl create configmap nginx-conf-admin-rayong \
-                                        --from-file=default.conf=Foodstore_admin_Frontend/nginx-rayong.conf \
-                                        -n \$K8S_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
-
-                                    # --- Frontend Deploy ---
-                                    envsubst < k8s/frontend-user-rayong.yaml | kubectl apply -f - -n \$K8S_NAMESPACE
-                                    envsubst < k8s/frontend-admin-rayong.yaml | kubectl apply -f - -n \$K8S_NAMESPACE
-
-                                    # --- Rollout check ---
-                                    # kubectl rollout status deployment/mysql-rayong -n \$K8S_NAMESPACE --timeout=180s
-                                    kubectl rollout status deployment/backend -n \$K8S_NAMESPACE --timeout=180s
-                                    kubectl rollout status deployment/frontend-admin -n \$K8S_NAMESPACE --timeout=180s
-                                    kubectl rollout status deployment/frontend-user -n \$K8S_NAMESPACE --timeout=180s
-
-                                    # Restart
-                                    kubectl rollout restart deployment/backend -n \$K8S_NAMESPACE
-                                    kubectl rollout restart deployment/frontend-admin -n \$K8S_NAMESPACE
-                                    kubectl rollout restart deployment/frontend-user -n \$K8S_NAMESPACE
-                                """
-                            }
-                        }
-                    }
+                    sh "docker push ${IMAGE_NAME_ADMIN}:${params.IMAGE_VERSION}"
+                    sh "docker push ${IMAGE_NAME_USER}:${params.IMAGE_VERSION}"
+                    sh "docker push ${IMAGE_NAME_BACKEND}:${params.IMAGE_VERSION}"
                 }
-
-
-                /* ============================================================
-                 *   Deploy Salaya (Slave)
-                 * ============================================================ */
-                stage('Deploy Salaya (Slave)') {
-                    steps {
-                        script {
-                            withCredentials([file(credentialsId: 'kubeconfig-prod', variable: 'KUBECONFIG_PATH')]) {
-                                sh """
-                                    export KUBECONFIG=\$KUBECONFIG_PATH
-                                    export DB_HOST_NAME="mysql-salaya"
-
-                                    echo "🚀 Deploying Slave to Salaya..."
-
-                                    kubectl get ns \$K8S_NAMESPACE || kubectl create ns \$K8S_NAMESPACE
-
-                                    kubectl apply -f k8s/mysql-pvc.yaml -n \$K8S_NAMESPACE
-
-                                    #####################################################
-                                    #   FIX: BACKEND PV / PVC MUST BE RESET            #
-                                    #####################################################
-
-                                    echo "⚠️ Cleaning old PVC/PV..."
-
-                                    kubectl patch pvc backend-pvc -n \$K8S_NAMESPACE -p '{"metadata":{"finalizers":[]}}' --type=merge || true
-                                    kubectl delete pvc backend-pvc -n \$K8S_NAMESPACE --ignore-not-found=true || true
-                                    kubectl patch pv backend-pv -p '{"spec":{"claimRef": null}}' || true
-
-                                    echo "♻️ Re-create backend PV & PVC..."
-
-                                    kubectl apply -f k8s/backend-pv.yaml
-                                    kubectl apply -f k8s/backend-pvc.yaml
-
-
-                                    /* --- MySQL Slave ---
-                                    kubectl apply -f k8s/mysql-config-slave.yaml -n \$K8S_NAMESPACE
-                                    kubectl apply -f k8s/mysql-secret.yaml -n \$K8S_NAMESPACE
-                                    kubectl apply -f k8s/mysql-slave.yaml -n \$K8S_NAMESPACE
-                                    */
-
-                                    # --- Backend ---
-                                    envsubst < k8s/backend.yaml | kubectl apply -f - -n \$K8S_NAMESPACE
-
-                                    # --- Frontend ConfigMaps ---
-                                    kubectl create configmap nginx-conf-user-salaya \
-                                        --from-file=default.conf=Foodstore_User/nginx-salaya.conf \
-                                        -n \$K8S_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
-
-                                    kubectl create configmap nginx-conf-admin-salaya \
-                                        --from-file=default.conf=Foodstore_admin_Frontend/nginx-salaya.conf \
-                                        -n \$K8S_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
-
-                                    # --- Frontend Deploy ---
-                                    envsubst < k8s/frontend-user-salaya.yaml | kubectl apply -f - -n \$K8S_NAMESPACE
-                                    envsubst < k8s/frontend-admin-salaya.yaml | kubectl apply -f - -n \$K8S_NAMESPACE
-
-                                    # --- Rollout check ---
-                                    kubectl rollout status deployment/backend -n \$K8S_NAMESPACE --timeout=180s
-                                    kubectl rollout status deployment/frontend-admin -n \$K8S_NAMESPACE --timeout=180s
-                                    kubectl rollout status deployment/frontend-user -n \$K8S_NAMESPACE --timeout=180s
-
-                                    kubectl rollout restart deployment/backend -n \$K8S_NAMESPACE
-                                    kubectl rollout restart deployment/frontend-admin -n \$K8S_NAMESPACE
-                                    kubectl rollout restart deployment/frontend-user -n \$K8S_NAMESPACE
-                                """
-                            }
-                        }
-                    }
-                }
-
             }
         }
     }
 
     post {
         always {
-            echo "✅ Deployment finished for all clusters"
+            archiveArtifacts artifacts: 'Foodstore_User/cypress/screenshots/**', allowEmptyArchive: true
+            archiveArtifacts artifacts: 'Foodstore_User/cypress/videos/**', allowEmptyArchive: true
+            archiveArtifacts artifacts: 'Foodstore_admin_Frontend/cypress/screenshots/**', allowEmptyArchive: true
+            archiveArtifacts artifacts: 'Foodstore_admin_Frontend/cypress/videos/**', allowEmptyArchive: true
+        }
+        failure {
+            echo "🚨 Pipeline failed! Check logs in /tmp/*.log"
         }
     }
 }
