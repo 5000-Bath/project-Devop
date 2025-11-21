@@ -1,5 +1,6 @@
 package com.ecommerce.backend.controllers;
 
+import com.ecommerce.backend.exceptions.ResourceNotFoundException;
 import com.ecommerce.backend.dtos.UpdateStatusRequest;
 import com.ecommerce.backend.models.Order;
 import com.ecommerce.backend.models.OrderItem;
@@ -109,7 +110,7 @@ public class OrderController {
             @CookieValue(name = "admin_token", required = false) String adminToken
     ) {
         Order order = orderRepository.findByIdWithOrderItems(id)
-                .orElseThrow(() -> new RuntimeException("Order not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + id));
 
         // 🟢 1) ถ้าเป็น admin ให้ผ่านทันที
         if (adminToken != null && !adminToken.isEmpty()) {
