@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: frontend-user
-        image: filmfilm/foodstore-user-frontend:latest
+        image: filmfilm/foodstore-user-frontend:${IMAGE_VERSION}
         ports:
         - containerPort: 80
 ---

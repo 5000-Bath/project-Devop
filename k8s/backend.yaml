@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: backend
-        image: filmfilm/foodstore-backend:latest
+        image: filmfilm/foodstore-backend:${IMAGE_VERSION}
         ports:
         - containerPort: 8080
         env:
