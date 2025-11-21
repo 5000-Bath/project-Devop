@@ -1,6 +1,7 @@
 package com.ecommerce.backend.services;
 
 import com.ecommerce.backend.models.Category;
+import com.ecommerce.backend.exceptions.ResourceNotFoundException;
 import com.ecommerce.backend.models.Product;
 import com.ecommerce.backend.repositories.CategoryRepository;
 import com.ecommerce.backend.repositories.ProductRepository;
@@ -42,9 +43,9 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public Product getProductById(Long id) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
         if (!product.getIsActive()) {
-            throw new RuntimeException("Product not found");
+            throw new ResourceNotFoundException("Product not found with id: " + id);
         }
         return product;
     }
@@ -74,7 +75,8 @@ public class ProductServiceImpl implements ProductService {
 
                 product.setImageUrl("/uploads/images/" + fileName);
             } catch (Exception e) {
-                e.printStackTrace();
+                // โยน Exception ออกไปเมื่อบันทึกไฟล์ไม่สำเร็จ เพื่อให้รู้ว่าเกิดข้อผิดพลาด
+                throw new RuntimeException("Could not store the file. Error: " + e.getMessage());
             }
         }
 
@@ -124,19 +126,32 @@ public class ProductServiceImpl implements ProductService {
             }
         }
         if (updates.containsKey("image")) {
-            MultipartFile image = (MultipartFile) updates.get("image");
-            if (image != null && !image.isEmpty()) {
-                try {
-                    File uploadDir = new File(uploadPath);
-                    if (!uploadDir.exists()) {
-                        uploadDir.mkdirs();
+            Object imageObj = updates.get("image");
+            if (imageObj instanceof MultipartFile) {
+                MultipartFile image = (MultipartFile) imageObj;
+                if (image != null && !image.isEmpty()) {
+                    try {
+                        // ลบไฟล์รูปเก่า (ถ้ามี) เพื่อไม่ให้ไฟล์ขยะค้างในระบบ
+                        if (product.getImageUrl() != null && !product.getImageUrl().isEmpty()) {
+                            Path oldFilePath = Paths.get(uploadPath, product.getImageUrl().replace("/uploads/images/", ""));
+                            Files.deleteIfExists(oldFilePath);
+                        }
+
+                        // สร้าง directory ถ้ายังไม่มี
+                        File uploadDir = new File(uploadPath);
+                        if (!uploadDir.exists()) {
+                            uploadDir.mkdirs();
+                        }
+                        // บันทึกไฟล์ใหม่
+                        String fileName = System.currentTimeMillis() + "_" + image.getOriginalFilename();
+                        Path filePath = Paths.get(uploadPath, fileName);
+                        image.transferTo(filePath.toFile());
+                        // อัปเดต URL รูปภาพใน DB
+                        product.setImageUrl("/uploads/images/" + fileName);
+                    } catch (Exception e) {
+                        // ควรมีการจัดการ Error ที่ดีกว่านี้ แต่เบื้องต้นให้แสดงผลเพื่อ Debug
+                        throw new RuntimeException("Could not store the file. Error: " + e.getMessage());
                     }
-                    String fileName = System.currentTimeMillis() + "_" + image.getOriginalFilename();
-                    Path filePath = Paths.get(uploadPath, fileName);
-                    image.transferTo(filePath.toFile());
-                    product.setImageUrl("/uploads/images/" + fileName);
-                } catch (Exception e) {
-                    e.printStackTrace(); // Consider a better error handling
                 }
             }
         }
@@ -147,7 +162,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public Map<String, Object> cutQuantity(Long id, int qty) {
         Product p = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
 
         if (qty <= 0) {
             throw new IllegalArgumentException("qty must be > 0");
@@ -168,6 +183,11 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public void softDeleteProduct(Long id) {
-        productRepository.softDeleteById(id);
+        // Find product regardless of its active status for deletion
+        Product product = productRepository.findById(id) 
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id)); 
+        product.setIsActive(false);
+        product.setDeletedAt(LocalDateTime.now());
+        productRepository.save(product);
     }
 }

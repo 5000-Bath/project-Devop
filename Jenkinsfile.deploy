@@ -11,6 +11,7 @@ pipeline {
     }
 
     stages {
+
         stage('Checkout') {
             steps {
                 deleteDir()
@@ -22,6 +23,9 @@ pipeline {
         stage('Deploy to Clusters in Parallel') {
             parallel {
 
+                /* ============================================================
+                 *   Deploy Rayong (Master)
+                 * ============================================================ */
                 stage('Deploy Rayong (Master)') {
                     steps {
                         script {
@@ -29,50 +33,39 @@ pipeline {
                                 sh """
                                     export KUBECONFIG=\$KUBECONFIG_PATH
                                     export DB_HOST_NAME="mysql-rayong"
+
                                     echo "🚀 Deploying Master to Rayong..."
 
                                     kubectl get ns \$K8S_NAMESPACE || kubectl create ns \$K8S_NAMESPACE
 
-                                    # --- MySQL Master ---
+                                    /* --- MySQL Master ---
                                     kubectl apply -f k8s/mysql-config-master.yaml -n \$K8S_NAMESPACE
                                     kubectl apply -f k8s/mysql-secret.yaml -n \$K8S_NAMESPACE
                                     kubectl apply -f k8s/mysql-init-master.yaml -n \$K8S_NAMESPACE
                                     kubectl apply -f k8s/mysql-master.yaml -n \$K8S_NAMESPACE
+                                    */
 
-                                    # --- Ensure Backend PV & PVC ---
-                                    echo "✅ Creating backend PV & PVC on-the-fly..."
+                                    #####################################################
+                                    #   FIX: BACKEND PV / PVC MUST BE CLEANED FIRST    #
+                                    #####################################################
+
+                                    echo "⚠️ Cleaning old PVC/PV to avoid stuck 'Released'..."
+
+                                    # Remove PVC finalizers
                                     kubectl patch pvc backend-pvc -n \$K8S_NAMESPACE -p '{"metadata":{"finalizers":[]}}' --type=merge || true
-                                    kubectl delete pvc backend-pvc -n \$K8S_NAMESPACE --ignore-not-found=true
 
-                                    cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: backend-pv
-  namespace: \$K8S_NAMESPACE
-spec:
-  capacity:
-    storage: 15Gi
-  accessModes:
-    - ReadWriteMany
-  persistentVolumeReclaimPolicy: Retain
-  nfs:
-    path: /mnt/k8s_backend_uploads
-    server: 10.10.10.9
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: backend-pvc
-  namespace: \$K8S_NAMESPACE
-spec:
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: 15Gi
-  volumeName: backend-pv
-EOF
+                                    # Delete PVC
+                                    kubectl delete pvc backend-pvc -n \$K8S_NAMESPACE --ignore-not-found=true || true
+
+                                    # Remove PV claimRef
+                                    kubectl patch pv backend-pv -p '{"spec":{"claimRef": null}}' || true
+
+                                    echo "♻️ Re-create backend PV & PVC..."
+
+                                    # Apply PV & PVC again
+                                    kubectl apply -f k8s/backend-pv.yaml
+                                    kubectl apply -f k8s/backend-pvc.yaml
+
 
                                     # --- Backend ---
                                     envsubst < k8s/backend.yaml | kubectl apply -f - -n \$K8S_NAMESPACE
@@ -81,7 +74,7 @@ EOF
                                     kubectl create configmap nginx-conf-user-rayong \
                                         --from-file=default.conf=Foodstore_User/nginx-rayong.conf \
                                         -n \$K8S_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
-                                    
+
                                     kubectl create configmap nginx-conf-admin-rayong \
                                         --from-file=default.conf=Foodstore_admin_Frontend/nginx-rayong.conf \
                                         -n \$K8S_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
@@ -91,12 +84,12 @@ EOF
                                     envsubst < k8s/frontend-admin-rayong.yaml | kubectl apply -f - -n \$K8S_NAMESPACE
 
                                     # --- Rollout check ---
-                                    kubectl rollout status deployment/mysql-rayong -n \$K8S_NAMESPACE --timeout=180s
+                                    # kubectl rollout status deployment/mysql-rayong -n \$K8S_NAMESPACE --timeout=180s
                                     kubectl rollout status deployment/backend -n \$K8S_NAMESPACE --timeout=180s
                                     kubectl rollout status deployment/frontend-admin -n \$K8S_NAMESPACE --timeout=180s
                                     kubectl rollout status deployment/frontend-user -n \$K8S_NAMESPACE --timeout=180s
 
-                                    # --- Restart deployments ---
+                                    # Restart
                                     kubectl rollout restart deployment/backend -n \$K8S_NAMESPACE
                                     kubectl rollout restart deployment/frontend-admin -n \$K8S_NAMESPACE
                                     kubectl rollout restart deployment/frontend-user -n \$K8S_NAMESPACE
@@ -106,6 +99,10 @@ EOF
                     }
                 }
 
+
+                /* ============================================================
+                 *   Deploy Salaya (Slave)
+                 * ============================================================ */
                 stage('Deploy Salaya (Slave)') {
                     steps {
                         script {
@@ -113,52 +110,34 @@ EOF
                                 sh """
                                     export KUBECONFIG=\$KUBECONFIG_PATH
                                     export DB_HOST_NAME="mysql-salaya"
+
                                     echo "🚀 Deploying Slave to Salaya..."
 
                                     kubectl get ns \$K8S_NAMESPACE || kubectl create ns \$K8S_NAMESPACE
 
-                                    # --- PVC ---
                                     kubectl apply -f k8s/mysql-pvc.yaml -n \$K8S_NAMESPACE
 
-                                    # --- Ensure Backend PV & PVC ---
-                                    echo "✅ Creating backend PV & PVC on-the-fly..."
+                                    #####################################################
+                                    #   FIX: BACKEND PV / PVC MUST BE RESET            #
+                                    #####################################################
+
+                                    echo "⚠️ Cleaning old PVC/PV..."
+
                                     kubectl patch pvc backend-pvc -n \$K8S_NAMESPACE -p '{"metadata":{"finalizers":[]}}' --type=merge || true
-                                    kubectl delete pvc backend-pvc -n \$K8S_NAMESPACE --ignore-not-found=true
+                                    kubectl delete pvc backend-pvc -n \$K8S_NAMESPACE --ignore-not-found=true || true
+                                    kubectl patch pv backend-pv -p '{"spec":{"claimRef": null}}' || true
 
-                                    cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: backend-pv
-  namespace: \$K8S_NAMESPACE
-spec:
-  capacity:
-    storage: 15Gi
-  accessModes:
-    - ReadWriteMany
-  persistentVolumeReclaimPolicy: Retain
-  nfs:
-    path: /mnt/k8s_backend_uploads
-    server: 10.10.10.9
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: backend-pvc
-  namespace: \$K8S_NAMESPACE
-spec:
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: 15Gi
-  volumeName: backend-pv
-EOF
+                                    echo "♻️ Re-create backend PV & PVC..."
 
-                                    # --- MySQL Slave ---
+                                    kubectl apply -f k8s/backend-pv.yaml
+                                    kubectl apply -f k8s/backend-pvc.yaml
+
+
+                                    /* --- MySQL Slave ---
                                     kubectl apply -f k8s/mysql-config-slave.yaml -n \$K8S_NAMESPACE
                                     kubectl apply -f k8s/mysql-secret.yaml -n \$K8S_NAMESPACE
                                     kubectl apply -f k8s/mysql-slave.yaml -n \$K8S_NAMESPACE
+                                    */
 
                                     # --- Backend ---
                                     envsubst < k8s/backend.yaml | kubectl apply -f - -n \$K8S_NAMESPACE
@@ -167,7 +146,7 @@ EOF
                                     kubectl create configmap nginx-conf-user-salaya \
                                         --from-file=default.conf=Foodstore_User/nginx-salaya.conf \
                                         -n \$K8S_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
-                                    
+
                                     kubectl create configmap nginx-conf-admin-salaya \
                                         --from-file=default.conf=Foodstore_admin_Frontend/nginx-salaya.conf \
                                         -n \$K8S_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
@@ -181,7 +160,6 @@ EOF
                                     kubectl rollout status deployment/frontend-admin -n \$K8S_NAMESPACE --timeout=180s
                                     kubectl rollout status deployment/frontend-user -n \$K8S_NAMESPACE --timeout=180s
 
-                                    # --- Restart deployments ---
                                     kubectl rollout restart deployment/backend -n \$K8S_NAMESPACE
                                     kubectl rollout restart deployment/frontend-admin -n \$K8S_NAMESPACE
                                     kubectl rollout restart deployment/frontend-user -n \$K8S_NAMESPACE

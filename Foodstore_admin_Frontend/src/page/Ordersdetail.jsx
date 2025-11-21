@@ -4,7 +4,6 @@ import Swal from "sweetalert2";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-const API_BASE = "http://localhost:8080";
 
 export default function Ordersdetail() {
     const { id } = useParams();
@@ -18,7 +17,7 @@ export default function Ordersdetail() {
     useEffect(() => {
         const fetchOrder = async () => {
             try {
-                const res = await fetch(`${API_BASE}/api/orders/${id}`, {
+                const res = await fetch(`/api/orders/${id}`, {
                     credentials: "include"
                 });
 
@@ -71,7 +70,7 @@ export default function Ordersdetail() {
 
             if (!result.isConfirmed) return;
 
-            const res = await fetch(`${API_BASE}/api/orders/${id}/status`, {
+            const res = await fetch(`/api/orders/${id}/status`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
@@ -433,12 +432,36 @@ export default function Ordersdetail() {
                             </span>
                         </div>
 
+                        {/* --- Start: Updated Price Section --- */}
+                        {order.discountAmount > 0 && (
+                            <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                <span style={{ color: "#666", fontSize: 14 }}>ราคารวม</span>
+                                <span style={{ color: "#333", fontSize: 14 }}>
+                                    {totalPrice.toLocaleString()} บาท
+                                </span>
+                            </div>
+                        )}
+
+                        {order.discountAmount > 0 && (
+                            <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                <span style={{ color: "green", fontSize: 14 }}>
+                                    ส่วนลด ({order.couponCode || 'N/A'})
+                                </span>
+                                <span style={{ color: "green", fontSize: 14 }}>
+                                    - {Number(order.discountAmount).toLocaleString()} บาท
+                                </span>
+                            </div>
+                        )}
+
                         <div style={{ display: "flex", justifyContent: "space-between" }}>
-                            <span style={{ color: "#666", fontSize: 14 }}>Total</span>
+                            <span style={{ color: "#333", fontSize: 16, fontWeight: "bold" }}>
+                                ราคาสุทธิ
+                            </span>
                             <span style={{ color: "#333", fontSize: 14, fontWeight: 500 }}>
-                                {totalPrice.toLocaleString()} บาท
+                                {Number(order.finalAmount ?? totalPrice).toLocaleString()} บาท
                             </span>
                         </div>
+                        {/* --- End: Updated Price Section --- */}
 
                         <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
                             <button

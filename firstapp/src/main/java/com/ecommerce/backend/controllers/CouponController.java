@@ -43,14 +43,14 @@ public class CouponController {
         coupon.setCode((String) body.get("code"));
 
         // discountValue → discountAmount
-        if(body.get("discountValue") != null)
-            coupon.setDiscountAmount(new BigDecimal(body.get("discountValue").toString()));
+        if(body.get("discountAmount") != null)
+            coupon.setDiscountAmount(new BigDecimal(body.get("discountAmount").toString()));
         else
             coupon.setDiscountAmount(BigDecimal.ZERO);
 
         // maxUses → remainingCount
-        if (body.get("maxUses") != null)
-            coupon.setRemainingCount(Integer.parseInt(body.get("maxUses").toString()));
+        if (body.get("remainingCount") != null)
+            coupon.setRemainingCount(Integer.parseInt(body.get("remainingCount").toString()));
         else
             coupon.setRemainingCount(0);
 
@@ -74,14 +74,14 @@ public class CouponController {
         if(body.get("code") != null)
             updates.put("code", body.get("code"));
 
-        if(body.get("discountValue") != null)
-            updates.put("discountAmount", new BigDecimal(body.get("discountValue").toString()));
+        if(body.get("discountAmount") != null)
+            updates.put("discountAmount", new BigDecimal(body.get("discountAmount").toString()));
 
-        if(body.get("maxUses") != null)
-            updates.put("remainingCount", Integer.parseInt(body.get("maxUses").toString()));
+        if(body.get("remainingCount") != null)
+            updates.put("remainingCount", Integer.parseInt(body.get("remainingCount").toString()));
 
-        if(body.get("expiryDate") != null) {
-            String dateStr = body.get("expiryDate").toString().replace("Z", "");
+        if(body.get("expirationDate") != null) {
+            String dateStr = body.get("expirationDate").toString().replace("Z", "");
             updates.put("expirationDate", LocalDateTime.parse(dateStr));
         }
 

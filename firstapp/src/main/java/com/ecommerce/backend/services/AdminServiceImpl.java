@@ -40,10 +40,24 @@ public class AdminServiceImpl implements AdminService {
         Admin admin = adminRepository.findById(id).orElseThrow(() -> new RuntimeException("Admin not found"));
 
         if (updates.containsKey("username")) {
-            admin.setUsername((String) updates.get("username"));
+            String newUsername = (String) updates.get("username");
+            // ตรวจสอบว่า username ใหม่ซ้ำกับคนอื่นหรือไม่ (ที่ไม่ใช่ตัวเอง)
+            adminRepository.findByUsername(newUsername).ifPresent(existingAdmin -> {
+                if (!existingAdmin.getId().equals(id)) {
+                    throw new IllegalStateException("Username '" + "' is already taken.");
+                }
+            });
+            admin.setUsername(newUsername);
         }
         if (updates.containsKey("email")) {
-            admin.setEmail((String) updates.get("email"));
+            String newEmail = (String) updates.get("email");
+            // ตรวจสอบว่า email ใหม่ซ้ำกับคนอื่นหรือไม่ (ที่ไม่ใช่ตัวเอง)
+            adminRepository.findByEmail(newEmail).ifPresent(existingAdmin -> {
+                if (!existingAdmin.getId().equals(id)) {
+                    throw new IllegalStateException("Email '" + "' is already taken.");
+                }
+            });
+            admin.setEmail(newEmail);
         }
         if (updates.containsKey("password")) {
             admin.setPassword((String) updates.get("password"));

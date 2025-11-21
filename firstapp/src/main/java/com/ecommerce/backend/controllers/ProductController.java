@@ -46,43 +46,52 @@ public class ProductController {
     public Product createProduct(
             @RequestParam("name") String name,
             @RequestParam(value = "description", required = false) String description,
-            @RequestParam("price") BigDecimal price,
+            @RequestParam("price") String priceStr, // รับเป็น String
             @RequestParam(value = "stock", required = false, defaultValue = "0") int stock,
             @RequestParam(value = "isActive", required = false, defaultValue = "true") boolean isActive,
             @RequestParam(value = "image", required = false) MultipartFile image,
             @RequestParam(value = "category", required = false) String category
     ) {
+        // แปลง String เป็น BigDecimal โดยตัดเครื่องหมายจุลภาค (,) ออกก่อน
+        BigDecimal price = new BigDecimal(priceStr.replace(",", ""));
         return productService.createProduct(name, description, price, stock, isActive, image, category);
     }
 
+    // ใช้ @PutMapping โดยไม่ระบุ consumes เพื่อให้ยืดหยุ่นและรองรับ Test case ได้
     @PutMapping("/{id}")
     public ResponseEntity<?> updateProduct(
             @PathVariable Long id,
             @RequestParam(value = "name", required = false) String name,
             @RequestParam(value = "description", required = false) String description,
-            @RequestParam(value = "price", required = false) BigDecimal price,
+            @RequestParam(value = "price", required = false) String priceStr, // รับเป็น String
             @RequestParam(value = "stock", required = false) Integer stock,
             @RequestParam(value = "isActive", required = false) Boolean isActive,
             @RequestParam(value = "image", required = false) MultipartFile image,
-            @RequestParam(value = "category", required = false) String category) { // Keep this as is
+            @RequestParam(value = "category", required = false) String category) {
 
+        // สร้าง Map เพื่อส่งข้อมูลไปให้ Service Layer
         Map<String, Object> updates = new HashMap<>();
         if (name != null) updates.put("name", name);
         if (description != null) updates.put("description", description);
-        if (price != null) updates.put("price", price);
+        if (priceStr != null && !priceStr.isEmpty()) {
+            // แปลง String เป็น BigDecimal โดยตัดเครื่องหมายจุลภาค (,) ออกก่อน
+            updates.put("price", new BigDecimal(priceStr.replace(",", "")));
+        }
         if (stock != null) updates.put("stock", stock);
         if (isActive != null) updates.put("isActive", isActive);
-        if (image != null && !image.isEmpty()) updates.put("image", image);
+        if (image != null && !image.isEmpty()) {
+            updates.put("image", image);
+        }
         if (category != null) updates.put("category", category);
 
         if (updates.isEmpty()) {
             return ResponseEntity.badRequest().body("No fields to update");
         }
-
+        
         Product updated = productService.updateProduct(id, updates);
         return ResponseEntity.ok(updated);
     }
-
+    
     @PostMapping("/{id}/quantity/cut")
     public ResponseEntity<?> cutQuantityJson(
             @PathVariable Long id,

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
 import { PlusCircle, Trash2, Edit, X, Save } from 'lucide-react';
 
+/* ---------------------- Format Date ---------------------- */
 const formatDate = (dateString) => {
   if (!dateString) return '–';
   try {
@@ -14,33 +16,32 @@ const formatDate = (dateString) => {
   }
 };
 
-// ใช้ SweetAlert2 ผ่าน window.Swal
-const showAlert = (title, text, icon) => {
-  if (window.Swal) {
-    window.Swal.fire({ title, text, icon, timer: 2000, showConfirmButton: false });
-  } else {
-    alert(`${title}: ${text}`);
-  }
+/* -------------------- SweetAlert2 Wrapper -------------------- */
+const showAlert = (title, text, icon = 'info') => {
+  return Swal.fire({
+    title,
+    text,
+    icon,
+    timer: 2000,
+    showConfirmButton: false,
+  });
 };
 
 const showConfirm = async (title, text) => {
-  if (window.Swal) {
-    return await window.Swal.fire({
-      title,
-      text,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#e53e3e',
-      cancelButtonColor: '#3182ce',
-      confirmButtonText: 'ใช่, ลบเลย!',
-      cancelButtonText: 'ยกเลิก',
-      reverseButtons: true,
-    });
-  } else {
-    return { isConfirmed: window.confirm(`${title}\n${text}`) };
-  }
+  return await Swal.fire({
+    title,
+    text,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#e53e3e',
+    cancelButtonColor: '#3182ce',
+    confirmButtonText: 'ใช่, ลบเลย!',
+    cancelButtonText: 'ยกเลิก',
+    reverseButtons: true,
+  });
 };
 
+/* --------------------------- Component --------------------------- */
 export default function Coupons() {
   const [coupons, setCoupons] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -57,6 +58,7 @@ export default function Coupons() {
 
   const [formData, setFormData] = useState(initialFormState);
 
+  /* ---------------------- Load Coupons ---------------------- */
   useEffect(() => {
     fetchCoupons();
   }, []);
@@ -67,6 +69,7 @@ export default function Coupons() {
     try {
       const res = await fetch(`/api/coupons`, { credentials: 'include' });
       if (!res.ok) throw new Error('ไม่สามารถโหลดข้อมูลคูปองได้');
+
       const data = await res.json();
       setCoupons(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -77,6 +80,7 @@ export default function Coupons() {
     }
   };
 
+  /* ---------------------- Form Change ---------------------- */
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -85,19 +89,21 @@ export default function Coupons() {
     }));
   };
 
+  /* ---------------------- Open/Close Modal ---------------------- */
   const openModal = (coupon = null) => {
     if (coupon) {
       setEditingCoupon(coupon);
       setFormData({
         code: coupon.code || '',
         discountValue: coupon.discountAmount || '',
-        expiryDate: coupon.expirationDate ? coupon.expirationDate.split('T')[0] : '',
+        expiryDate: coupon.expirationDate?.split('T')[0] || '',
         maxUses: coupon.remainingCount || '',
       });
     } else {
       setEditingCoupon(null);
       setFormData(initialFormState);
     }
+
     setIsModalOpen(true);
   };
 
@@ -107,21 +113,28 @@ export default function Coupons() {
     setFormData(initialFormState);
   };
 
+  /* ---------------------- Submit ---------------------- */
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!formData.code.trim() || !formData.discountValue) {
       showAlert('ข้อมูลไม่ครบ', 'กรุณากรอกโค้ดและมูลค่าส่วนลด', 'warning');
       return;
     }
 
-    const url = editingCoupon ? `/api/coupons/${editingCoupon.id}` : `/api/coupons`;
+    const url = editingCoupon
+      ? `/api/coupons/${editingCoupon.id}`
+      : `/api/coupons`;
+
     const method = editingCoupon ? 'PUT' : 'POST';
 
     const body = {
       code: formData.code,
-      discountValue: parseFloat(formData.discountValue),
-      maxUses: formData.maxUses ? parseInt(formData.maxUses, 10) : 0,
-      expiryDate: formData.expiryDate ? new Date(formData.expiryDate).toISOString() : null,
+      discountAmount: parseFloat(formData.discountValue),
+      remainingCount: formData.maxUses ? parseInt(formData.maxUses, 10) : 0,
+      expirationDate: formData.expiryDate
+        ? new Date(formData.expiryDate).toISOString()
+        : null,
     };
 
     try {
@@ -133,8 +146,8 @@ export default function Coupons() {
       });
 
       if (!res.ok) {
-        const errData = await res.json().catch(() => ({ message: 'เกิดข้อผิดพลาด' }));
-        throw new Error(errData.message || `HTTP ${res.status}`);
+        const err = await res.json().catch(() => ({ message: 'เกิดข้อผิดพลาด' }));
+        throw new Error(err.message);
       }
 
       showAlert(
@@ -142,6 +155,7 @@ export default function Coupons() {
         `คูปอง "${formData.code}" ถูกบันทึกแล้ว`,
         'success'
       );
+
       closeModal();
       fetchCoupons();
     } catch (err) {
@@ -149,28 +163,36 @@ export default function Coupons() {
     }
   };
 
+  /* ---------------------- Delete ---------------------- */
   const handleDelete = async (couponId) => {
-    const result = await showConfirm('ต้องการลบคูปองนี้?', 'การกระทำนี้ไม่สามารถย้อนกลับได้!');
+    const result = await showConfirm(
+      'ต้องการลบคูปองนี้?',
+      'การกระทำนี้ไม่สามารถย้อนกลับได้!'
+    );
 
-    if (result.isConfirmed) {
-      try {
-        const res = await fetch(`/api/coupons/${couponId}`, {
-          method: 'DELETE',
-          credentials: 'include',
-        });
-        if (!res.ok) throw new Error('ลบไม่สำเร็จ');
-        showAlert('ลบแล้ว!', 'คูปองถูกลบออกจากระบบแล้ว', 'success');
-        fetchCoupons();
-      } catch (err) {
-        showAlert('เกิดข้อผิดพลาด', err.message, 'error');
-      }
+    if (!result.isConfirmed) return;
+
+    try {
+      const res = await fetch(`/api/coupons/${couponId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      if (!res.ok) throw new Error('ลบไม่สำเร็จ');
+
+      showAlert('ลบแล้ว!', 'คูปองถูกลบออกจากระบบแล้ว', 'success');
+      fetchCoupons();
+    } catch (err) {
+      showAlert('เกิดข้อผิดพลาด', err.message, 'error');
     }
   };
 
+  /* --------------------------- JSX --------------------------- */
   return (
     <div className="coupons-container">
       <div className="coupons-header">
         <h1 className="coupons-title">จัดการคูปอง</h1>
+
         <button className="btn btn-primary" onClick={() => openModal()}>
           <PlusCircle size={18} />
           <span>เพิ่มคูปองใหม่</span>
@@ -192,6 +214,7 @@ export default function Coupons() {
                 <th>จัดการ</th>
               </tr>
             </thead>
+
             <tbody>
               {coupons.length > 0 ? (
                 coupons.map((coupon) => (
@@ -205,14 +228,13 @@ export default function Coupons() {
                         <button
                           className="btn-icon btn-edit"
                           onClick={() => openModal(coupon)}
-                          title="แก้ไข"
                         >
                           <Edit size={16} />
                         </button>
+
                         <button
                           className="btn-icon btn-delete"
                           onClick={() => handleDelete(coupon.id)}
-                          title="ลบ"
                         >
                           <Trash2 size={16} />
                         </button>
@@ -230,6 +252,7 @@ export default function Coupons() {
         </div>
       )}
 
+      {/* ---------------------- Modal ---------------------- */}
       {isModalOpen && (
         <div className="modal-overlay" onClick={closeModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -239,6 +262,7 @@ export default function Coupons() {
                 <X size={24} />
               </button>
             </div>
+
             <form onSubmit={handleSubmit} className="modal-form">
               <div className="form-group">
                 <label>โค้ดคูปอง</label>
@@ -251,6 +275,7 @@ export default function Coupons() {
                   className="form-input"
                 />
               </div>
+
               <div className="form-group">
                 <label>มูลค่าส่วนลด (บาท)</label>
                 <input
@@ -260,10 +285,10 @@ export default function Coupons() {
                   onChange={handleInputChange}
                   required
                   min="0"
-                  step="0.01"
                   className="form-input"
                 />
               </div>
+
               <div className="form-group">
                 <label>จำนวนคงเหลือ</label>
                 <input
@@ -275,6 +300,7 @@ export default function Coupons() {
                   className="form-input"
                 />
               </div>
+
               <div className="form-group">
                 <label>วันหมดอายุ</label>
                 <input
@@ -285,6 +311,7 @@ export default function Coupons() {
                   className="form-input"
                 />
               </div>
+
               <div className="modal-footer">
                 <button type="button" className="btn btn-ghost" onClick={closeModal}>
                   ยกเลิก
