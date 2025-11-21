@@ -4,7 +4,7 @@ import shinchanLogo from "../assets/shinchan.png";
 import FoodLogin from "../assets/Food_Login.png";
 import { useIsMobile } from "./useIsMobile";
 
-const API_BASE = "http://localhost:3001";
+const API_BASE = "";
 
 export default function LoginPage() {
     const navigate = useNavigate();
