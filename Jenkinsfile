@@ -3,6 +3,7 @@ pipeline {
 
     parameters {
         string(name: 'IMAGE_VERSION', defaultValue: '1.0.0', description: 'Version for Docker images')
+        booleanParam(name: 'RUN_TEST', defaultValue: false, description: 'Run Unit & E2E Tests')
     }
 
     environment {
@@ -27,41 +28,47 @@ pipeline {
             }
         }
         
+        /* --------------------------- TEST SECTIONS -------------------------- */
+
         stage('Install Dependencies') {
+            when { expression { params.RUN_TEST } }
             steps {
                 echo "Installing system dependencies for Cypress..."
                 sh 'sudo apt-get update && sudo apt-get install -y xvfb libgtk-3-0 libgbm-dev || true'
             }
         }
-        
+
         stage('Start Test Environment') {
+            when { expression { params.RUN_TEST } }
             steps {
-                echo "1. Starting DB and Backend API on host ports (localhost:${BACKEND_PORT})..."
+                echo "Starting DB and Backend API..."
                 sh "docker-compose -f ${COMPOSE_FILE} up -d db backend" 
                 sh 'sleep 45'
                 
-                echo "2. Installing Frontend Dependencies and starting Vite Dev Servers..."
-                sh 'cd Foodstore_User && npm install && npm install path && npm install --save-dev msw && npm install @testing-library/user-event --save-dev'
-                sh "cd Foodstore_User && VITE_API_URL=http://localhost:${BACKEND_PORT} npm run dev > /tmp/user-dev.log 2>&1 &" 
+                echo "Installing Frontend Dependencies & starting dev servers..."
+                sh 'cd Foodstore_User && npm install'
+                sh "cd Foodstore_User && npm run dev > /tmp/user-dev.log 2>&1 &" 
                 
-                sh 'cd Foodstore_admin_Frontend && npm install && npm install path && npm install --save-dev msw && npm install @testing-library/user-event --save-dev'
-                sh "cd Foodstore_admin_Frontend && VITE_API_URL=http://localhost:${BACKEND_PORT} npm run dev > /tmp/admin-dev.log 2>&1 &" 
+                sh 'cd Foodstore_admin_Frontend && npm install'
+                sh "cd Foodstore_admin_Frontend && npm run dev > /tmp/admin-dev.log 2>&1 &" 
                 
                 sh 'sleep 15'
             }
         }
 
         stage('Unit Test') {
+            when { expression { params.RUN_TEST } }
             steps {
-                echo "Running Frontend Unit Tests on Host..."
+                echo "Running Frontend Unit Tests..."
                 sh 'cd Foodstore_User && npm test' 
                 sh 'cd Foodstore_admin_Frontend && npm test'
             }
         }
 
         stage('E2E Test') {
+            when { expression { params.RUN_TEST } }
             steps {
-                echo "Running Cypress E2E Tests with Xvfb..."
+                echo "Running Cypress E2E Tests..."
                 
                 sh 'cd Foodstore_User && npx cypress install' 
                 sh "cd Foodstore_User && DISPLAY=:99 xvfb-run -a npx cypress run --config baseUrl=http://localhost:${USER_PORT} --headless || true"
@@ -72,15 +79,14 @@ pipeline {
         }
 
         stage('Cleanup Test Environment') {
+            when { expression { params.RUN_TEST } }
             steps {
-                echo "Killing running Frontend Dev Servers..."
-                sh "kill \$(lsof -t -i:${USER_PORT}) || true"
-                sh "kill \$(lsof -t -i:${ADMIN_PORT}) || true"
-
                 echo "Stopping Docker Compose services..."
                 sh "docker-compose -f ${COMPOSE_FILE} down"
             }
         }
+
+        /* --------------------------- END TEST SECTIONS ---------------------- */
 
         stage('Build and Push Docker Images') {
             steps {
@@ -103,19 +109,23 @@ pipeline {
                 }
             }
         }
-
-        
     }
 
     post {
         always {
-            archiveArtifacts artifacts: 'Foodstore_User/cypress/screenshots/**', allowEmptyArchive: true
-            archiveArtifacts artifacts: 'Foodstore_User/cypress/videos/**', allowEmptyArchive: true
-            archiveArtifacts artifacts: 'Foodstore_admin_Frontend/cypress/screenshots/**', allowEmptyArchive: true
-            archiveArtifacts artifacts: 'Foodstore_admin_Frontend/cypress/videos/**', allowEmptyArchive: true
+            script {
+                if (params.RUN_TEST) {
+                    archiveArtifacts artifacts: 'Foodstore_User/cypress/screenshots/**', allowEmptyArchive: true
+                    archiveArtifacts artifacts: 'Foodstore_User/cypress/videos/**', allowEmptyArchive: true
+                    archiveArtifacts artifacts: 'Foodstore_admin_Frontend/cypress/screenshots/**', allowEmptyArchive: true
+                    archiveArtifacts artifacts: 'Foodstore_admin_Frontend/cypress/videos/**', allowEmptyArchive: true
+                } else {
+                    echo "RUN_TEST=false → Skipping artifact archive"
+                }
+            }
         }
         failure {
-            echo "Pipeline failed! Check logs in /tmp/*.log"
+            echo "Pipeline failed! Check logs."
         }
     }
 }
