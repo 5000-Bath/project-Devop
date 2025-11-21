@@ -13,6 +13,9 @@ spec:
       labels:
         app: backend
     spec:
+      # บังคับรันเฉพาะ worker nodes
+      nodeSelector:
+        node-role.kubernetes.io/worker: "true"
       containers:
       - name: backend
         image: filmfilm/foodstore-backend:${IMAGE_VERSION}
