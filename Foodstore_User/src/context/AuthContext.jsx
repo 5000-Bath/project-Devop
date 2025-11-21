@@ -2,11 +2,11 @@ import React, { createContext, useCallback, useEffect, useMemo, useState } from 
 
 export const AuthContext = createContext(null);
 
-const API_BASE = (import.meta.env.VITE_API_URL || "http://localhost:8080").replace(/\/+$/, "");
-const LOGIN_URL = `${API_BASE}/api/auth/login`;      
-const ME_URL = `${API_BASE}/api/auth/me`;            
-const LOGOUT_URL = `${API_BASE}/api/auth/logout`;    
-const CHECK_URL = `${API_BASE}/api/auth/check`;      
+
+const LOGIN_URL = `/api/auth/login`;      
+const ME_URL = `/api/auth/me`;            
+const LOGOUT_URL = `/api/auth/logout`;    
+const CHECK_URL = `/api/auth/check`;      
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);

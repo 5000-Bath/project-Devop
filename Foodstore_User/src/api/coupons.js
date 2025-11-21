@@ -1,5 +1,4 @@
-// c:/Users/minec/Desktop/kk/new-19-11-2025/project-Devop/Foodstore_User/src/api/coupons.js
-const API_BASE = (import.meta.env.VITE_API_URL || "http://localhost:8080").replace(/\/+$/, "");
+// c:/Users/minec/Desktop/kk/new-19-11-2025/project-Devop/Foodstore_User/src/api/coupons.jsconst API_BASE = (import.meta.env.VITE_API_URL || "http://localhost:8080").replace(/\/+$/, "");
 
 /**
  * Applies a coupon to a given amount.
@@ -13,7 +12,7 @@ export async function applyCoupon(code, originalAmount) {
     throw new Error('Original amount must be a valid number');
   }
 
-  const res = await fetch(`${API_BASE}/api/coupons/use`, {
+  const res = await fetch(`/api/coupons/use`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
