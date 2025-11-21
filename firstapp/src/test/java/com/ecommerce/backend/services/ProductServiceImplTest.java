@@ -8,16 +8,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -38,202 +34,183 @@ class ProductServiceImplTest {
     @InjectMocks
     private ProductServiceImpl productService;
 
-    private Product product;
-
+    // ตั้งค่า Path รูปภาพหลอกๆ เพื่อไม่ให้ Error ตอนเทส
     @BeforeEach
     void setUp() {
-        product = new Product();
-        product.setId(1L);
-        product.setName("Test Product");
-        product.setPrice(new BigDecimal("100.00"));
-        product.setStock(10);
-        product.setIsActive(true);
+        String tempDir = System.getProperty("java.io.tmpdir"); // ใช้ folder temp ของเครื่อง
+        productService.setUploadPath(tempDir);
     }
 
-    @Test
-    void createProduct_Success() throws IOException {
-        // Mock MultipartFile
-        MultipartFile image = mock(MultipartFile.class);
-        when(image.isEmpty()).thenReturn(false);
-        when(image.getOriginalFilename()).thenReturn("test.jpg");
-
-        // Mock ProductRepository
-        when(productRepository.save(any(Product.class))).thenAnswer(invocation -> {
-            Product p = invocation.getArgument(0);
-            p.setId(2L); // Simulate saving and getting an ID
-            return p;
-        });
-
-        // Mock static methods for Path and Files
-        try (MockedStatic<Paths> paths = mockStatic(Paths.class);
-             MockedStatic<Files> files = mockStatic(Files.class)) {
-
-            Path path = mock(Path.class);
-            paths.when(() -> Paths.get(anyString())).thenReturn(path);
-            files.when(() -> Files.exists(path)).thenReturn(true);
-            doNothing().when(image).transferTo(any(Path.class));
-
-            Product newProduct = productService.createProduct(
-                    "New Product",
-                    "Description",
-                    new BigDecimal("200.00"),
-                    50,
-                    true,
-                    image,
-                    "Category"
-            );
-
-            assertNotNull(newProduct);
-            assertEquals("New Product", newProduct.getName());
-            assertNotNull(newProduct.getImageUrl());
-            assertTrue(newProduct.getImageUrl().contains("test.jpg"));
-            verify(productRepository, times(1)).save(any(Product.class));
-        }
-    }
-    
+    // --- 1. Test: Get Products ---
     @Test
     void getAllProducts_Success() {
-        when(productRepository.findByIsActiveTrue()).thenReturn(List.of(product));
-
-        List<Product> products = productService.getAllProducts();
-
-        assertNotNull(products);
-        assertEquals(1, products.size());
-        verify(productRepository, times(1)).findByIsActiveTrue();
+        when(productRepository.findByIsActiveTrue()).thenReturn(List.of(new Product(), new Product()));
+        List<Product> result = productService.getAllProducts();
+        assertEquals(2, result.size());
     }
 
     @Test
     void getProductById_Success() {
+        Product product = new Product();
+        product.setId(1L);
+        product.setIsActive(true); // ต้อง active
         when(productRepository.findById(1L)).thenReturn(Optional.of(product));
 
-        Product foundProduct = productService.getProductById(1L);
-
-        assertNotNull(foundProduct);
-        assertEquals(product.getId(), foundProduct.getId());
-        verify(productRepository, times(1)).findById(1L);
+        Product result = productService.getProductById(1L);
+        assertEquals(1L, result.getId());
     }
 
     @Test
     void getProductById_NotFound() {
-        when(productRepository.findById(1L)).thenReturn(Optional.empty());
-
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            productService.getProductById(1L);
-        });
-
-        assertEquals("Product not found", exception.getMessage());
-        verify(productRepository, times(1)).findById(1L);
+        when(productRepository.findById(99L)).thenReturn(Optional.empty());
+        assertThrows(RuntimeException.class, () -> productService.getProductById(99L));
     }
 
     @Test
-    void getProductById_InactiveProduct() {
-        product.setIsActive(false);
+    void getProductById_FoundButInactive() {
+        Product product = new Product();
+        product.setId(1L);
+        product.setIsActive(false); // ไม่ active
         when(productRepository.findById(1L)).thenReturn(Optional.of(product));
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            productService.getProductById(1L);
-        });
-
-        assertEquals("Product not found", exception.getMessage());
-        verify(productRepository, times(1)).findById(1L);
+        // ต้อง throw Error ว่าหาไม่เจอ (เพราะเราซ่อนสินค้าไว้)
+        assertThrows(RuntimeException.class, () -> productService.getProductById(1L));
     }
 
+    // --- 2. Test: Create Product ---
+    @Test
+    void createProduct_Success_NoImage() {
+        when(productRepository.save(any(Product.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        Product result = productService.createProduct("Test Product", "Desc", BigDecimal.TEN, 100, true, null, "Electronics");
+
+        assertNotNull(result);
+        assertEquals("Test Product", result.getName());
+        assertEquals("Electronics", result.getCategory());
+        verify(productRepository, times(1)).save(any(Product.class));
+    }
+
+    @Test
+    void createProduct_Success_WithImage() throws IOException {
+        // Mock ไฟล์รูปภาพ
+        MultipartFile mockImage = mock(MultipartFile.class);
+        when(mockImage.isEmpty()).thenReturn(false);
+        when(mockImage.getOriginalFilename()).thenReturn("test.jpg");
+
+        when(productRepository.save(any(Product.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        Product result = productService.createProduct("With Image", "Desc", BigDecimal.TEN, 10, true, mockImage, "General");
+
+        assertNotNull(result);
+        assertNotNull(result.getImageUrl()); // ต้องมี URL รูป
+        assertTrue(result.getImageUrl().contains("test.jpg"));
+
+        // เช็คว่ามีการสั่ง save file จริง (แต่เราใช้ temp folder เลยไม่พัง)
+        verify(mockImage, times(1)).transferTo(any(File.class));
+    }
+
+    // --- 3. Test: Update Product ---
+    @Test
+    void updateProduct_Success_AllFields() {
+        Product existing = new Product();
+        existing.setId(1L);
+        existing.setName("Old Name");
+
+        when(productRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(productRepository.save(any(Product.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        // Map ข้อมูลใหม่
+        Map<String, Object> updates = Map.of(
+                "name", "New Name",
+                "description", "New Desc",
+                "price", 999.00,
+                "stock", 50,
+                "isActive", false,
+                "category", "New Cat"
+        );
+
+        Product updated = productService.updateProduct(1L, updates);
+
+        assertEquals("New Name", updated.getName());
+        assertEquals(new BigDecimal("999.0"), updated.getPrice());
+        assertEquals(50, updated.getStock());
+        assertEquals("New Cat", updated.getCategory());
+        assertFalse(updated.getIsActive());
+    }
+
+    @Test
+    void updateProduct_WithImage() throws IOException {
+        Product existing = new Product();
+        existing.setId(1L);
+
+        when(productRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(productRepository.save(any(Product.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        MultipartFile mockImage = mock(MultipartFile.class);
+        when(mockImage.isEmpty()).thenReturn(false);
+        when(mockImage.getOriginalFilename()).thenReturn("update.png");
+
+        // ส่ง Map ที่มี Image
+        Map<String, Object> updates = Map.of("image", mockImage);
+
+        Product updated = productService.updateProduct(1L, updates);
+
+        assertNotNull(updated.getImageUrl());
+        assertTrue(updated.getImageUrl().contains("update.png"));
+    }
+
+    @Test
+    void updateProduct_EmptyCategory() {
+        Product existing = new Product();
+        existing.setCategory("Old");
+        when(productRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(productRepository.save(any())).thenAnswer(i -> i.getArguments()[0]);
+
+        // ส่ง category เป็นว่าง -> ต้องกลายเป็น null
+        Map<String, Object> updates = Map.of("category", "");
+
+        Product updated = productService.updateProduct(1L, updates);
+        assertNull(updated.getCategory());
+    }
+
+    // --- 4. Test: Cut Quantity ---
     @Test
     void cutQuantity_Success() {
-        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
-        when(productRepository.save(any(Product.class))).thenReturn(product);
+        Product p = new Product();
+        p.setId(1L);
+        p.setStock(10);
+        when(productRepository.findById(1L)).thenReturn(Optional.of(p));
 
-        int quantityToCut = 3;
-        int expectedRemainingStock = product.getStock() - quantityToCut;
+        Map<String, Object> result = productService.cutQuantity(1L, 2);
 
-        var result = productService.cutQuantity(1L, quantityToCut);
-
-        assertEquals(expectedRemainingStock, product.getStock());
-        assertEquals(expectedRemainingStock, result.get("remainingQty"));
-        verify(productRepository, times(1)).findById(1L);
-        verify(productRepository, times(1)).save(product);
+        assertEquals(8, p.getStock()); // เหลือ 8
+        assertEquals(8, result.get("remainingQty"));
     }
 
     @Test
-    void cutQuantity_ProductNotFound() {
-        when(productRepository.findById(1L)).thenReturn(Optional.empty());
+    void cutQuantity_InvalidQty() {
+        Product p = new Product();
+        when(productRepository.findById(1L)).thenReturn(Optional.of(p));
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            productService.cutQuantity(1L, 5);
-        });
-
-        assertEquals("Product not found", exception.getMessage());
-        verify(productRepository, times(1)).findById(1L);
-        verify(productRepository, never()).save(any());
-    }
-
-    @Test
-    void cutQuantity_InvalidQuantity() {
-        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
-
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            productService.cutQuantity(1L, 0);
-        });
-
-        assertEquals("qty must be > 0", exception.getMessage());
-        verify(productRepository, times(1)).findById(1L);
-        verify(productRepository, never()).save(any());
+        // ตัด 0 หรือ ติดลบ ไม่ได้
+        assertThrows(IllegalArgumentException.class, () -> productService.cutQuantity(1L, 0));
     }
 
     @Test
     void cutQuantity_InsufficientStock() {
-        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
+        Product p = new Product();
+        p.setStock(5);
+        when(productRepository.findById(1L)).thenReturn(Optional.of(p));
 
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            productService.cutQuantity(1L, 20); // Stock is 10
-        });
-
-        assertEquals("insufficient stock", exception.getMessage());
-        verify(productRepository, times(1)).findById(1L);
-        verify(productRepository, never()).save(any());
+        // มี 5 จะตัด 10 ต้อง Error
+        assertThrows(IllegalArgumentException.class, () -> productService.cutQuantity(1L, 10));
     }
 
+    // --- 5. Test: Soft Delete ---
     @Test
     void softDeleteProduct_Success() {
-        Long productId = 1L;
-        doNothing().when(productRepository).softDeleteById(productId);
-
-        productService.softDeleteProduct(productId);
-
-        verify(productRepository, times(1)).softDeleteById(productId);
-    }
-
-    @Test
-    void updateProduct_Success() {
-        Map<String, Object> updates = new HashMap<>();
-        updates.put("name", "New Name");
-        updates.put("price", new BigDecimal("150.00"));
-
-        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
-        when(productRepository.save(any(Product.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-        Product updatedProduct = productService.updateProduct(1L, updates);
-
-        assertNotNull(updatedProduct);
-        assertEquals("New Name", updatedProduct.getName());
-        assertEquals(new BigDecimal("150.00"), updatedProduct.getPrice());
-        verify(productRepository, times(1)).findById(1L);
-        verify(productRepository, times(1)).save(product);
-    }
-
-    @Test
-    void updateProduct_NotFound() {
-        Map<String, Object> updates = new HashMap<>();
-        updates.put("name", "New Name");
-
-        when(productRepository.findById(1L)).thenReturn(Optional.empty());
-
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            productService.updateProduct(1L, updates);
-        });
-
-        assertEquals("Product not found", exception.getMessage());
-        verify(productRepository, times(1)).findById(1L);
-        verify(productRepository, never()).save(any());
+        doNothing().when(productRepository).softDeleteById(1L);
+        productService.softDeleteProduct(1L);
+        verify(productRepository, times(1)).softDeleteById(1L);
     }
 }

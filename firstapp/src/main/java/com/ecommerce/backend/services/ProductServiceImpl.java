@@ -30,6 +30,10 @@ public class ProductServiceImpl implements ProductService {
     @Value("${upload.path.images}")
     private String uploadPath;
 
+    public void setUploadPath(String uploadPath) {
+        this.uploadPath = uploadPath;
+    }
+
     @Override
     public List<Product> getAllProducts() {
         return productRepository.findByIsActiveTrue();
