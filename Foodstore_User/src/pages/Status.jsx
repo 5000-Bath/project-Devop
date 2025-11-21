@@ -84,7 +84,10 @@ export default function Status() {
 
       if (!res.ok) {
         if (res.status === 403) throw new Error('คุณไม่มีสิทธิ์ดูออเดอร์นี้');
-        if (res.status === 404) throw new Error('ไม่พบออเดอร์นี้');
+        // หากไม่พบข้อมูล (404) หรือเกิดปัญหาที่เซิร์ฟเวอร์ (500) ให้แจ้งว่าไม่พบ
+        if (res.status === 404 || res.status === 500) {
+          throw new Error('ไม่พบเลขออเดอร์นี้');
+        }
         if (res.status === 401) {
           navigate(`/login?redirect=/status?orderId=${trimmed}`);
           return;
