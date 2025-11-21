@@ -38,12 +38,12 @@ pipeline {
 
                                     kubectl get ns \$K8S_NAMESPACE || kubectl create ns \$K8S_NAMESPACE
 
-                                    # --- MySQL Master ---
+                                    /* --- MySQL Master ---
                                     kubectl apply -f k8s/mysql-config-master.yaml -n \$K8S_NAMESPACE
                                     kubectl apply -f k8s/mysql-secret.yaml -n \$K8S_NAMESPACE
                                     kubectl apply -f k8s/mysql-init-master.yaml -n \$K8S_NAMESPACE
                                     kubectl apply -f k8s/mysql-master.yaml -n \$K8S_NAMESPACE
-
+                                    */
 
                                     #####################################################
                                     #   FIX: BACKEND PV / PVC MUST BE CLEANED FIRST    #
@@ -84,7 +84,7 @@ pipeline {
                                     envsubst < k8s/frontend-admin-rayong.yaml | kubectl apply -f - -n \$K8S_NAMESPACE
 
                                     # --- Rollout check ---
-                                    kubectl rollout status deployment/mysql-rayong -n \$K8S_NAMESPACE --timeout=180s
+                                    # kubectl rollout status deployment/mysql-rayong -n \$K8S_NAMESPACE --timeout=180s
                                     kubectl rollout status deployment/backend -n \$K8S_NAMESPACE --timeout=180s
                                     kubectl rollout status deployment/frontend-admin -n \$K8S_NAMESPACE --timeout=180s
                                     kubectl rollout status deployment/frontend-user -n \$K8S_NAMESPACE --timeout=180s
@@ -117,7 +117,6 @@ pipeline {
 
                                     kubectl apply -f k8s/mysql-pvc.yaml -n \$K8S_NAMESPACE
 
-
                                     #####################################################
                                     #   FIX: BACKEND PV / PVC MUST BE RESET            #
                                     #####################################################
@@ -134,10 +133,11 @@ pipeline {
                                     kubectl apply -f k8s/backend-pvc.yaml
 
 
-                                    # --- MySQL Slave ---
+                                    /* --- MySQL Slave ---
                                     kubectl apply -f k8s/mysql-config-slave.yaml -n \$K8S_NAMESPACE
                                     kubectl apply -f k8s/mysql-secret.yaml -n \$K8S_NAMESPACE
                                     kubectl apply -f k8s/mysql-slave.yaml -n \$K8S_NAMESPACE
+                                    */
 
                                     # --- Backend ---
                                     envsubst < k8s/backend.yaml | kubectl apply -f - -n \$K8S_NAMESPACE
