@@ -1,15 +1,12 @@
 apiVersion: v1
-kind: PersistentVolume
+kind: PersistentVolumeClaim
 metadata:
-  name: backend-pv
+  name: backend-pvc
   namespace: production
 spec:
-  capacity:
-    storage: 15Gi
   accessModes:
-    - ReadWriteMany 
-  persistentVolumeReclaimPolicy: Retain
-  # แก้ไข: ลบ hostPath แล้วใช้ NFS แทน
-  nfs: 
-    path: /mnt/k8s_backend_uploads # Path Export บน NFS Server
-    server: 10.10.10.9       # IP ของ NFS Server
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 15Gi
+  volumeName: backend-pv  # bind PV ที่มีอยู่
