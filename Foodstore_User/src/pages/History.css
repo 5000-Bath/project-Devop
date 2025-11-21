@@ -1,97 +1,94 @@
-
-/* General Page Style */
 .history-page {
-  padding: 24px; /* Increased padding for more breathing room */
-  font-family: 'Sarabun', sans-serif; /* Modern, readable font */
-  background-color: #f4f5fa; /* Very light grey background, subtle */
+  padding: 24px;
+  font-family: 'Sarabun', sans-serif;
+  background-color: #f4f5fa;
   min-height: 100vh;
-  color: #333; /* Default text color */
+  color: #333;
 }
 
-/* Header Section */
 .history-header {
-  background: #0f0f10; /* Original dark header background */
-  color: #fff; /* Original white text */
+  background: #0f0f10;
+  color: #fff;
   border-radius: 12px;
-  padding: 18px 24px; /* Adjusted padding */
+  padding: 18px 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px; /* Consistent gap */
+  gap: 16px;
   flex-wrap: wrap;
-  margin-bottom: 24px; /* Space below header */
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+  margin-bottom: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .history-header h1 {
   margin: 0;
-  font-size: 26px; /* Slightly larger heading */
+  font-size: 26px;
   font-weight: 700;
   letter-spacing: 0.8px;
 }
 
 .history-tabs {
   display: flex;
-  gap: 10px; /* Original gap */
+  gap: 10px !important;
   flex-wrap: wrap;
+  margin-top: 12px;
 }
 
-/* Tab Buttons */
 .hist-tab {
   border: none;
-  border-radius: 999px; /* Pill shape */
-  background: #2f2f2f; /* Original dark tab background */
-  color: #fff; /* Original white text */
-  padding: 10px 18px; /* Adjusted padding */
-  font-weight: 600; /* Slightly less bold */
+  border-radius: 999px;
+  background: #2f2f2f;
+  color: #fff;
+  padding: 10px 18px;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease; /* Smooth transitions */
+  transition: all 0.2s ease;
   font-size: 15px;
 }
 
 .hist-tab.active {
-  background: #e53935; /* Original active red */
-  box-shadow: 0 6px 16px rgba(229, 57, 53, 0.4); /* Enhanced shadow for active state */
+  background: #e53935;
+  box-shadow: 0 6px 16px rgba(229, 57, 53, 0.4);
 }
 
 .hist-tab:hover:not(.active) {
-  background: #444; /* Slightly lighter dark on hover */
-  transform: translateY(-2px); /* Subtle lift effect */
+  background: #444;
+  transform: translateY(-2px);
 }
 
-/* Header Actions */
 .history-actions {
   display: flex;
-  gap: 12px; /* Consistent gap */
+  gap: 12px;
   align-items: center;
   flex-wrap: wrap;
 }
 
 .hist-search {
-  width: 100%; /* Make it full width in smaller screens */
-  max-width: 280px; /* Max width for larger screens */
-  height: 40px; /* Consistent height */
-  border-radius: 8px; /* Slightly less rounded */
-  border: 1px solid #444; /* Darker border */
-  background: #1a1a1a; /* Original dark input background */
-  color: #fff; /* Original white text */
-  padding: 0 14px; /* Adjusted padding */
+  width: 100%;
+  max-width: 280px;
+  height: 40px;
+  border-radius: 8px;
+  border: 1px solid #444;
+  background: #1a1a1a;
+  color: #fff;
+  padding: 0 14px;
   font-size: 15px;
 }
+
 .hist-search::placeholder {
-  color: #bbb; /* Lighter placeholder text */
+  color: #bbb;
 }
+
 .hist-search:focus {
-  border-color: #e53935; /* Red focus border */
-  box-shadow: 0 0 0 2px rgba(229, 57, 53, 0.3); /* Red glow on focus */
+  border-color: #e53935;
+  box-shadow: 0 0 0 2px rgba(229, 57, 53, 0.3);
   outline: none;
 }
 
-/* General Button Styles */
 .btn {
-  height: 40px; /* Consistent height */
-  border-radius: 8px; /* Consistent border-radius */
-  padding: 0 16px; /* Adjusted padding */
+  height: 40px;
+  border-radius: 8px;
+  padding: 0 16px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -103,55 +100,55 @@
 
 .btn-dark {
   border: none;
-  background: #444; /* Original dark button background */
-  color: #fff; /* Original white text */
+  background: #444;
+  color: #fff;
 }
 
 .btn-dark:hover {
-  background: #555; /* Slightly lighter on hover */
+  background: #555;
 }
 
 .btn-outline {
-  border: 1px solid #d1d5db; /* Lighter border for outline */
-  background: #fff; /* White background */
-  color: #333; /* Dark text */
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #333;
 }
 
 .btn-outline:hover {
-  background: #f0f0f0; /* Light grey on hover */
+  background: #f0f0f0;
   border-color: #a0a0a0;
 }
 
 .btn-group {
   display: inline-flex;
-  gap: 8px; /* Consistent gap */
+  gap: 8px;
 }
 
-/* Table Styling */
 .table-wrap {
   overflow-x: auto;
   background: #fff;
   border-radius: 12px;
-  border: 1px solid #e0e0e0; /* Lighter border */
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); /* Subtle shadow */
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .history-table {
   width: 100%;
-  border-collapse: separate; /* For rounded corners */
+  border-collapse: separate;
   border-spacing: 0;
-  min-width: 760px; /* Ensure table doesn't get too cramped */
+  min-width: 760px;
 }
 
 .history-table thead tr {
-  background: #f8f9fa; /* Lighter header background */
+  background: #f8f9fa;
 }
 
-.history-table th, .history-table td {
-  padding: 14px 18px; /* Increased padding */
+.history-table th,
+.history-table td {
+  padding: 14px 18px;
   font-size: 14px;
   color: #333;
-  border-bottom: 1px solid #eee; /* Lighter border */
+  border-bottom: 1px solid #eee;
 }
 
 .history-table th {
@@ -162,63 +159,77 @@
 }
 
 .history-table tbody tr:last-child td {
-  border-bottom: none; /* No border for the last row */
+  border-bottom: none;
 }
 
 .history-table tbody tr:hover {
-  background-color: #fcfcfc; /* Very subtle hover effect */
+  background-color: #fcfcfc;
 }
 
-.ta-right { text-align: right; }
-.ta-center { text-align: center; }
-.ta-left { text-align: left; }
+.ta-right {
+  text-align: right;
+}
+.ta-center {
+  text-align: center;
+}
+.ta-left {
+  text-align: left;
+}
 
-/* Status Badge */
 .badge {
   display: inline-block;
-  padding: 5px 10px; /* Adjusted padding */
-  border-radius: 6px; /* Slightly less rounded */
+  padding: 5px 10px;
+  border-radius: 6px;
   font-weight: 600;
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
 
-/* Original badge colors */
-.ok{background:#e6ffed;color:#087443}
-.warn{background:#fff6e5;color:#8a5a00}
-.bad{background:#ffe9e9;color:#b00020}
-.muted{background:#f1f3f5;color:#666}
+.ok {
+  background: #e6ffed;
+  color: #087443;
+}
+.warn {
+  background: #fff6e5;
+  color: #8a5a00;
+}
+.bad {
+  background: #ffe9e9;
+  color: #b00020;
+}
+.muted {
+  background: #f1f3f5;
+  color: #666;
+}
 
-/* Price & Discount Styling */
 .discount-applied {
   display: inline-block;
-  background-color: #dcfce7; /* Light green */
-  color: #16a34a; /* Darker green */
-  padding: 3px 8px; /* Adjusted padding */
+  background-color: #dcfce7;
+  color: #16a34a;
+  padding: 3px 8px;
   border-radius: 6px;
-  font-size: 0.85em; /* Slightly larger */
+  font-size: 0.85em;
   font-weight: 600;
   margin-right: 8px;
 }
 
 .final-price {
-  font-weight: 700; /* More prominent */
-  color: #111; /* Darker color */
+  font-weight: 700;
+  color: #111;
 }
 
-/* Details Section (Expanded Row) */
 .details-cell {
-  background: #fcfcfc; /* Lighter background for details row */
-  padding: 16px 24px; /* Increased padding */
+  background: #fcfcfc;
+  padding: 16px 24px;
 }
 
 .details-wrap {
   background: #ffffff;
   border: 1px solid #e5e7eb;
-  border-radius: 10px; /* Rounded corners for the inner card */
-  padding: 20px; /* Increased padding */
-  box-shadow: 0 2px 6px rgba(0,0,0,0.06); /* Subtle shadow */
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
   overflow-x: auto;
 }
 
@@ -230,15 +241,15 @@
 .hist-items thead th {
   font-size: 12px;
   color: #6b7280;
-  background: #fcfcfc; /* Lighter header for sub-table */
+  background: #fcfcfc;
   padding: 10px 12px;
   border-bottom: 1px solid #e5e7eb;
-  text-align: left; /* Default to left for consistency */
+  text-align: left;
 }
 
 .hist-items td {
-  padding: 12px; /* Adjusted padding */
-  border-bottom: 1px solid #f5f5f5; /* Very light border */
+  padding: 12px;
+  border-bottom: 1px solid #f5f5f5;
   vertical-align: middle;
 }
 
@@ -246,7 +257,6 @@
   border-bottom: none;
 }
 
-/* Summary Rows in Details Table */
 .summary-row td {
   font-weight: 600;
   border-top: 1px solid #e0e0e0;
@@ -255,37 +265,73 @@
 }
 
 .total-row td {
-  font-weight: 800; /* Even bolder for total */
-  font-size: 1.2em; /* Larger total font size */
-  color: #000; /* Black for total */
+  font-weight: 800;
+  font-size: 1.2em;
+  color: #000;
 }
 
-/* Loading/Error/Empty States */
-.hist-loading, .hist-error, .hist-empty {
+.hist-loading,
+.hist-error,
+.hist-empty {
   text-align: center;
   padding: 40px;
   font-size: 16px;
   color: #6b7280;
 }
 
-.hist-error { color: #ef4444; }
+.hist-error {
+  color: #ef4444;
+}
 
-/* Responsive Adjustments */
 @media (max-width: 768px) {
-  .history-page { padding: 16px; }
-  .history-header { flex-direction: column; align-items: stretch; padding: 16px; }
-  .history-header h1 { font-size: 22px; text-align: center; }
-  .history-tabs { justify-content: center; }
-  .history-actions { flex-direction: column; align-items: stretch; }
-  .hist-search { max-width: none; }
-  .btn-group { justify-content: center; }
-  .history-table { min-width: 600px; } /* Allow horizontal scroll on smaller screens */
-  .history-table th, .history-table td { padding: 10px 12px; font-size: 13px; }
-  .details-cell { padding: 12px; }
-  .details-wrap { padding: 16px; }
+  .history-page {
+    padding: 16px;
+  }
+  .history-header {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 16px;
+  }
+  .history-header h1 {
+    font-size: 22px;
+    text-align: center;
+  }
+  .history-tabs {
+    justify-content: center;
+  }
+  .history-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .hist-search {
+    max-width: none;
+  }
+  .btn-group {
+    justify-content: center;
+  }
+  .history-table {
+    min-width: 600px;
+  }
+  .history-table th,
+  .history-table td {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+  .details-cell {
+    padding: 12px;
+  }
+  .details-wrap {
+    padding: 16px;
+  }
 }
 
 @media (max-width: 480px) {
-  .hist-tab { padding: 8px 14px; font-size: 14px; }
-  .btn { padding: 0 12px; font-size: 14px; }
+  .hist-tab {
+    padding: 8px 14px;
+    font-size: 14px;
+  }
+  .btn {
+    padding: 0 12px;
+    font-size: 14px;
+  }
 }

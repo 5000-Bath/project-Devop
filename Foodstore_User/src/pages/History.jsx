@@ -1,31 +1,40 @@
-import React, { useContext, useEffect, useMemo, useState } from "react";
+import React, { useContext, useEffect, useMemo, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import "./History.css";
 
 const STATUSES = ["ALL", "PENDING", "SUCCESS", "CANCELLED"];
-
-
 const ORDERS_URL = `/api/orders`;
 
 function formatThaiFromLocalInput(inputStr) {
   if (!inputStr) return "-";
-  const iso = inputStr.replace(" ", "T") + "Z";
-  const d = new Date(iso);
-  if (isNaN(d)) return inputStr;
-  const dd = String(d.getDate()).padStart(2, "0");
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const yyyy = d.getFullYear() + 543;
-  const hh = String(d.getHours()).padStart(2, "0");
-  const mi = String(d.getMinutes()).padStart(2, "0");
-  return `${dd}/${mm}/${yyyy} ${hh}:${mi}`;
+  try {
+    const isoLike = String(inputStr).replace(" ", "T");
+    const d = new Date(isoLike);
+    if (isNaN(d.getTime())) return inputStr;
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const yyyy = d.getFullYear() + 543;
+    const hh = String(d.getHours()).padStart(2, "0");
+    const mi = String(d.getMinutes()).padStart(2, "0");
+    return `${dd}/${mm}/${yyyy} ${hh}:${mi}`;
+  } catch {
+    return inputStr;
+  }
 }
 
-const money = (n) =>
-  Number(n || 0).toLocaleString("th-TH", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+const currencyFormatter = new Intl.NumberFormat("th-TH", {
+  style: "currency",
+  currency: "THB",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+const money = (n) => {
+  const num = Number(n ?? 0);
+  if (Number.isNaN(num)) return currencyFormatter.format(0);
+  return currencyFormatter.format(num);
+};
 
 const badgeClass = (s) =>
   ({
@@ -37,13 +46,16 @@ const badgeClass = (s) =>
 export default function History() {
   const { user, isAuthed, loading: authLoading } = useContext(AuthContext);
   const navigate = useNavigate();
-  
+
   const [status, setStatus] = useState("ALL");
   const [q, setQ] = useState("");
+  const [debouncedQ, setDebouncedQ] = useState("");
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
   const [openId, setOpenId] = useState(null);
+
+  const fetchControllerRef = useRef(null);
 
   useEffect(() => {
     if (!authLoading && !isAuthed) {
@@ -51,59 +63,60 @@ export default function History() {
     }
   }, [isAuthed, authLoading, navigate]);
 
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQ(q.trim().toLowerCase()), 300);
+    return () => clearTimeout(t);
+  }, [q]);
+
   const fetchOrders = async () => {
     if (!isAuthed) return;
-    
+    if (fetchControllerRef.current) {
+      fetchControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    fetchControllerRef.current = controller;
+
     setLoading(true);
     setErr("");
 
     try {
-      console.log("🔍 Fetching orders for user:", user?.username); 
-      
       const res = await fetch(ORDERS_URL, {
         method: "GET",
-        credentials: "include", 
-        headers: { 
+        credentials: "include",
+        headers: {
           Accept: "application/json",
-          "Content-Type": "application/json"
-        }
+          "Content-Type": "application/json",
+        },
+        signal: controller.signal,
       });
-      
-      console.log("📡 Response status:", res.status); 
-      
+
       if (!res.ok) {
         if (res.status === 401) {
-          console.error("❌ 401 Unauthorized - redirecting to login");
           navigate("/login?redirect=/history");
           return;
         }
         if (res.status === 403) {
-          console.error("❌ 403 Forbidden - access denied");
           throw new Error("Access denied. Please check your permissions.");
         }
         throw new Error(`HTTP ${res.status}`);
       }
-      
-      const data = await res.json();
-      console.log("📦 Received data:", data); 
 
-      const list = Array.isArray(data) ? data : Array.isArray(data?.orders) ? data.orders : [];
-      
-      console.log(`✅ Loaded ${list.length} orders for user ${user?.username}`); 
+      const data = await res.json();
+
+      const list = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.orders)
+        ? data.orders
+        : [];
 
       if (user?.id) {
-        const invalidOrders = list.filter(o => o.userId !== user.id);
-        if (invalidOrders.length > 0) {
-          console.error("⚠️ Warning: Received orders from other users:", invalidOrders);
-          const validOrders = list.filter(o => o.userId === user.id);
-          setOrders(validOrders);
-          return;
-        }
+        const validOrders = list.filter((o) => o.userId === user.id);
+        setOrders(validOrders);
+      } else {
+        setOrders(list);
       }
-      
-      setOrders(list);
     } catch (e) {
-      console.error("❌ Failed to load orders:", e);
+      if (e.name === "AbortError") return;
       setErr(e?.message || "Load failed");
       setOrders([]);
     } finally {
@@ -113,13 +126,17 @@ export default function History() {
 
   useEffect(() => {
     if (isAuthed && user) {
-      console.log("🚀 User authenticated, fetching orders..."); 
       fetchOrders();
     }
-  }, [isAuthed, user?.id]); 
+    return () => {
+      if (fetchControllerRef.current) {
+        fetchControllerRef.current.abort();
+      }
+    };
+  }, [isAuthed, user?.id]);
 
   const filtered = useMemo(() => {
-    const needle = q.trim().toLowerCase();
+    const needle = debouncedQ;
     const byStatus =
       status === "ALL"
         ? orders
@@ -139,8 +156,10 @@ export default function History() {
           );
         });
 
-    return [...bySearch].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-  }, [orders, q, status]);
+    return [...bySearch].sort(
+      (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+    );
+  }, [orders, debouncedQ, status]);
 
   const totals = useMemo(() => {
     let totalOrders = filtered.length;
@@ -181,7 +200,9 @@ export default function History() {
     const cartItems = buildCartFromOrder(order);
     writeCartToStorage(cartItems);
     try {
-      localStorage.setItem("cartMeta", JSON.stringify({ fromOrderId: order?.id }));
+      if (order?.id) {
+        localStorage.setItem("cartMeta", JSON.stringify({ fromOrderId: order.id }));
+      }
     } catch {}
     navigate("/Order");
   }
@@ -194,23 +215,16 @@ export default function History() {
     );
   }
 
-  if (!isAuthed) {
-    return null;
-  }
+  if (!isAuthed) return null;
 
   return (
     <div className="history-page">
-      {/* Header */}
       <div className="history-header">
         <div className="history-left">
           <h1>HISTORY</h1>
           <div className="history-tabs">
             {STATUSES.map((s) => (
-              <button
-                key={s}
-                onClick={() => setStatus(s)}
-                className={`hist-tab ${status === s ? "active" : ""}`}
-              >
+              <button key={s} type="button" onClick={() => setStatus(s)} className={`hist-tab ${status === s ? "active" : ""}`}>
                 {s}
               </button>
             ))}
@@ -223,12 +237,9 @@ export default function History() {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="ค้นหา: เลขออเดอร์ / สินค้า / สถานะ"
+            aria-label="ค้นหาออเดอร์"
           />
-          <button
-            className="btn btn-dark"
-            onClick={fetchOrders}
-            disabled={loading}
-          >
+          <button type="button" className="btn btn-dark" onClick={fetchOrders} disabled={loading}>
             {loading ? "Loading..." : "Refresh"}
           </button>
         </div>
@@ -245,19 +256,22 @@ export default function History() {
                 <th style={{ width: 120 }}>Order ID</th>
                 <th style={{ width: 160 }}>Created</th>
                 <th style={{ width: 140 }}>Status</th>
-                <th className="ta-right" style={{ width: 120 }}>Items</th>
-                <th className="ta-right" style={{ width: 140 }}>Est. Total</th>
-                <th className="ta-center" style={{ width: 180 }}>More</th>
+                <th className="ta-right" style={{ width: 120 }}>
+                  Items
+                </th>
+                <th className="ta-right" style={{ width: 140 }}>
+                  Est. Total
+                </th>
+                <th className="ta-center" style={{ width: 180 }}>
+                  More
+                </th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((o) => {
                 const items = Array.isArray(o.orderItems) ? o.orderItems : [];
                 const totalItems = items.reduce((s, it) => s + Number(it.quantity ?? 0), 0);
-                const subtotal = items.reduce(
-                  (s, it) => s + Number(it.quantity ?? 0) * Number(it?.product?.price ?? 0),
-                  0
-                );
+                const subtotal = items.reduce((s, it) => s + Number(it.quantity ?? 0) * Number(it?.product?.price ?? 0), 0);
                 const finalAmount = o.finalAmount ?? subtotal;
                 const discountAmount = o.discountAmount ?? 0;
                 const opened = openId === o.id;
@@ -274,24 +288,17 @@ export default function History() {
                       <td className="ta-right">
                         {discountAmount > 0 && (
                           <span className="discount-applied" title={`ส่วนลด ${money(discountAmount)} บาท`}>
-                            -฿{money(discountAmount)}
+                            -{money(discountAmount)}
                           </span>
                         )}
-                        <span className="final-price">฿ {money(finalAmount)}</span>
+                        <span className="final-price">{money(finalAmount)}</span>
                       </td>
                       <td className="ta-center">
                         <div className="btn-group">
-                          <button
-                            className="btn btn-outline"
-                            onClick={() => handleReorder(o)}
-                            title="เพิ่มสินค้าชุดนี้ลงตะกร้าและไปหน้า Order"
-                          >
+                          <button type="button" className="btn btn-outline" onClick={() => handleReorder(o)} title="เพิ่มสินค้าชุดนี้ลงตะกร้าและไปหน้า Order">
                             Reorder
                           </button>
-                          <button
-                            className="btn btn-dark"
-                            onClick={() => setOpenId(opened ? null : o.id)}
-                          >
+                          <button type="button" className="btn btn-dark" onClick={() => setOpenId(opened ? null : o.id)}>
                             {opened ? "Hide" : "Details"}
                           </button>
                         </div>
@@ -307,9 +314,9 @@ export default function History() {
                                 <tr>
                                   <th>#</th>
                                   <th>Product</th>
-                                  <th className="ta-right">Price</th>
-                                  <th className="ta-center">Qty</th>
-                                  <th className="ta-right">Subtotal</th>
+                                  <th>Price</th>
+                                  <th>Qty</th>
+                                  <th>Subtotal</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -319,34 +326,52 @@ export default function History() {
                                   const qty = Number(it?.quantity ?? 0);
                                   return (
                                     <tr key={it.id || idx}>
-                                      <td>{idx + 1}</td>
-                                      <td className="ta-left">{name}</td>
-                                      <td className="ta-right">฿ {money(price)}</td>
-                                      <td className="ta-center">{qty}</td>
-                                      <td className="ta-right">฿ {money(price * qty)}</td>
+                                      <td data-label="#">{idx + 1}</td>
+                                      <td data-label="Product" className="prod-col">
+                                        {name}
+                                      </td>
+                                      <td data-label="Price" className="num-col">
+                                        {money(price)}
+                                      </td>
+                                      <td data-label="Qty" className="qty-col">
+                                        {qty}
+                                      </td>
+                                      <td data-label="Subtotal" className="num-col">
+                                        {money(price * qty)}
+                                      </td>
                                     </tr>
                                   );
                                 })}
                                 {!items.length && (
                                   <tr>
-                                    <td colSpan={5} className="ta-left">No items</td>
+                                    <td colSpan={5} style={{ textAlign: "left" }}>
+                                      No items
+                                    </td>
                                   </tr>
                                 )}
+
                                 {discountAmount > 0 && (
                                   <>
                                     <tr className="summary-row">
-                                      <td colSpan="4" className="ta-right">Subtotal</td>
-                                      <td className="ta-right">฿ {money(subtotal)}</td>
+                                      <td colSpan="4" style={{ textAlign: "right" }}>
+                                        Subtotal
+                                      </td>
+                                      <td style={{ textAlign: "right" }}>{money(subtotal)}</td>
                                     </tr>
                                     <tr className="summary-row">
-                                      <td colSpan="4" className="ta-right">Discount ({o.couponCode})</td>
-                                      <td className="ta-right">- ฿ {money(discountAmount)}</td>
+                                      <td colSpan="4" style={{ textAlign: "right" }}>
+                                        Discount ({o.couponCode || "-"})
+                                      </td>
+                                      <td style={{ textAlign: "right" }}>-{money(discountAmount)}</td>
                                     </tr>
                                   </>
                                 )}
+
                                 <tr className="summary-row total-row">
-                                  <td colSpan="4" className="ta-right">Total</td>
-                                  <td className="ta-right">฿ {money(finalAmount)}</td>
+                                  <td colSpan={5} style={{ textAlign: "right", fontWeight: 800 }}>
+                                    <span style={{ marginRight: 12 }}>Total</span>
+                                    <span>{money(finalAmount)}</span>
+                                  </td>
                                 </tr>
                               </tbody>
                             </table>
