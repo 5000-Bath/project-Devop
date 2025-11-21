@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import "./Login.css";
 import shinchanLogo from "../assets/shinchan.png";
 
-const API_BASE = (import.meta.env.VITE_API_URL || "http://localhost:8080").replace(/\/+$/, "");
+
 
 export default function Register() {
   const nav = useNavigate();
@@ -31,7 +31,7 @@ export default function Register() {
 
     setLoading(true);
     try{
-      const res = await fetch(`${API_BASE}/api/auth/register`,{
+      const res = await fetch(`/api/auth/register`,{
         method:"POST",
         credentials: "include",
         headers:{ "Content-Type":"application/json", "Accept":"application/json" },

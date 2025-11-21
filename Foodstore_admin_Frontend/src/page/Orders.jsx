@@ -4,7 +4,7 @@ import Swal from "sweetalert2";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-const API_BASE = "http://localhost:8080";
+const API_BASE = "";
 
 export default function Orders() {
     const [orders, setOrders] = useState([]);

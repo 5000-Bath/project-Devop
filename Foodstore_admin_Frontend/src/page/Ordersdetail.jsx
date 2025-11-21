@@ -4,7 +4,6 @@ import Swal from "sweetalert2";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-const API_BASE = "http://localhost:8080";
 
 export default function Ordersdetail() {
     const { id } = useParams();
@@ -18,7 +17,7 @@ export default function Ordersdetail() {
     useEffect(() => {
         const fetchOrder = async () => {
             try {
-                const res = await fetch(`${API_BASE}/api/orders/${id}`, {
+                const res = await fetch(`/api/orders/${id}`, {
                     credentials: "include"
                 });
 
@@ -71,7 +70,7 @@ export default function Ordersdetail() {
 
             if (!result.isConfirmed) return;
 
-            const res = await fetch(`${API_BASE}/api/orders/${id}/status`, {
+            const res = await fetch(`/api/orders/${id}/status`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
