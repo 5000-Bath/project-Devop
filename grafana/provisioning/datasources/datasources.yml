@@ -1,0 +1,37 @@
+﻿apiVersion: 1
+datasources:
+  - name: Prometheus
+    uid: prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+  - name: Loki
+    uid: loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    jsonData:
+      maxLines: 1000
+  - name: Tempo
+    uid: tempo
+    type: tempo
+    access: proxy
+    url: http://tempo:3200
+    jsonData:
+      tracesToLogs:
+        datasourceUid: loki
+        spanStartTimeShift: -15m
+        spanEndTimeShift: 15m
+        filterByTraceID: true
+        mapTagNamesEnabled: true
+      tracesToMetrics:
+        datasourceUid: prometheus
+        tags: ["job"]
+        queries:
+          - name: Span Metrics
+            query: sum by (service_name)(rate(tempo_spanmetrics_latency_bucket[5m]))
+      serviceMap:
+        datasourceUid: tempo
+      nodeGraph:
+        enabled: true
