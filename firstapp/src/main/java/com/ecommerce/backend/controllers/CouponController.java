@@ -80,8 +80,8 @@ public class CouponController {
         if(body.get("remainingCount") != null)
             updates.put("remainingCount", Integer.parseInt(body.get("remainingCount").toString()));
 
-        if(body.get("expiryDate") != null) {
-            String dateStr = body.get("expiryDate").toString().replace("Z", "");
+        if(body.get("expirationDate") != null) {
+            String dateStr = body.get("expirationDate").toString().replace("Z", "");
             updates.put("expirationDate", LocalDateTime.parse(dateStr));
         }
 

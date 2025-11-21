@@ -432,12 +432,36 @@ export default function Ordersdetail() {
                             </span>
                         </div>
 
+                        {/* --- Start: Updated Price Section --- */}
+                        {order.discountAmount > 0 && (
+                            <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                <span style={{ color: "#666", fontSize: 14 }}>ราคารวม</span>
+                                <span style={{ color: "#333", fontSize: 14 }}>
+                                    {totalPrice.toLocaleString()} บาท
+                                </span>
+                            </div>
+                        )}
+
+                        {order.discountAmount > 0 && (
+                            <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                <span style={{ color: "green", fontSize: 14 }}>
+                                    ส่วนลด ({order.couponCode || 'N/A'})
+                                </span>
+                                <span style={{ color: "green", fontSize: 14 }}>
+                                    - {Number(order.discountAmount).toLocaleString()} บาท
+                                </span>
+                            </div>
+                        )}
+
                         <div style={{ display: "flex", justifyContent: "space-between" }}>
-                            <span style={{ color: "#666", fontSize: 14 }}>Total</span>
+                            <span style={{ color: "#333", fontSize: 16, fontWeight: "bold" }}>
+                                ราคาสุทธิ
+                            </span>
                             <span style={{ color: "#333", fontSize: 14, fontWeight: 500 }}>
-                                {totalPrice.toLocaleString()} บาท
+                                {Number(order.finalAmount ?? totalPrice).toLocaleString()} บาท
                             </span>
                         </div>
+                        {/* --- End: Updated Price Section --- */}
 
                         <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
                             <button
