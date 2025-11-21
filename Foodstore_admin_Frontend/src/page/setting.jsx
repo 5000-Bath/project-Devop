@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Edit2, Save, X, Mail, Lock, User, Calendar } from "lucide-react";
 import Swal from "sweetalert2";
 
-const API_BASE = "";
+
 
 function Button({ children, onClick, variant = "primary", disabled = false, ...rest }) {
     const baseStyle = {
@@ -155,7 +155,7 @@ export default function Setting() {
     useEffect(() => {
         const loadAdminData = async () => {
             try {
-                const res = await fetch(`${API_BASE}/api/admins/me`, { credentials: "include" });
+                const res = await fetch(`/api/admins/me`, { credentials: "include" });
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const data = await res.json();
                 setAdmin(data);
@@ -193,15 +193,18 @@ export default function Setting() {
         }
         setSaving(true);
         try {
-            const res = await fetch(`${API_BASE}/api/admins/${admin.id}`, {
+            const res = await fetch(`/api/admins/${admin.id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
                 body: JSON.stringify({ username: form.fullName, email: form.email, password: form.password || undefined }),
             });
             if (!res.ok) {
-                const err = await res.json().catch(() => ({}));
-                throw new Error(err.message || `HTTP ${res.status}`);
+                // ปรับปรุงการจัดการ Error ให้อ่าน message จาก backend
+                const errData = await res.json().catch(() => ({ error: `เกิดข้อผิดพลาด: ${res.status}` }));
+                // ใช้ error message จาก backend ถ้ามี, ถ้าไม่มีก็ใช้ข้อความสำรอง
+                const errorMessage = errData.error || errData.message || `HTTP ${res.status}`;
+                throw new Error(errorMessage);
             }
             const updated = await res.json();
             setAdmin(updated);

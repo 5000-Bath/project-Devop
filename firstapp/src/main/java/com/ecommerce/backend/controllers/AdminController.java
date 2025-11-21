@@ -5,7 +5,9 @@ import com.ecommerce.backend.repositories.AdminRepository;
 import com.ecommerce.backend.services.AdminService;
 import com.ecommerce.backend.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -73,7 +75,7 @@ public class AdminController {
     @PutMapping("/{id}")
     public ResponseEntity<?> updateAdmin(
             @PathVariable Long id, 
-            @RequestBody Map<String, String> body,
+            @RequestBody Map<String, Object> body,
             @CookieValue(name = "admin_token", required = false) String token
     ) {
         if (token == null || token.isEmpty()) {
@@ -82,27 +84,41 @@ public class AdminController {
         }
 
         try {
-            jwtUtil.getUsernameFromToken(token);
+            String currentUsername = jwtUtil.getUsernameFromToken(token);
+            Admin admin = adminService.getAdminByUsername(currentUsername);
+            if (!admin.getId().equals(id)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Access denied"));
+            }
+
+            // เข้ารหัสรหัสผ่านถ้ามีการส่งมาใหม่
+            if (body.containsKey("password")) {
+                String rawPassword = (String) body.get("password");
+                if (rawPassword != null && !rawPassword.isEmpty()) {
+                    body.put("password", passwordEncoder.encode(rawPassword));
+                } else {
+                    body.remove("password"); // ไม่ต้องอัปเดตรหัสผ่านถ้าเป็นค่าว่าง
+                }
+            }
+
+            Admin updatedAdmin = adminService.updateAdmin(id, body);
+
+            // สร้าง Token ใหม่ถ้า username เปลี่ยน
+            String newToken = jwtUtil.generateToken(updatedAdmin.getUsername());
+            ResponseCookie cookie = ResponseCookie.from("admin_token", newToken)
+                    .httpOnly(true).path("/").maxAge(7 * 24 * 60 * 60).build();
+
+            return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, cookie.toString()).body(updatedAdmin);
+
+        } catch (IllegalStateException e) {
+            // ดักจับ Error จาก Service (เช่น username/email ซ้ำ) แล้วส่งกลับเป็น 400
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
+            // Log error ที่ฝั่ง server แทนการส่งกลับไปหา client โดยตรง
+            System.err.println("Admin update failed due to token error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "Invalid token"));
+                    .body(Map.of("error", "Token invalid or expired. Please login again."));
         }
-
-        Admin admin = adminRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Admin not found"));
-
-        if (body.containsKey("username")) {
-            admin.setUsername(body.get("username"));
-        }
-        if (body.containsKey("email")) {
-            admin.setEmail(body.get("email"));
-        }
-        if (body.containsKey("password") && body.get("password") != null && !body.get("password").isEmpty()) {
-            admin.setPassword(passwordEncoder.encode(body.get("password")));
-        }
-
-        Admin updated = adminRepository.save(admin);
-        return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/{id}")

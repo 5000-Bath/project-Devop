@@ -209,8 +209,20 @@ class ProductServiceImplTest {
     // --- 5. Test: Soft Delete ---
     @Test
     void softDeleteProduct_Success() {
-        doNothing().when(productRepository).softDeleteById(1L);
+        // 1. เตรียมข้อมูล Product ที่จะใช้ทดสอบ
+        Product product = new Product();
+        product.setId(1L);
+        product.setIsActive(true);
+
+        // 2. Mock repository: เมื่อ findById(1L) ถูกเรียก ให้คืน product ที่เราเตรียมไว้
+        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
+
+        // 3. เรียกใช้เมธอดที่ต้องการทดสอบ
         productService.softDeleteProduct(1L);
-        verify(productRepository, times(1)).softDeleteById(1L);
+
+        // 4. ตรวจสอบว่า productRepository.save() ถูกเรียก 1 ครั้ง และ product ที่ส่งไป save มีสถานะเป็น false
+        verify(productRepository, times(1)).save(product);
+        assertFalse(product.getIsActive()); // ตรวจสอบว่าสถานะเปลี่ยนเป็น false
+        assertNotNull(product.getDeletedAt()); // ตรวจสอบว่ามีการตั้งเวลาที่ลบ
     }
 }

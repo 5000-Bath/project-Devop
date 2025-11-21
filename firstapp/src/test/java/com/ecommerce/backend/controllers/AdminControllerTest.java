@@ -114,30 +114,33 @@ class AdminControllerTest {
     void updateAdmin_Success() throws Exception {
         String token = "valid-token";
         Cookie cookie = new Cookie("admin_token", token);
-
-        // ข้อมูลที่จะแก้
-        Map<String, String> updates = Map.of(
-                "username", "updatedName",
-                "password", "newPass123"
-        );
-
+    
         // ข้อมูลเดิมใน DB
         Admin existingAdmin = new Admin();
         existingAdmin.setId(1L);
-        existingAdmin.setUsername("oldName");
-
+        existingAdmin.setUsername("adminUser"); // ชื่อต้องตรงกับที่ mock จาก token
+    
+        // ข้อมูลใหม่ที่จะส่งไปอัปเดต
+        Map<String, Object> updates = Map.of("email", "new@email.com");
+    
+        // ข้อมูลที่คาดหวังว่าจะได้กลับมาหลังอัปเดต
+        Admin updatedAdmin = new Admin();
+        updatedAdmin.setId(1L);
+        updatedAdmin.setUsername("adminUser");
+        updatedAdmin.setEmail("new@email.com");
+    
         // Mock Process ทั้งหมด
-        when(jwtUtil.getUsernameFromToken(token)).thenReturn("adminUser"); // ผ่าน Token check
-        when(adminRepository.findById(1L)).thenReturn(Optional.of(existingAdmin)); // เจอ Admin
-        when(passwordEncoder.encode("newPass123")).thenReturn("encodedPass"); // เข้ารหัสผ่าน
-        when(adminRepository.save(any(Admin.class))).thenAnswer(i -> i.getArguments()[0]); // บันทึก
-
+        when(jwtUtil.getUsernameFromToken(token)).thenReturn("adminUser");
+        when(adminService.getAdminByUsername("adminUser")).thenReturn(existingAdmin); // Controller จะเรียก service เพื่อเช็คสิทธิ์
+        when(adminService.updateAdmin(eq(1L), any(Map.class))).thenReturn(updatedAdmin); // Service อัปเดตข้อมูล
+        when(jwtUtil.generateToken(anyString())).thenReturn("new-token"); // สร้าง token ใหม่
+    
         mockMvc.perform(put("/api/admins/1")
                         .cookie(cookie) // อย่าลืม Cookie
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updates)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.username").value("updatedName")); // เช็คว่าเปลี่ยนจริง
+                .andExpect(jsonPath("$.email").value("new@email.com")); // เช็คว่าเปลี่ยนจริง
     }
 
     @Test
