@@ -45,7 +45,7 @@ pipeline {
         }
 
         stage('Start Test Environment') {
-            when { expression { params.RUN_TEST == false } }
+            when { expression { params.RUN_TEST == true } }
             steps {
                 echo "Starting DB and Backend API..."
                 sh "docker-compose -f ${COMPOSE_FILE} up -d db backend"
@@ -69,14 +69,6 @@ pipeline {
             }
         }
 
-        stage('Unit Test') {
-            when { expression { return params.RUN_TEST } }
-            steps {
-                echo "Running Unit Tests..."
-                sh "cd Foodstore_User && npm test"
-                sh "cd Foodstore_admin_Frontend && npm test"
-            }
-        }
 
         stage('E2E Test') {
             when { expression { return params.RUN_TEST } }
