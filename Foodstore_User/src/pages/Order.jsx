@@ -10,7 +10,7 @@ import placeholderImage from '../assets/menupic/khao-man-kai.jpg';
 
 // API function สำหรับใช้คูปอง
 const validateCoupon = async (code, originalAmount) => {
-  const response = await fetch('http://localhost:8080/api/coupons/validate', {
+  const response = await fetch('/api/coupons/validate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
