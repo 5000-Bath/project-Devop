@@ -38,8 +38,8 @@ pipeline {
             steps {
                 echo "Installing dependencies required for Cypress..."
                 sh '''
-                    sudo apt-get update
-                    sudo apt-get install -y xvfb libgtk-3-0 libgbm-dev || true
+                    apt-get update
+                    apt-get install -y xvfb libgtk-3-0 libgbm-dev || true
                 '''
             }
         }
