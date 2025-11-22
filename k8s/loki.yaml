@@ -13,9 +13,11 @@ spec:
       labels:
         app: loki
     spec:
+      securityContext:
+        fsGroup: 10001        # ให้ volume ทั้งหมดถูก assign group 10001
       containers:
       - name: loki
-        image: grafana/loki:2.9.8        # ← ใส่ image container หลักตรงนี้
+        image: grafana/loki:2.9.8
         securityContext:
           runAsUser: 10001
           runAsGroup: 10001
@@ -31,7 +33,7 @@ spec:
       initContainers:
       - name: init-chown-data
         image: busybox:1.36
-        command: ["chown", "-R", "10001:10001", "/loki"]
+        command: ["sh", "-c", "chown -R 10001:10001 /loki"]
         volumeMounts:
           - name: loki-storage
             mountPath: /loki
