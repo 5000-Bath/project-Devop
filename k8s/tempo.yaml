@@ -15,26 +15,26 @@ spec:
     spec:
       containers:
       - name: tempo
+        image: grafana/tempo:latest       # ← ใส่ image container หลักตรงนี้
         securityContext:
           runAsUser: 10001
           runAsGroup: 10001
+        args:
+          - "-config.file=/etc/tempo/config.yaml"
+        ports:
+          - containerPort: 3200
+        volumeMounts:
+          - name: tempo-config
+            mountPath: /etc/tempo
+          - name: tempo-storage
+            mountPath: /tmp/tempo
       initContainers:
       - name: init-chown-data
         image: busybox:1.36
         command: ["chown", "-R", "10001:10001", "/tmp/tempo"]
         volumeMounts:
-        - name: tempo-storage
-          mountPath: /tmp/tempo
-        image: grafana/tempo:latest
-        args:
-          - "-config.file=/etc/tempo/config.yaml"
-        ports:
-        - containerPort: 3200
-        volumeMounts:
-        - name: tempo-config
-          mountPath: /etc/tempo
-        - name: tempo-storage
-          mountPath: /tmp/tempo
+          - name: tempo-storage
+            mountPath: /tmp/tempo
       volumes:
       - name: tempo-config
         configMap:
