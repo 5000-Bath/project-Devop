@@ -15,27 +15,27 @@ spec:
     spec:
       containers:
       - name: prometheus
+        image: prom/prometheus:latest        # ← ต้องใส่ตรงนี้
         securityContext:
           runAsUser: 65534
           runAsGroup: 65534
+        args:
+          - "--config.file=/etc/prometheus/prometheus.yml"
+          - "--storage.tsdb.path=/prometheus/"
+        ports:
+          - containerPort: 9090
+        volumeMounts:
+          - name: prometheus-config-volume
+            mountPath: /etc/prometheus/
+          - name: prometheus-storage-volume
+            mountPath: /prometheus/
       initContainers:
       - name: init-chown-data
         image: busybox:1.36
         command: ["chown", "-R", "65534:65534", "/prometheus"]
         volumeMounts:
-        - name: prometheus-storage-volume
-          mountPath: /prometheus/
-        image: prom/prometheus:latest
-        args:
-          - "--config.file=/etc/prometheus/prometheus.yml"
-          - "--storage.tsdb.path=/prometheus/"
-        ports:
-        - containerPort: 9090
-        volumeMounts:
-        - name: prometheus-config-volume
-          mountPath: /etc/prometheus/
-        - name: prometheus-storage-volume
-          mountPath: /prometheus/
+          - name: prometheus-storage-volume
+            mountPath: /prometheus/
       volumes:
       - name: prometheus-config-volume
         configMap:
