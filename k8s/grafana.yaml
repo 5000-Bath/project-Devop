@@ -15,17 +15,10 @@ spec:
     spec:
       containers:
       - name: grafana
+        image: grafana/grafana:latest      # ← ต้องใส่ตรงนี้
         securityContext:
           runAsUser: 472
           runAsGroup: 472
-      initContainers:
-      - name: init-chown-data
-        image: busybox:1.36
-        command: ["chown", "-R", "472:472", "/var/lib/grafana"]
-        volumeMounts:
-        - name: grafana-storage
-          mountPath: /var/lib/grafana
-        image: grafana/grafana:latest
         ports:
         - containerPort: 3000
         volumeMounts:
@@ -34,6 +27,13 @@ spec:
         - name: grafana-datasources
           mountPath: /etc/grafana/provisioning/datasources
           readOnly: true
+      initContainers:
+      - name: init-chown-data
+        image: busybox:1.36
+        command: ["chown", "-R", "472:472", "/var/lib/grafana"]
+        volumeMounts:
+        - name: grafana-storage
+          mountPath: /var/lib/grafana
       volumes:
       - name: grafana-storage
         persistentVolumeClaim:
