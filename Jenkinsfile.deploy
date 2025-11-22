@@ -38,6 +38,32 @@ pipeline {
 
                                     kubectl get ns \$K8S_NAMESPACE || kubectl create ns \$K8S_NAMESPACE
 
+                                    echo "📊 Deploying Monitoring Stack to Rayong..."
+
+                                    # --- Persistent Volumes (Not Namespaced) ---
+                                    kubectl apply -f k8s/grafana-pv.yaml
+                                    kubectl apply -f k8s/prometheus-pv.yaml
+                                    kubectl apply -f k8s/loki-pv.yaml
+                                    kubectl apply -f k8s/tempo-pv.yaml
+
+                                    # --- Persistent Volume Claims & ConfigMaps (Namespaced) ---
+                                    kubectl apply -f k8s/grafana-pvc.yaml -n \$K8S_NAMESPACE
+                                    kubectl apply -f k8s/grafana-configmap.yaml -n \$K8S_NAMESPACE
+                                    kubectl apply -f k8s/prometheus-pvc.yaml -n \$K8S_NAMESPACE
+                                    kubectl apply -f k8s/prometheus-configmap.yaml -n \$K8S_NAMESPACE
+                                    kubectl apply -f k8s/loki-pvc.yaml -n \$K8S_NAMESPACE
+                                    kubectl apply -f k8s/loki-configmap.yaml -n \$K8S_NAMESPACE
+                                    kubectl apply -f k8s/tempo-pvc.yaml -n \$K8S_NAMESPACE
+                                    kubectl apply -f k8s/tempo-configmap.yaml -n \$K8S_NAMESPACE
+                                    kubectl apply -f k8s/promtail-configmap.yaml -n \$K8S_NAMESPACE
+
+                                    # --- Deployments, Services, DaemonSets ---
+                                    kubectl apply -f k8s/grafana.yaml -n \$K8S_NAMESPACE
+                                    kubectl apply -f k8s/prometheus.yaml -n \$K8S_NAMESPACE
+                                    kubectl apply -f k8s/loki.yaml -n \$K8S_NAMESPACE
+                                    kubectl apply -f k8s/tempo.yaml -n \$K8S_NAMESPACE
+                                    kubectl apply -f k8s/promtail.yaml -n \$K8S_NAMESPACE # Contains non-namespaced resources too
+
                                     # --- MySQL Master (commented out) ---
                                     # kubectl apply -f k8s/mysql-config-master.yaml -n \$K8S_NAMESPACE
                                     # kubectl apply -f k8s/mysql-secret.yaml -n \$K8S_NAMESPACE
@@ -113,6 +139,32 @@ pipeline {
                                     echo "🚀 Deploying Slave to Salaya..."
 
                                     kubectl get ns \$K8S_NAMESPACE || kubectl create ns \$K8S_NAMESPACE
+
+                                    echo "📊 Deploying Monitoring Stack to Salaya..."
+
+                                    # --- Persistent Volumes (Not Namespaced) ---
+                                    kubectl apply -f k8s/grafana-pv.yaml
+                                    kubectl apply -f k8s/prometheus-pv.yaml
+                                    kubectl apply -f k8s/loki-pv.yaml
+                                    kubectl apply -f k8s/tempo-pv.yaml
+
+                                    # --- Persistent Volume Claims & ConfigMaps (Namespaced) ---
+                                    kubectl apply -f k8s/grafana-pvc.yaml -n \$K8S_NAMESPACE
+                                    kubectl apply -f k8s/grafana-configmap.yaml -n \$K8S_NAMESPACE
+                                    kubectl apply -f k8s/prometheus-pvc.yaml -n \$K8S_NAMESPACE
+                                    kubectl apply -f k8s/prometheus-configmap.yaml -n \$K8S_NAMESPACE
+                                    kubectl apply -f k8s/loki-pvc.yaml -n \$K8S_NAMESPACE
+                                    kubectl apply -f k8s/loki-configmap.yaml -n \$K8S_NAMESPACE
+                                    kubectl apply -f k8s/tempo-pvc.yaml -n \$K8S_NAMESPACE
+                                    kubectl apply -f k8s/tempo-configmap.yaml -n \$K8S_NAMESPACE
+                                    kubectl apply -f k8s/promtail-configmap.yaml -n \$K8S_NAMESPACE
+
+                                    # --- Deployments, Services, DaemonSets ---
+                                    kubectl apply -f k8s/grafana.yaml -n \$K8S_NAMESPACE
+                                    kubectl apply -f k8s/prometheus.yaml -n \$K8S_NAMESPACE
+                                    kubectl apply -f k8s/loki.yaml -n \$K8S_NAMESPACE
+                                    kubectl apply -f k8s/tempo.yaml -n \$K8S_NAMESPACE
+                                    kubectl apply -f k8s/promtail.yaml -n \$K8S_NAMESPACE # Contains non-namespaced resources too
 
                                     kubectl apply -f k8s/mysql-pvc.yaml -n \$K8S_NAMESPACE
 
