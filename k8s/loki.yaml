@@ -14,7 +14,7 @@ spec:
         app: loki
     spec:
       securityContext:
-        fsGroup: 10001        # ให้ volume ทั้งหมดถูก assign group 10001
+        fsGroup: 10001
       containers:
       - name: loki
         image: grafana/loki:2.9.8
@@ -30,13 +30,17 @@ spec:
             mountPath: /etc/loki
           - name: loki-storage
             mountPath: /loki
+          - name: loki-storage    # ← WAL จะไปที่ /wal ด้วย volume เดิม
+            mountPath: /wal
       initContainers:
       - name: init-chown-data
         image: busybox:1.36
-        command: ["sh", "-c", "chown -R 10001:10001 /loki"]
+        command: ["sh", "-c", "chown -R 10001:10001 /loki /wal"]
         volumeMounts:
           - name: loki-storage
             mountPath: /loki
+          - name: loki-storage
+            mountPath: /wal
       volumes:
       - name: loki-config
         configMap:
