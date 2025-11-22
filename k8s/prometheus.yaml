@@ -15,6 +15,16 @@ spec:
     spec:
       containers:
       - name: prometheus
+        securityContext:
+          runAsUser: 65534
+          runAsGroup: 65534
+      initContainers:
+      - name: init-chown-data
+        image: busybox:1.36
+        command: ["chown", "-R", "65534:65534", "/prometheus"]
+        volumeMounts:
+        - name: prometheus-storage-volume
+          mountPath: /prometheus/
         image: prom/prometheus:latest
         args:
           - "--config.file=/etc/prometheus/prometheus.yml"
