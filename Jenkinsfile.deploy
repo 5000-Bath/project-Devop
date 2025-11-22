@@ -97,6 +97,8 @@ pipeline {
                                     # --- Backend ---
                                     envsubst < k8s/backend.yaml | kubectl apply -f - -n \$K8S_NAMESPACE
 
+                                    kubectl patch pvc backend-pvc -n \$K8S_NAMESPACE -p '{"metadata":{"finalizers":[]}}' --type=merge || true
+
                                     # --- Frontend ConfigMaps ---
                                     kubectl create configmap nginx-conf-user-rayong \
                                         --from-file=default.conf=Foodstore_User/nginx-rayong.conf \
@@ -109,6 +111,8 @@ pipeline {
                                     # --- Frontend Deploy ---
                                     envsubst < k8s/frontend-user-rayong.yaml | kubectl apply -f - -n \$K8S_NAMESPACE
                                     envsubst < k8s/frontend-admin-rayong.yaml | kubectl apply -f - -n \$K8S_NAMESPACE
+
+                                    
 
                                     # --- Rollout check ---
                                     kubectl rollout status deployment/backend -n \$K8S_NAMESPACE --timeout=180s
@@ -193,6 +197,8 @@ pipeline {
 
                                     # --- Backend ---
                                     envsubst < k8s/backend.yaml | kubectl apply -f - -n \$K8S_NAMESPACE
+
+                                    kubectl patch pvc backend-pvc -n \$K8S_NAMESPACE -p '{"metadata":{"finalizers":[]}}' --type=merge || true
 
                                     # --- Frontend ConfigMaps ---
                                     kubectl create configmap nginx-conf-user-salaya \
